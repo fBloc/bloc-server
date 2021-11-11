@@ -287,8 +287,10 @@ func (mr *MongoRepository) SaveIptBrief(
 			iptBAOk[paramIndex] = append(iptBAOk[paramIndex], mongoIptBriefAndKey{
 				Brief:   string(byteInrune[:minLength-1]),
 				FullKey: key})
-			// TODO oss set error check
-			objectStorageImplement.Set(key, uploadByte)
+			err := objectStorageImplement.Set(key, uploadByte)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return mr.mongoCollection.PatchByID(

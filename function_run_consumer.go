@@ -34,7 +34,7 @@ func reportHeartBeat(
 	}
 }
 
-// BlocTaskConsumer 消费并执行具体的bloc，若有下游，发布下游bloc
+// FunctionRunConsumer 消费并执行具体的function节点，若有下游，发布下游待执行functions
 func (blocApp *BlocApp) FunctionRunConsumer() {
 	event.InjectMq(blocApp.GetOrCreateEventMQ())
 	event.InjectFutureEventStorageImplement(blocApp.GetOrCreateFutureEventStorage())
@@ -153,9 +153,14 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 			}
 		}
 
-		funcRunRecordRepo.SaveIptBrief(
+		err = funcRunRecordRepo.SaveIptBrief(
 			funcRunRecordUuid, functionRecordIns.Ipts,
 			objectStorage)
+		if err != nil {
+			// TODO 修改为更为合适的处理
+			panic(err)
+		}
+
 		// > ipt装配完成，先保存输入
 		// 若装配IPT失败
 		if functionRecordIns.ErrorMsg != "" {

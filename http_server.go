@@ -10,6 +10,7 @@ import (
 	"github.com/fBloc/bloc-backend-go/interfaces/web/function"
 	"github.com/fBloc/bloc-backend-go/interfaces/web/function_run_record"
 	"github.com/fBloc/bloc-backend-go/interfaces/web/middleware"
+	"github.com/fBloc/bloc-backend-go/interfaces/web/object_storage"
 	"github.com/fBloc/bloc-backend-go/interfaces/web/user"
 	flow_service "github.com/fBloc/bloc-backend-go/services/flow"
 	flowRunRecord_service "github.com/fBloc/bloc-backend-go/services/flow_run_record"
@@ -211,6 +212,15 @@ func (blocApp *BlocApp) RunHttpServer() {
 	}
 
 	// object storage
+	{
+		object_storage.InjectObjectStorageImplement(
+			blocApp.GetOrCreateConsumerObjectStorage(),
+		)
+		{
+			basicPath := "/api/v1/object_storage"
+			router.GET(basicPath+"/get_string_value_by_key/:key", object_storage.GetValueByKeyReturnString)
+		}
+	}
 
 	// start http server
 	log.Printf("start http server at http://%s", blocApp.HttpAddress())
