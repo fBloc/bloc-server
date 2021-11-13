@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/fBloc/bloc-backend-go/aggregate"
+	"github.com/fBloc/bloc-backend-go/event"
 	"github.com/fBloc/bloc-backend-go/interfaces/web"
 	"github.com/fBloc/bloc-backend-go/interfaces/web/req_context"
 
@@ -39,15 +40,15 @@ func Run(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		return
 	}
 
-	// 创建新的run_record记录
-	aggFlowRunRecord := aggregate.NewFlowRunRecordFromFlow(*flowIns)
-	aggFlowRunRecord.TriggerUserID = reqUser.ID
+	// create new run record
+	aggFlowRunRecord := aggregate.NewUserTriggeredRunRecord(*flowIns, reqUser.ID)
 	err = fService.FlowRunRecord.Create(aggFlowRunRecord)
 	if err != nil {
 		web.WriteInternalServerErrorResp(
 			&w, err,
 			"create flow run record to repository failed")
 	}
+	event.PubEvent(&event.FlowToRun{FlowRunRecordID: aggFlowRunRecord.ID})
 
 	web.WritePlainSucOkResp(&w)
 }

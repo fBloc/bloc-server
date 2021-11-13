@@ -3,7 +3,6 @@ package aggregate
 import (
 	"time"
 
-	"github.com/fBloc/bloc-backend-go/event"
 	"github.com/fBloc/bloc-backend-go/value_object"
 
 	"github.com/google/uuid"
@@ -32,7 +31,7 @@ type FlowRunRecord struct {
 	CancelUserID                 uuid.UUID
 }
 
-func NewFlowRunRecordFromFlow(f Flow) *FlowRunRecord {
+func newFromFlow(f Flow) *FlowRunRecord {
 	ret := &FlowRunRecord{
 		ID:            uuid.New(),
 		FlowID:        f.ID,
@@ -42,8 +41,20 @@ func NewFlowRunRecordFromFlow(f Flow) *FlowRunRecord {
 		Status:        value_object.Created,
 	}
 
-	event.PubEvent(&event.FlowToRun{FlowRunRecordID: ret.ID})
 	return ret
+}
+
+func NewUserTriggeredRunRecord(f Flow, triggerUserID uuid.UUID) *FlowRunRecord {
+	rR := newFromFlow(f)
+	rR.TriggerUserID = triggerUserID
+	rR.TriggerType = value_object.Manual
+	return rR
+}
+
+func NewCrontabTriggeredRunRecord(f Flow) *FlowRunRecord {
+	rR := newFromFlow(f)
+	rR.TriggerType = value_object.Crontab
+	return rR
 }
 
 func (task *FlowRunRecord) IsZero() bool {

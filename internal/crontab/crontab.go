@@ -10,6 +10,14 @@ import (
 	"github.com/robfig/cron/v3"
 )
 
+// TriggeredTimeFlag theTime是一个具体的时间，返回的是当前精度支持下的词时间的表达
+// 目前被crontab watcher那边用来做并发安全控制的标识
+// 目前支持的是分钟级别，所以返回表达式也是到分钟
+// 如果后续改到秒，此地修改就行。避免还要到对应使用者去修改
+func TriggeredTimeFlag(theTime time.Time) string {
+	return theTime.Format("20060102.150405")
+}
+
 type CrontabRepresent struct {
 	CrontabStr string
 	schedule   cron.Schedule

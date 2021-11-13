@@ -14,4 +14,5 @@ func (blocApp *BlocApp) RunConsumer() {
 	// go blocApp.LookDeadBlocAndRepub()
 
 	// crontab watcher
+	go blocApp.CrontabWatcher()
 }

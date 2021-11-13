@@ -34,6 +34,7 @@ type FlowRepository interface {
 	GetDraftByOriginID(originID uuid.UUID) (*aggregate.Flow, error)
 
 	FilterOnline(userID uuid.UUID, nameContains string) (flows []aggregate.Flow, err error)
+	FilterCrontabFlows() (flows []aggregate.Flow, err error)
 	FilterDraft(userID uuid.UUID, nameContains string) (flows []aggregate.Flow, err error)
 
 	// Update

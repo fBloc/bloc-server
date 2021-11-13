@@ -2,10 +2,12 @@ package mongo
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/fBloc/bloc-backend-go/aggregate"
 	"github.com/fBloc/bloc-backend-go/internal/conns/mongodb"
+	"github.com/fBloc/bloc-backend-go/internal/crontab"
 	"github.com/fBloc/bloc-backend-go/internal/json_date"
 	"github.com/fBloc/bloc-backend-go/repository/flow_run_record"
 	"github.com/fBloc/bloc-backend-go/value_object"
@@ -57,6 +59,17 @@ type mongoFlowRunRecord struct {
 	TimeoutCanceled              bool                                 `bson:"timeout_canceled,omitempty"`
 	Canceled                     bool                                 `bson:"canceled"`
 	CancelUserID                 uuid.UUID                            `bson:"cancel_user_id"`
+	crontabRepresent             string                               `bson:"crontab_represent"`
+}
+
+func (m *mongoFlowRunRecord) IsZero() bool {
+	if m == nil {
+		return true
+	}
+	if m.ID == uuid.Nil {
+		return true
+	}
+	return false
 }
 
 func NewFromAggregate(
@@ -118,6 +131,29 @@ func (mr *MongoRepository) Create(fRR *aggregate.FlowRunRecord) error {
 	m := NewFromAggregate(fRR)
 	_, err := mr.mongoCollection.InsertOne(*m)
 	return err
+}
+
+// CrontabFindOrCreate 创建来源是crontab触发的
+func (mr *MongoRepository) CrontabFindOrCreate(
+	fRR *aggregate.FlowRunRecord,
+	crontabTime time.Time,
+) (created bool, err error) {
+	m := NewFromAggregate(fRR)
+	var old mongoFlowRunRecord
+
+	crontabRep := fmt.Sprintf("%s_%s",
+		fRR.FlowID.String(), crontab.TriggeredTimeFlag(crontabTime))
+	err = mr.mongoCollection.FindOneOrInsert(
+		mongodb.NewFilter().AddEqual("crontab_represent", crontabRep),
+		*m,
+		&old)
+	if err != nil {
+		return
+	}
+	if !old.IsZero() { // 老文档存在，表示已经创建过了
+		created = true
+	}
+	return
 }
 
 // Read

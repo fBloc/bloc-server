@@ -1,6 +1,8 @@
 package flow_run_record
 
 import (
+	"time"
+
 	"github.com/fBloc/bloc-backend-go/aggregate"
 	"github.com/fBloc/bloc-backend-go/value_object"
 
@@ -10,6 +12,9 @@ import (
 type FlowRunRecordRepository interface {
 	// Create
 	Create(*aggregate.FlowRunRecord) error
+	CrontabFindOrCreate(
+		fRR *aggregate.FlowRunRecord, crontabTime time.Time,
+	) (created bool, err error)
 
 	// Read
 	GetByID(id uuid.UUID) (*aggregate.FlowRunRecord, error)

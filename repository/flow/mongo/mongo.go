@@ -264,6 +264,21 @@ func (mr *MongoRepository) FilterOnline(userID uuid.UUID, nameContains string) (
 	return ret, err
 }
 
+func (mr *MongoRepository) FilterCrontabFlows() ([]aggregate.Flow, error) {
+	filter := mongodb.NewFilter().AddEqual("is_draft", false).AddEqual("newest", true).AddExist("crontab")
+
+	var flows []mongoFlow
+	err := mr.mongoCollection.Filter(filter, &filter_options.FilterOption{}, &flows)
+	if err != nil {
+		return nil, err
+	}
+	ret := make([]aggregate.Flow, 0, len(flows))
+	for _, i := range flows {
+		ret = append(ret, *i.ToAggregate())
+	}
+	return ret, err
+}
+
 func (mr *MongoRepository) FilterDraft(userID uuid.UUID, nameContains string) ([]aggregate.Flow, error) {
 	filter := mongodb.NewFilter().AddEqual("is_draft", true)
 	if userID != uuid.Nil {

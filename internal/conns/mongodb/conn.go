@@ -258,6 +258,23 @@ func (c *Collection) InsertOne(insertData interface{}) (string, error) {
 	return "", errors.New("insert ok. gen ID failed")
 }
 
+func (c *Collection) FindOneOrInsert(
+	mFilter *MongoFilter,
+	insertData interface{},
+	oldDocResultPointer interface{},
+) (err error) {
+	err = c.collection.FindOneAndUpdate(
+		context.TODO(),
+		mFilter.filter,
+		bson.M{"$setOnInsert": insertData},
+		options.FindOneAndUpdate().SetUpsert(true).SetReturnDocument(options.Before),
+	).Decode(oldDocResultPointer)
+	if err != nil && err == mongo.ErrNoDocuments {
+		err = nil
+	}
+	return
+}
+
 // PatchByID partially update a doc, only update ipt fields
 func (c *Collection) PatchByID(id uuid.UUID, mSetter *MongoUpdater) error {
 	return c.Patch(NewFilter().AddEqual("id", id), mSetter)
