@@ -18,9 +18,9 @@ func InjectFlowRunRecordService(
 
 type FlowFunctionRecord struct {
 	ID                           uuid.UUID                            `json:"id"`
-	ArrangementID                uuid.UUID                            `json:"arrangement_id"`
-	ArrangementFlowID            string                               `json:"arrangement_flow_id"`
-	ArrangementRunRecordID       string                               `json:"arrangement_run_record_id"`
+	ArrangementID                uuid.UUID                            `json:"arrangement_id,omitempty"`
+	ArrangementFlowID            string                               `json:"arrangement_flow_id,omitempty"`
+	ArrangementRunRecordID       string                               `json:"arrangement_run_record_id,omitempty"`
 	FlowID                       uuid.UUID                            `json:"flow_id"`
 	FlowOriginID                 uuid.UUID                            `json:"flow_origin_id"`
 	FlowFuncIDMapFuncRunRecordID map[string]uuid.UUID                 `json:"flowFunctionID_map_functionRunRecordID"`

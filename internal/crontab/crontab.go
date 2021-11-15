@@ -84,14 +84,17 @@ func BuildCrontab(iptString string) *CrontabRepresent {
 }
 
 // 分钟  小时    dayofmonth   month    dayofweek
-func (cr *CrontabRepresent) RunNow() bool {
+func (cr *CrontabRepresent) TimeMatched(theTime time.Time) bool {
 	if cr.schedule == nil { // TODO 这里是不是不对？？
 		return false
 	}
 	// 当前此crontab配置是否应该立即运行
 	m, _ := time.ParseDuration("-1m")
 	nextRunTime := cr.schedule.Next(time.Now().Add(m))
-	if nextRunTime.Minute() == time.Now().Minute() {
+
+	if nextRunTime.Minute() == theTime.Minute() && nextRunTime.Hour() == theTime.Hour() &&
+		nextRunTime.Day() == theTime.Day() && nextRunTime.Month() == theTime.Month() &&
+		nextRunTime.Year() == theTime.Year() {
 		return true
 	}
 	return false

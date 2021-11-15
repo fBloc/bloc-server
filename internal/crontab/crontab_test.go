@@ -3,6 +3,7 @@ package crontab
 import (
 	"fmt"
 	"testing"
+	"time"
 )
 
 func TestCrontab(t *testing.T) {
@@ -15,6 +16,7 @@ func TestCrontab(t *testing.T) {
 	crontabstrMapvalid["69 * * * *"] = false
 	crontabstrMapvalid["* 34 * * *"] = false
 
+	now := time.Now()
 	for k, v := range crontabstrMapvalid {
 		cr := BuildCrontab(k)
 		if v == true && cr.IsZero() {
@@ -24,7 +26,7 @@ func TestCrontab(t *testing.T) {
 			t.Errorf("%v should not be valid", k)
 		}
 		if cr != nil {
-			run := cr.RunNow()
+			run := cr.TimeMatched(now)
 			if run {
 				fmt.Printf("\tRun Now! %v\n", k)
 			}
