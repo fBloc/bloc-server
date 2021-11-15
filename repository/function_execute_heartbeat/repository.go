@@ -12,6 +12,7 @@ type FunctionExecuteHeartbeatRepository interface {
 
 	// read
 	GetByID(id uuid.UUID) (*aggregate.FunctionExecuteHeartBeat, error)
+	AllDeads() ([]*aggregate.FunctionExecuteHeartBeat, error)
 
 	// update
 	AliveReport(id uuid.UUID) error

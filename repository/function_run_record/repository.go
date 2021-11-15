@@ -41,7 +41,7 @@ type FunctionRunRecordRepository interface {
 		objectStorageImplement object_storage.ObjectStorage,
 	) error
 
-	ClearProgress(id uuid.UUID, progressStages []string) error
+	ClearProgress(id uuid.UUID) error
 	SaveSuc(
 		id uuid.UUID, desc string, opt map[string]interface{},
 		brief map[string]string, pass bool,

@@ -298,10 +298,15 @@ func (mr *MongoRepository) SaveIptBrief(
 		mongodb.NewUpdater().AddSet("ipt", iptBAOk))
 }
 
-func (mr *MongoRepository) ClearProgress(id uuid.UUID, progressStages []string) error {
+// ClearProgress 清空进度相关的字段
+func (mr *MongoRepository) ClearProgress(id uuid.UUID) error {
 	return mr.mongoCollection.PatchByID(
 		id,
-		mongodb.NewUpdater().AddSet("process", 0).AddSet("progress_msg", []string{}),
+		mongodb.NewUpdater().
+			AddSet("start", time.Time{}).
+			AddSet("process", 0).
+			AddSet("progress_msg", []string{}).
+			AddSet("process_stage_index", 0),
 	)
 }
 

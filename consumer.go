@@ -10,8 +10,8 @@ func (blocApp *BlocApp) RunConsumer() {
 	//监听bloc task完成消息的consumer
 	go blocApp.FunctionRunConsumer()
 
-	//监听是否有运行bloc中途因为各项原因退出了的bloc，触发重新运行
-	// go blocApp.LookDeadBlocAndRepub()
+	//监听是否有运行中途因为各项原因退出了的function，触发其重新运行
+	go blocApp.RePubDeadRuns()
 
 	// crontab watcher
 	go blocApp.CrontabWatcher()

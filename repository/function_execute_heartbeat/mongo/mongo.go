@@ -6,6 +6,7 @@ import (
 
 	"github.com/fBloc/bloc-backend-go/aggregate"
 	"github.com/fBloc/bloc-backend-go/internal/conns/mongodb"
+	"github.com/fBloc/bloc-backend-go/internal/filter_options"
 	"github.com/fBloc/bloc-backend-go/repository/function_execute_heartbeat"
 
 	"github.com/google/uuid"
@@ -75,6 +76,24 @@ func (mr *MongoRepository) GetByID(
 		return nil, err
 	}
 	return m.ToAggregate(), nil
+}
+
+func (mr *MongoRepository) AllDeads() ([]*aggregate.FunctionExecuteHeartBeat, error) {
+	var mSlice []mongoFunctionExecuteHeartBeat
+	err := mr.mongoCollection.Filter(
+		mongodb.NewFilter().AddLt("latest_heartbeat_time", time.Now().Add(aggregate.HeartBeatDeadThreshold)),
+		&filter_options.FilterOption{}, &mSlice,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := make([]*aggregate.FunctionExecuteHeartBeat, 0, len(mSlice))
+	for _, m := range mSlice {
+		ret = append(ret, m.ToAggregate())
+	}
+
+	return ret, nil
 }
 
 func (mr *MongoRepository) AliveReport(

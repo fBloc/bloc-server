@@ -6,6 +6,11 @@ import (
 	"github.com/google/uuid"
 )
 
+const (
+	HeartBeatReportInterval = 5 * time.Second
+	HeartBeatDeadThreshold  = 30 * time.Second
+)
+
 type FunctionExecuteHeartBeat struct {
 	ID                  uuid.UUID
 	FunctionRunRecordID uuid.UUID

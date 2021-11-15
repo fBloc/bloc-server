@@ -20,7 +20,7 @@ func reportHeartBeat(
 	heartBeatRepo function_execute_heartbeat_repository.FunctionExecuteHeartbeatRepository,
 	heartBeatRecordID uuid.UUID,
 	done chan bool) {
-	ticker := time.NewTicker(5 * time.Second)
+	ticker := time.NewTicker(aggregate.HeartBeatReportInterval)
 	defer ticker.Stop()
 
 	for {
@@ -28,7 +28,7 @@ func reportHeartBeat(
 		case <-done: // 任务已完成，删除心跳
 			heartBeatRepo.Delete(heartBeatRecordID)
 			return
-		case <-ticker.C: // 每五秒汇报一次心跳
+		case <-ticker.C: // 上报心跳
 			heartBeatRepo.AliveReport(heartBeatRecordID)
 		}
 	}
