@@ -40,7 +40,12 @@ func BuildFromWebRequestParams(
 	filterKeyMapFilterInGetPath := make(map[string]web.FilterInGetPath)
 	for filterInGetPath, reqKeys := range filterInGetPathMapReqKeys {
 		for _, key := range reqKeys {
-			completeKey := fmt.Sprintf("%s%s", key, filterInGetPath.String())
+			var completeKey string
+			if strings.HasPrefix(filterInGetPath.String(), "__") {
+				completeKey = fmt.Sprintf("%s%s", key, filterInGetPath.String())
+			} else {
+				completeKey = key
+			}
 			val := query.Get(completeKey)
 			if filterInGetPath == web.FilterInGetPathLimit {
 				intVal, err := strconv.Atoi(val)

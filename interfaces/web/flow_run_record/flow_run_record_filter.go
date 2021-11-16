@@ -52,7 +52,12 @@ func BuildFromWebRequestParams(
 	filterKeyMapFilterInGetPath := make(map[string]web.FilterInGetPath)
 	for filterInGetPath, reqKeys := range filterInGetPathMapReqKeys {
 		for _, key := range reqKeys {
-			completeKey := fmt.Sprintf("%s%s", key, filterInGetPath.String())
+			var completeKey string
+			if strings.HasPrefix(filterInGetPath.String(), "__") {
+				completeKey = fmt.Sprintf("%s%s", key, filterInGetPath.String())
+			} else {
+				completeKey = key
+			}
 			val := query.Get(completeKey)
 			if filterInGetPath == web.FilterInGetPathLimit {
 				intVal, err := strconv.Atoi(val)
@@ -94,7 +99,7 @@ func BuildFromWebRequestParams(
 		if filterInGetPath != web.FilterInGetPathEq {
 			return nil, nil, errors.New("flow_id only suport equal search")
 		}
-		flowUUID, err := uuid.Parse(fFRR.FlowOriginIDStr)
+		flowUUID, err := uuid.Parse(fFRR.FlowIDStr)
 		if err != nil {
 			return nil, nil, errors.Wrap(err, "parse flow_id to uuid failed")
 		}
