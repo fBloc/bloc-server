@@ -44,7 +44,8 @@ func GetFlowByID(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		retFlow = fromAggWithoutUserPermission(flowIns)
 		retFlow.Write = false
 		retFlow.Execute = false
-		retFlow.Super = false
+		retFlow.Delete = false
+		retFlow.AssignPermission = false
 	}
 	web.WriteSucResp(&w, retFlow)
 }
@@ -204,7 +205,7 @@ func SetExecuteControlAttributes(w http.ResponseWriter, r *http.Request, _ httpr
 	web.WritePlainSucOkResp(&w)
 }
 
-// DeleteFlowByOriginID 只有superuser能够删除flow，通过originID全部删除
+// DeleteFlowByOriginID 只有delete user能够删除flow，通过originID全部删除
 func DeleteFlowByOriginID(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	originID := ps.ByName("origin_id")
 	if originID == "" {
@@ -223,8 +224,15 @@ func DeleteFlowByOriginID(w http.ResponseWriter, r *http.Request, ps httprouter.
 			"get requser from context failed")
 		return
 	}
-	if !reqUser.IsSuper {
-		web.WriteNeedSuperUser(&w)
+
+	aggFlow, err := fService.Flow.GetOnlineByOriginID(uuOriginID)
+	if err != nil {
+		web.WriteInternalServerErrorResp(&w, nil,
+			"get flow from origin_id failed")
+		return
+	}
+	if !aggFlow.UserCanDelete(reqUser) {
+		web.WritePermissionNotEnough(&w, "need delete permission")
 		return
 	}
 
@@ -234,6 +242,6 @@ func DeleteFlowByOriginID(w http.ResponseWriter, r *http.Request, ps httprouter.
 		web.WriteInternalServerErrorResp(&w, err, "delete failed")
 		return
 	}
-	// TODO：不应该只删除flow就完事了，对应的flowRunRecord & blocRunRecord也都应该删除
+	// TODO：不应该只删除flow就完事了，对应的flowRunRecord、fucntionRunRecord ... 也应该删除
 	web.WriteDeleteSucResp(&w, deleteCount)
 }

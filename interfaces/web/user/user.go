@@ -41,7 +41,7 @@ type User struct {
 	RaWPassword string             `json:"password"`
 	Token       uuid.UUID          `json:"token,omitempty"`
 	CreateTime  json_date.JsonDate `json:"create_time"`
-	IsSuper     bool               `json:"is_superuser"`
+	IsSuper     bool               `json:"super"`
 }
 
 func (u *User) IsZero() bool {

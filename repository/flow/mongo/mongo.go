@@ -9,7 +9,6 @@ import (
 	"github.com/fBloc/bloc-backend-go/internal/crontab"
 	"github.com/fBloc/bloc-backend-go/internal/filter_options"
 	"github.com/fBloc/bloc-backend-go/pkg/add_or_del"
-	"github.com/fBloc/bloc-backend-go/pkg/op_role"
 	"github.com/fBloc/bloc-backend-go/pkg/value_type"
 	"github.com/fBloc/bloc-backend-go/repository/flow"
 	"github.com/fBloc/bloc-backend-go/value_object"
@@ -79,30 +78,32 @@ type mongoFlow struct {
 	ReadUserIDs                   []uuid.UUID                   `bson:"read_user_ids"`
 	WriteUserIDs                  []uuid.UUID                   `bson:"write_user_ids"`
 	ExecuteUserIDs                []uuid.UUID                   `bson:"execute_user_ids"`
-	SuperUserIDs                  []uuid.UUID                   `bson:"super_user_ids"`
+	DeleteUserIDs                 []uuid.UUID                   `bson:"delete_user_ids"`
+	AssignPermissionUserIDs       []uuid.UUID                   `bson:"assign_permission_user_ids"`
 }
 
 func (m mongoFlow) ToAggregate() *aggregate.Flow {
 	resp := aggregate.Flow{
-		ID:                    m.ID,
-		Name:                  m.Name,
-		IsDraft:               m.IsDraft,
-		Version:               m.Version,
-		OriginID:              m.OriginID,
-		Newest:                m.Newest,
-		CreateUserID:          m.CreateUserID,
-		CreateTime:            m.CreateTime,
-		Position:              m.Position,
-		Crontab:               m.Crontab,
-		TriggerKey:            m.TriggerKey,
-		TimeoutInSeconds:      m.TimeoutInSeconds,
-		RetryAmount:           m.RetryAmount,
-		RetryIntervalInSecond: m.RetryIntervalInSecond,
-		PubWhileRunning:       m.PubWhileRunning,
-		ReadUserIDs:           m.ReadUserIDs,
-		WriteUserIDs:          m.WriteUserIDs,
-		ExecuteUserIDs:        m.ExecuteUserIDs,
-		SuperUserIDs:          m.SuperUserIDs,
+		ID:                      m.ID,
+		Name:                    m.Name,
+		IsDraft:                 m.IsDraft,
+		Version:                 m.Version,
+		OriginID:                m.OriginID,
+		Newest:                  m.Newest,
+		CreateUserID:            m.CreateUserID,
+		CreateTime:              m.CreateTime,
+		Position:                m.Position,
+		Crontab:                 m.Crontab,
+		TriggerKey:              m.TriggerKey,
+		TimeoutInSeconds:        m.TimeoutInSeconds,
+		RetryAmount:             m.RetryAmount,
+		RetryIntervalInSecond:   m.RetryIntervalInSecond,
+		PubWhileRunning:         m.PubWhileRunning,
+		ReadUserIDs:             m.ReadUserIDs,
+		WriteUserIDs:            m.WriteUserIDs,
+		ExecuteUserIDs:          m.ExecuteUserIDs,
+		DeleteUserIDs:           m.DeleteUserIDs,
+		AssignPermissionUserIDs: m.AssignPermissionUserIDs,
 	}
 	funcs := make(map[string]*aggregate.FlowFunction, len(m.FlowFunctionIDMapFlowFunction))
 	for flowFuncID, flowFunc := range m.FlowFunctionIDMapFlowFunction {
@@ -135,25 +136,26 @@ func (m mongoFlow) ToAggregate() *aggregate.Flow {
 
 func NewFromFlow(f *aggregate.Flow) *mongoFlow {
 	resp := mongoFlow{
-		ID:                    f.ID,
-		Name:                  f.Name,
-		IsDraft:               f.IsDraft,
-		Version:               f.Version,
-		OriginID:              f.OriginID,
-		Newest:                f.Newest,
-		CreateUserID:          f.CreateUserID,
-		CreateTime:            f.CreateTime,
-		Position:              f.Position,
-		Crontab:               f.Crontab,
-		TriggerKey:            f.TriggerKey,
-		TimeoutInSeconds:      f.TimeoutInSeconds,
-		RetryAmount:           f.RetryAmount,
-		RetryIntervalInSecond: f.RetryIntervalInSecond,
-		PubWhileRunning:       f.PubWhileRunning,
-		ReadUserIDs:           f.ReadUserIDs,
-		WriteUserIDs:          f.WriteUserIDs,
-		ExecuteUserIDs:        f.ExecuteUserIDs,
-		SuperUserIDs:          f.SuperUserIDs,
+		ID:                      f.ID,
+		Name:                    f.Name,
+		IsDraft:                 f.IsDraft,
+		Version:                 f.Version,
+		OriginID:                f.OriginID,
+		Newest:                  f.Newest,
+		CreateUserID:            f.CreateUserID,
+		CreateTime:              f.CreateTime,
+		Position:                f.Position,
+		Crontab:                 f.Crontab,
+		TriggerKey:              f.TriggerKey,
+		TimeoutInSeconds:        f.TimeoutInSeconds,
+		RetryAmount:             f.RetryAmount,
+		RetryIntervalInSecond:   f.RetryIntervalInSecond,
+		PubWhileRunning:         f.PubWhileRunning,
+		ReadUserIDs:             f.ReadUserIDs,
+		WriteUserIDs:            f.WriteUserIDs,
+		ExecuteUserIDs:          f.ExecuteUserIDs,
+		DeleteUserIDs:           f.DeleteUserIDs,
+		AssignPermissionUserIDs: f.AssignPermissionUserIDs,
 	}
 	funcs := make(map[string]*mongoFlowFunction, len(f.FlowFunctionIDMapFlowFunction))
 	for flowFuncID, flowFunc := range f.FlowFunctionIDMapFlowFunction {
@@ -370,14 +372,18 @@ func (mr *MongoRepository) ReplaceByID(id uuid.UUID, aggFlow *aggregate.Flow) er
 	return mr.mongoCollection.ReplaceByID(id, *mFlow)
 }
 
-func (mr *MongoRepository) userOperation(id, userID uuid.UUID, role op_role.OpRole, aod add_or_del.AddOrDel) error {
+func (mr *MongoRepository) userOperation(id, userID uuid.UUID, permType value_object.PermissionType, aod add_or_del.AddOrDel) error {
 	roleStr := "read_user_ids"
-	if role == op_role.Writer {
+	if permType == value_object.Write {
 		roleStr = "write_user_ids"
-	} else if role == op_role.Executer {
+	} else if permType == value_object.Execute {
 		roleStr = "execute_user_ids"
-	} else if role == op_role.Super {
-		roleStr = "super_user_ids"
+	} else if permType == value_object.Delete {
+		roleStr = "delete_user_ids"
+	} else if permType == value_object.AssignPermission {
+		roleStr = "assign_permission_user_ids"
+	} else {
+		return errors.New("permission type wrong")
 	}
 
 	updater := mongodb.NewUpdater()
@@ -390,34 +396,42 @@ func (mr *MongoRepository) userOperation(id, userID uuid.UUID, role op_role.OpRo
 }
 
 func (mr *MongoRepository) AddReader(id, userID uuid.UUID) error {
-	return mr.userOperation(id, userID, op_role.Reader, add_or_del.Add)
+	return mr.userOperation(id, userID, value_object.Read, add_or_del.Add)
 }
-func (mr *MongoRepository) DeleteReader(id, userID uuid.UUID) error {
-	return mr.userOperation(id, userID, op_role.Reader, add_or_del.Remove)
+func (mr *MongoRepository) RemoveReader(id, userID uuid.UUID) error {
+	return mr.userOperation(id, userID, value_object.Read, add_or_del.Remove)
 }
 
 func (mr *MongoRepository) AddWriter(id, userID uuid.UUID) error {
-	return mr.userOperation(id, userID, op_role.Writer, add_or_del.Add)
+	return mr.userOperation(id, userID, value_object.Write, add_or_del.Add)
 }
 
-func (mr *MongoRepository) AddSuper(id, userID uuid.UUID) error {
-	return mr.userOperation(id, userID, op_role.Super, add_or_del.Add)
-}
-
-func (mr *MongoRepository) DeleteWriter(id, userID uuid.UUID) error {
-	return mr.userOperation(id, userID, op_role.Writer, add_or_del.Remove)
+func (mr *MongoRepository) RemoveWriter(id, userID uuid.UUID) error {
+	return mr.userOperation(id, userID, value_object.Write, add_or_del.Remove)
 }
 
 func (mr *MongoRepository) AddExecuter(id, userID uuid.UUID) error {
-	return mr.userOperation(id, userID, op_role.Executer, add_or_del.Add)
+	return mr.userOperation(id, userID, value_object.Execute, add_or_del.Add)
 }
 
-func (mr *MongoRepository) DeleteExecuter(id, userID uuid.UUID) error {
-	return mr.userOperation(id, userID, op_role.Executer, add_or_del.Remove)
+func (mr *MongoRepository) RemoveExecuter(id, userID uuid.UUID) error {
+	return mr.userOperation(id, userID, value_object.Execute, add_or_del.Remove)
 }
 
-func (mr *MongoRepository) DeleteSuper(id, userID uuid.UUID) error {
-	return mr.userOperation(id, userID, op_role.Super, add_or_del.Remove)
+func (mr *MongoRepository) AddDeleter(id, userID uuid.UUID) error {
+	return mr.userOperation(id, userID, value_object.Delete, add_or_del.Add)
+}
+
+func (mr *MongoRepository) RemoveDeleter(id, userID uuid.UUID) error {
+	return mr.userOperation(id, userID, value_object.Delete, add_or_del.Remove)
+}
+
+func (mr *MongoRepository) AddAssigner(id, userID uuid.UUID) error {
+	return mr.userOperation(id, userID, value_object.AssignPermission, add_or_del.Add)
+}
+
+func (mr *MongoRepository) RemoveAssigner(id, userID uuid.UUID) error {
+	return mr.userOperation(id, userID, value_object.AssignPermission, add_or_del.Remove)
 }
 
 func (mr *MongoRepository) mongoCreateFromAgg(flow *aggregate.Flow) error {
@@ -448,7 +462,8 @@ func (mr *MongoRepository) CreateDraftFromScratch(
 		ReadUserIDs:                   []uuid.UUID{createUserID},
 		WriteUserIDs:                  []uuid.UUID{createUserID},
 		ExecuteUserIDs:                []uuid.UUID{createUserID},
-		SuperUserIDs:                  []uuid.UUID{createUserID},
+		DeleteUserIDs:                 []uuid.UUID{createUserID},
+		AssignPermissionUserIDs:       []uuid.UUID{createUserID},
 	}
 
 	err := mr.mongoCreateFromAgg(&aggFlow)
@@ -491,7 +506,8 @@ func (mr *MongoRepository) CreateDraftFromExistFlow(
 		ReadUserIDs:                   existFlow.ReadUserIDs,
 		WriteUserIDs:                  existFlow.WriteUserIDs,
 		ExecuteUserIDs:                existFlow.ExecuteUserIDs,
-		SuperUserIDs:                  existFlow.SuperUserIDs,
+		DeleteUserIDs:                 existFlow.DeleteUserIDs,
+		AssignPermissionUserIDs:       existFlow.AssignPermissionUserIDs,
 	}
 
 	err = mr.mongoCreateFromAgg(&aggFlow)
@@ -526,7 +542,8 @@ func (mr *MongoRepository) CreateOnlineFromDraft(
 	aggF.ReadUserIDs = latestFlow.ReadUserIDs
 	aggF.WriteUserIDs = latestFlow.WriteUserIDs
 	aggF.ExecuteUserIDs = latestFlow.ExecuteUserIDs
-	aggF.SuperUserIDs = latestFlow.SuperUserIDs
+	aggF.DeleteUserIDs = latestFlow.DeleteUserIDs
+	aggF.AssignPermissionUserIDs = latestFlow.AssignPermissionUserIDs
 	// 运行配置
 	aggF.PubWhileRunning = latestFlow.PubWhileRunning
 	aggF.Crontab = latestFlow.Crontab

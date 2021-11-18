@@ -140,10 +140,11 @@ type Flow struct {
 	RetryAmount           uint16
 	RetryIntervalInSecond uint16
 	// 用于权限
-	ReadUserIDs    []uuid.UUID
-	WriteUserIDs   []uuid.UUID
-	ExecuteUserIDs []uuid.UUID
-	SuperUserIDs   []uuid.UUID
+	ReadUserIDs             []uuid.UUID
+	WriteUserIDs            []uuid.UUID
+	ExecuteUserIDs          []uuid.UUID
+	DeleteUserIDs           []uuid.UUID
+	AssignPermissionUserIDs []uuid.UUID
 }
 
 func (flow *Flow) IsZero() bool {
@@ -199,13 +200,26 @@ func (flow *Flow) UserCanExecute(user *User) bool {
 	return false
 }
 
-func (flow *Flow) UserIsSuper(user *User) bool {
+func (flow *Flow) UserCanDelete(user *User) bool {
 	if user.IsSuper {
 		return true
 	}
 	userID := user.ID
-	for _, superUserID := range flow.SuperUserIDs {
-		if superUserID == userID {
+	for _, uID := range flow.DeleteUserIDs {
+		if uID == userID {
+			return true
+		}
+	}
+	return false
+}
+
+func (flow *Flow) UserCanAssignPermission(user *User) bool {
+	if user.IsSuper {
+		return true
+	}
+	userID := user.ID
+	for _, uID := range flow.AssignPermissionUserIDs {
+		if uID == userID {
 			return true
 		}
 	}

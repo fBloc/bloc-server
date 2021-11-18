@@ -95,10 +95,8 @@ func (blocApp *BlocApp) RunHttpServer() {
 			// function权限
 			basicPath := "/api/v1/function_permission"
 			router.GET(basicPath, middleware.LoginAuth(function.GetPermissionByFunctionID))
-			router.POST("/api/v1/bloc_permission/:who", middleware.LoginAuth(
-				function.AddUserPermission))
-			router.DELETE("/api/v1/bloc_permission/:who", middleware.LoginAuth(
-				function.DeleteUserPermission))
+			router.POST(basicPath+"/add_permission", middleware.LoginAuth(function.AddUserPermission))
+			router.DELETE(basicPath+"/remove_permission", middleware.LoginAuth(function.DeleteUserPermission))
 		}
 	}
 
@@ -187,8 +185,8 @@ func (blocApp *BlocApp) RunHttpServer() {
 			// 权限
 			basicPath := "/api/v1/flow_permission"
 			router.GET(basicPath, middleware.LoginAuth(flow.GetPermission))
-			router.POST(basicPath+"/:who", middleware.LoginAuth(flow.AddUserPermission))
-			router.DELETE(basicPath+"/:who", middleware.LoginAuth(flow.DeleteUserPermission))
+			router.POST(basicPath+"/add_permission", middleware.LoginAuth(flow.AddUserPermission))
+			router.DELETE(basicPath+"/remove_permission", middleware.LoginAuth(flow.DeleteUserPermission))
 		}
 	}
 

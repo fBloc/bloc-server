@@ -268,7 +268,7 @@ func UpdateDraft(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	web.WritePlainSucOkResp(&w)
 }
 
-// DeleteDraftByOriginID 只有对此draft_flow有super权限的能够删除flow，通过originID全部删除
+// DeleteDraftByOriginID 只有对此draft_flow有delete权限的能够删除flow，通过originID全部删除
 func DeleteDraftByOriginID(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	originID := ps.ByName("origin_id")
 	if originID == "" {
@@ -299,10 +299,10 @@ func DeleteDraftByOriginID(w http.ResponseWriter, r *http.Request, ps httprouter
 		return
 	}
 
-	if !flowIns.UserIsSuper(reqUser) {
+	if !flowIns.UserCanDelete(reqUser) {
 		web.WritePermissionNotEnough(
 			&w,
-			"only user with super permission to this draft flow can delete")
+			"only user with delete permission to this draft flow can delete")
 		return
 	}
 

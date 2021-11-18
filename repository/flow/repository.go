@@ -51,13 +51,15 @@ type FlowRepository interface {
 
 	// update user permission
 	AddReader(id, userID uuid.UUID) error
-	DeleteReader(id, userID uuid.UUID) error
+	RemoveReader(id, userID uuid.UUID) error
 	AddWriter(id, userID uuid.UUID) error
-	DeleteWriter(id, userID uuid.UUID) error
+	RemoveWriter(id, userID uuid.UUID) error
 	AddExecuter(id, userID uuid.UUID) error
-	DeleteExecuter(id, userID uuid.UUID) error
-	AddSuper(id, userID uuid.UUID) error
-	DeleteSuper(id, userID uuid.UUID) error
+	RemoveExecuter(id, userID uuid.UUID) error
+	AddDeleter(id, userID uuid.UUID) error
+	RemoveDeleter(id, userID uuid.UUID) error
+	AddAssigner(id, userID uuid.UUID) error
+	RemoveAssigner(id, userID uuid.UUID) error
 
 	// Delete
 	DeleteByID(id uuid.UUID) (int64, error)

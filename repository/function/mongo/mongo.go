@@ -2,13 +2,14 @@ package mongo
 
 import (
 	"context"
+	"errors"
 
 	"github.com/fBloc/bloc-backend-go/internal/conns/mongodb"
 	"github.com/fBloc/bloc-backend-go/pkg/add_or_del"
 	"github.com/fBloc/bloc-backend-go/pkg/ipt"
-	"github.com/fBloc/bloc-backend-go/pkg/op_role"
 	"github.com/fBloc/bloc-backend-go/pkg/opt"
 	"github.com/fBloc/bloc-backend-go/repository/function"
+	"github.com/fBloc/bloc-backend-go/value_object"
 
 	"github.com/fBloc/bloc-backend-go/aggregate"
 
@@ -39,41 +40,51 @@ func New(
 }
 
 type mongoFunction struct {
-	ID            uuid.UUID    `bson:"id"`
-	Name          string       `bson:"name"`
-	GroupName     string       `bson:"group_name"`
-	Description   string       `bson:"description"`
-	Ipts          ipt.IptSlice `bson:"ipts"`
-	Opts          []*opt.Opt   `bson:"opts"`
-	IptDigest     string       `bson:"ipt_digest"`
-	OptDigest     string       `bson:"opt_digest"`
-	ProcessStages []string     `bson:"process_stages"`
+	ID                      uuid.UUID    `bson:"id"`
+	Name                    string       `bson:"name"`
+	GroupName               string       `bson:"group_name"`
+	Description             string       `bson:"description"`
+	Ipts                    ipt.IptSlice `bson:"ipts"`
+	Opts                    []*opt.Opt   `bson:"opts"`
+	IptDigest               string       `bson:"ipt_digest"`
+	OptDigest               string       `bson:"opt_digest"`
+	ProcessStages           []string     `bson:"process_stages"`
+	ReadUserIDs             []uuid.UUID  `bson:"read_user_ids"`
+	ExecuteUserIDs          []uuid.UUID  `bson:"execute_user_ids"`
+	AssignPermissionUserIDs []uuid.UUID  `bson:"assign_permission_user_ids"`
 }
 
 func (m *mongoFunction) ToAggregate() *aggregate.Function {
 	return &aggregate.Function{
-		ID:            m.ID,
-		Name:          m.Name,
-		GroupName:     m.GroupName,
-		Description:   m.Description,
-		Ipts:          m.Ipts,
-		Opts:          m.Opts,
-		IptDigest:     m.IptDigest,
-		OptDigest:     m.OptDigest,
-		ProcessStages: m.ProcessStages}
+		ID:                      m.ID,
+		Name:                    m.Name,
+		GroupName:               m.GroupName,
+		Description:             m.Description,
+		Ipts:                    m.Ipts,
+		Opts:                    m.Opts,
+		IptDigest:               m.IptDigest,
+		OptDigest:               m.OptDigest,
+		ProcessStages:           m.ProcessStages,
+		ReadUserIDs:             m.ReadUserIDs,
+		ExecuteUserIDs:          m.ExecuteUserIDs,
+		AssignPermissionUserIDs: m.AssignPermissionUserIDs,
+	}
 }
 
 func NewFromFunction(f *aggregate.Function) *mongoFunction {
 	resp := mongoFunction{
-		ID:            f.ID,
-		Name:          f.Name,
-		GroupName:     f.GroupName,
-		Description:   f.Description,
-		Ipts:          f.Ipts,
-		Opts:          f.Opts,
-		IptDigest:     f.IptDigest,
-		OptDigest:     f.OptDigest,
-		ProcessStages: f.ProcessStages,
+		ID:                      f.ID,
+		Name:                    f.Name,
+		GroupName:               f.GroupName,
+		Description:             f.Description,
+		Ipts:                    f.Ipts,
+		Opts:                    f.Opts,
+		IptDigest:               f.IptDigest,
+		OptDigest:               f.OptDigest,
+		ProcessStages:           f.ProcessStages,
+		ReadUserIDs:             f.ReadUserIDs,
+		ExecuteUserIDs:          f.ExecuteUserIDs,
+		AssignPermissionUserIDs: f.AssignPermissionUserIDs,
 	}
 	return &resp
 }
@@ -153,15 +164,16 @@ func (mr *MongoRepository) PatchGroupName(id uuid.UUID, groupName string) error 
 }
 
 func (mr *MongoRepository) userOperation(
-	id, userID uuid.UUID, role op_role.OpRole, aod add_or_del.AddOrDel,
+	id, userID uuid.UUID, permType value_object.PermissionType, aod add_or_del.AddOrDel,
 ) error {
-	roleStr := "read_user_ids"
-	if role == op_role.Writer {
-		roleStr = "write_user_ids"
-	} else if role == op_role.Executer {
+	var roleStr string
+	roleStr = "read_user_ids"
+	if permType == value_object.Execute {
 		roleStr = "execute_user_ids"
-	} else if role == op_role.Super {
-		roleStr = "super_user_ids"
+	} else if permType == value_object.AssignPermission {
+		roleStr = "assign_permission_user_ids"
+	} else {
+		return errors.New("permission type wrong")
 	}
 
 	updater := mongodb.NewUpdater()
@@ -174,32 +186,24 @@ func (mr *MongoRepository) userOperation(
 }
 
 func (mr *MongoRepository) AddReader(id, userID uuid.UUID) error {
-	return mr.userOperation(id, userID, op_role.Reader, add_or_del.Add)
+	return mr.userOperation(id, userID, value_object.Read, add_or_del.Add)
 }
-func (mr *MongoRepository) DeleteReader(id, userID uuid.UUID) error {
-	return mr.userOperation(id, userID, op_role.Reader, add_or_del.Remove)
-}
-
-func (mr *MongoRepository) AddWriter(id, userID uuid.UUID) error {
-	return mr.userOperation(id, userID, op_role.Writer, add_or_del.Add)
-}
-
-func (mr *MongoRepository) AddSuper(id, userID uuid.UUID) error {
-	return mr.userOperation(id, userID, op_role.Super, add_or_del.Add)
-}
-
-func (mr *MongoRepository) DeleteWriter(id, userID uuid.UUID) error {
-	return mr.userOperation(id, userID, op_role.Writer, add_or_del.Remove)
+func (mr *MongoRepository) RemoveReader(id, userID uuid.UUID) error {
+	return mr.userOperation(id, userID, value_object.Read, add_or_del.Remove)
 }
 
 func (mr *MongoRepository) AddExecuter(id, userID uuid.UUID) error {
-	return mr.userOperation(id, userID, op_role.Executer, add_or_del.Add)
+	return mr.userOperation(id, userID, value_object.Execute, add_or_del.Add)
 }
 
-func (mr *MongoRepository) DeleteExecuter(id, userID uuid.UUID) error {
-	return mr.userOperation(id, userID, op_role.Executer, add_or_del.Remove)
+func (mr *MongoRepository) RemoveExecuter(id, userID uuid.UUID) error {
+	return mr.userOperation(id, userID, value_object.Execute, add_or_del.Remove)
 }
 
-func (mr *MongoRepository) DeleteSuper(id, userID uuid.UUID) error {
-	return mr.userOperation(id, userID, op_role.Super, add_or_del.Remove)
+func (mr *MongoRepository) AddAssigner(id, userID uuid.UUID) error {
+	return mr.userOperation(id, userID, value_object.AssignPermission, add_or_del.Add)
+}
+
+func (mr *MongoRepository) RemoveAssigner(id, userID uuid.UUID) error {
+	return mr.userOperation(id, userID, value_object.AssignPermission, add_or_del.Remove)
 }

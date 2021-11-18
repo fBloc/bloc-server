@@ -104,10 +104,11 @@ type Flow struct {
 	RetryIntervalInSecond uint16                    `json:"retry_interval_in_second"`
 	PubWhileRunning       bool                      `json:"pub_while_running"`
 	// permission
-	Read    bool `json:"read"`
-	Write   bool `json:"write"`
-	Execute bool `json:"execute"`
-	Super   bool `json:"super"`
+	Read             bool `json:"read"`
+	Write            bool `json:"write"`
+	Execute          bool `json:"execute"`
+	Delete           bool `json:"delete"`
+	AssignPermission bool `json:"assign_permission"`
 	// latest run status
 	LatestRun                  *LatestRun                       `json:"latest_run,omitempty"`
 	FlowFunctionIDMapRunStatus map[string]value_object.RunState `json:"flowFunctionID_map_status"`
@@ -189,7 +190,8 @@ func fromAgg(aggF *aggregate.Flow, reqUser *aggregate.User) *Flow {
 	bareFlow.Read = aggF.UserCanRead(reqUser)
 	bareFlow.Write = aggF.UserCanWrite(reqUser)
 	bareFlow.Execute = aggF.UserCanExecute(reqUser)
-	bareFlow.Super = aggF.UserIsSuper(reqUser)
+	bareFlow.Delete = aggF.UserCanDelete(reqUser)
+	bareFlow.AssignPermission = aggF.UserCanAssignPermission(reqUser)
 	return bareFlow
 }
 

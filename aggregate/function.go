@@ -20,10 +20,9 @@ type Function struct {
 	ProcessStages []string
 	ExeFunc       function_developer_implement.FunctionDeveloperImplementInterface
 	// 用于权限
-	ReadUserIDs    []uuid.UUID
-	WriteUserIDs   []uuid.UUID
-	ExecuteUserIDs []uuid.UUID
-	SuperUserIDs   []uuid.UUID
+	ReadUserIDs             []uuid.UUID
+	ExecuteUserIDs          []uuid.UUID
+	AssignPermissionUserIDs []uuid.UUID
 }
 
 func (f *Function) CoreString() string {
@@ -46,21 +45,8 @@ func (f *Function) UserCanRead(user *User) bool {
 		return true
 	}
 	userID := user.ID
-	for _, readAbleUserID := range f.ReadUserIDs {
-		if readAbleUserID == userID {
-			return true
-		}
-	}
-	return false
-}
-
-func (f *Function) UserCanWrite(user *User) bool {
-	if user.IsSuper {
-		return true
-	}
-	userID := user.ID
-	for _, writeAbleUserID := range f.WriteUserIDs {
-		if writeAbleUserID == userID {
+	for _, uID := range f.ReadUserIDs {
+		if uID == userID {
 			return true
 		}
 	}
@@ -72,21 +58,21 @@ func (f *Function) UserCanExecute(user *User) bool {
 		return true
 	}
 	userID := user.ID
-	for _, exeAbleUserID := range f.ExecuteUserIDs {
-		if exeAbleUserID == userID {
+	for _, uID := range f.ExecuteUserIDs {
+		if uID == userID {
 			return true
 		}
 	}
 	return false
 }
 
-func (f *Function) UserIsSuper(user *User) bool {
+func (f *Function) UserCanAssignPermission(user *User) bool {
 	if user.IsSuper {
 		return true
 	}
 	userID := user.ID
-	for _, superUserID := range f.SuperUserIDs {
-		if superUserID == userID {
+	for _, uID := range f.AssignPermissionUserIDs {
+		if uID == userID {
 			return true
 		}
 	}
