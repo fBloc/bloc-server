@@ -25,14 +25,14 @@ func (blocApp *BlocApp) CrontabWatcher() {
 		now := time.Now()
 		for _, flowIns := range crontabFlows {
 			// ToEnhance 池化，避免要发布的太多、一下子起的goroutine太多。（优先级-低）
-			go func(flowIns *aggregate.Flow, crontabTrigTime time.Time) {
+			go func(flowIns aggregate.Flow, crontabTrigTime time.Time) {
 				// 时间若不符合crontab规则，则不发布运行任务
 				if !flowIns.Crontab.TimeMatched(now) {
 					return
 				}
 
 				// 符合就发布运行任务
-				flowRunRecord := aggregate.NewCrontabTriggeredRunRecord(*flowIns)
+				flowRunRecord := aggregate.NewCrontabTriggeredRunRecord(flowIns)
 				created, err := flowRunRecordRepo.CrontabFindOrCreate(flowRunRecord, crontabTrigTime)
 				if err != nil {
 					logger.Errorf("error create flow run record", err.Error())
@@ -42,7 +42,7 @@ func (blocApp *BlocApp) CrontabWatcher() {
 					return
 				}
 				event.PubEvent(&event.FlowToRun{FlowRunRecordID: flowRunRecord.ID})
-			}(&flowIns, now)
+			}(flowIns, now)
 		}
 	}
 }

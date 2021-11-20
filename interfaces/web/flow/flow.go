@@ -321,14 +321,14 @@ func fromAggSliceWithLatestRun(aggFs []aggregate.Flow, reqUser *aggregate.User) 
 	wGroup.Add(len(aggFs))
 
 	for _, aggF := range aggFs {
-		go func(wg *sync.WaitGroup, aF *aggregate.Flow, retChan chan *Flow) {
+		go func(wg *sync.WaitGroup, aF aggregate.Flow, retChan chan *Flow) {
 			defer wg.Done()
-			retFlow := fromAggWithLatestRunFlowView(aF, reqUser)
+			retFlow := fromAggWithLatestRunFlowView(&aF, reqUser)
 			if retFlow.IsZero() {
 				return
 			}
 			retChan <- retFlow
-		}(&wGroup, &aggF, respChan)
+		}(&wGroup, aggF, respChan)
 	}
 
 	wGroup.Wait()
