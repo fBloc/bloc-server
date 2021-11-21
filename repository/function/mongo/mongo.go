@@ -167,8 +167,9 @@ func (mr *MongoRepository) userOperation(
 	id, userID uuid.UUID, permType value_object.PermissionType, aod add_or_del.AddOrDel,
 ) error {
 	var roleStr string
-	roleStr = "read_user_ids"
-	if permType == value_object.Execute {
+	if permType == value_object.Read {
+		roleStr = "read_user_ids"
+	} else if permType == value_object.Execute {
 		roleStr = "execute_user_ids"
 	} else if permType == value_object.AssignPermission {
 		roleStr = "assign_permission_user_ids"

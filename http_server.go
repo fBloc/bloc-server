@@ -61,9 +61,9 @@ func (blocApp *BlocApp) RunHttpServer() {
 		router.POST("/api/v1/login", user.LoginHandler)
 
 		basicPath := "/api/v1/user"
-		router.GET(basicPath, middleware.SuperuserAuth(user.FilterByName))
+		router.GET(basicPath, middleware.LoginAuth(user.FilterByName))
 		router.POST(basicPath, middleware.SuperuserAuth(user.AddUser))
-		router.DELETE(basicPath, middleware.SuperuserAuth(user.AddUser))
+		router.DELETE(basicPath+"/delete_by_id/:id", middleware.SuperuserAuth(user.DeleteUser))
 	}
 
 	// function

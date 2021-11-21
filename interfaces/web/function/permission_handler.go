@@ -1,7 +1,6 @@
 package function
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/fBloc/bloc-backend-go/interfaces/web"
@@ -48,50 +47,19 @@ func GetPermissionByFunctionID(w http.ResponseWriter, r *http.Request, _ httprou
 }
 
 func AddUserPermission(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	var req PermissionReq
-	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
-		web.WriteBadRequestDataResp(&w, "not valid json data："+err.Error())
-		return
-	}
-	if req.FunctionID == uuid.Nil {
-		web.WriteBadRequestDataResp(&w, "function_id cannot be blank")
-		return
-	}
-	if !req.PermissionType.IsValid() {
-		web.WriteBadRequestDataResp(&w, "permission_type not valid")
-		return
-	}
-
-	aggF, err := fService.Function.GetByID(req.FunctionID)
-	if err != nil {
-		web.WriteInternalServerErrorResp(&w, err, "get function by id error")
-		return
-	}
-	if aggF.IsZero() {
-		web.WriteBadRequestDataResp(&w, "function_id find no function")
-		return
-	}
-
-	// 检查当前用户是否对此function有操作添加用户的权限
-	reqUser, suc := req_context.GetReqUserFromContext(r.Context())
-	if !suc {
-		web.WriteInternalServerErrorResp(&w, nil,
-			"get requser from context failed")
-		return
-	}
-	if !aggF.UserCanAssignPermission(reqUser) {
-		web.WritePermissionNotEnough(&w, "need assign_permission permission")
+	req := BuildPermissionReqAndCheck(&w, r, r.Body)
+	if req == nil {
 		return
 	}
 
 	// 开始实际更新数据
+	var err error
 	if req.PermissionType == Read {
-		err = fService.Function.AddReader(req.FunctionID, reqUser.ID)
+		err = fService.Function.AddReader(req.FunctionID, req.UserID)
 	} else if req.PermissionType == Execute {
-		err = fService.Function.AddExecuter(req.FunctionID, reqUser.ID)
+		err = fService.Function.AddExecuter(req.FunctionID, req.UserID)
 	} else if req.PermissionType == AssignPermission {
-		err = fService.Function.AddAssigner(req.FunctionID, reqUser.ID)
+		err = fService.Function.AddAssigner(req.FunctionID, req.UserID)
 	}
 	if err != nil {
 		web.WriteInternalServerErrorResp(&w, err, "add user permission failed")
@@ -101,51 +69,19 @@ func AddUserPermission(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 }
 
 func DeleteUserPermission(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	var req PermissionReq
-	var err error
-	err = json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
-		web.WriteBadRequestDataResp(&w, "not valid json data："+err.Error())
-		return
-	}
-	if req.FunctionID == uuid.Nil {
-		web.WriteBadRequestDataResp(&w, "function_id cannot be blank")
-		return
-	}
-	if !req.PermissionType.IsValid() {
-		web.WriteBadRequestDataResp(&w, "permission_type not valid")
-		return
-	}
-
-	aggF, err := fService.Function.GetByID(req.FunctionID)
-	if err != nil {
-		web.WriteInternalServerErrorResp(&w, err, "get function by id error")
-		return
-	}
-	if aggF.IsZero() {
-		web.WriteBadRequestDataResp(&w, "function_id find no function")
-		return
-	}
-
-	// 检查当前用户是否对此function有操作添加用户的权限
-	reqUser, suc := req_context.GetReqUserFromContext(r.Context())
-	if !suc {
-		web.WriteInternalServerErrorResp(&w, nil,
-			"get requser from context failed")
-		return
-	}
-	if !aggF.UserCanAssignPermission(reqUser) {
-		web.WritePermissionNotEnough(&w, "need assign_permission permission")
+	req := BuildPermissionReqAndCheck(&w, r, r.Body)
+	if req == nil {
 		return
 	}
 
 	// 开始实际更新数据
+	var err error
 	if req.PermissionType == Read {
-		err = fService.Function.RemoveReader(req.FunctionID, reqUser.ID)
+		err = fService.Function.RemoveReader(req.FunctionID, req.UserID)
 	} else if req.PermissionType == Execute {
-		err = fService.Function.RemoveExecuter(req.FunctionID, reqUser.ID)
+		err = fService.Function.RemoveExecuter(req.FunctionID, req.UserID)
 	} else if req.PermissionType == AssignPermission {
-		err = fService.Function.RemoveAssigner(req.FunctionID, reqUser.ID)
+		err = fService.Function.RemoveAssigner(req.FunctionID, req.UserID)
 	}
 	if err != nil {
 		web.WriteInternalServerErrorResp(&w, err, "remove user permission failed")

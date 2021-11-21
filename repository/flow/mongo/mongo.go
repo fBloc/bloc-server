@@ -373,8 +373,10 @@ func (mr *MongoRepository) ReplaceByID(id uuid.UUID, aggFlow *aggregate.Flow) er
 }
 
 func (mr *MongoRepository) userOperation(id, userID uuid.UUID, permType value_object.PermissionType, aod add_or_del.AddOrDel) error {
-	roleStr := "read_user_ids"
-	if permType == value_object.Write {
+	var roleStr string
+	if permType == value_object.Read {
+		roleStr = "read_user_ids"
+	} else if permType == value_object.Write {
 		roleStr = "write_user_ids"
 	} else if permType == value_object.Execute {
 		roleStr = "execute_user_ids"

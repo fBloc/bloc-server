@@ -32,7 +32,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		return
 	}
 
-	HttpSucRespFromAgg(&w, sameNameUser)
+	LoginRespFromAgg(&w, sameNameUser)
 }
 
 // FilterByName
@@ -44,7 +44,7 @@ func FilterByName(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		return
 	}
 
-	HttpSucRespFromAggs(&w, users)
+	FilterRespFromAggs(&w, users)
 }
 
 // AddUser POST添加用户 - 只有superuser才能够添加用户
@@ -66,16 +66,16 @@ func AddUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		web.WriteBadRequestDataResp(&w, err.Error())
 		return
 	}
+	web.WritePlainSucOkResp(&w)
 }
 
 // DeleteUser Delete删除用户 - 只有superuser才能够删除用户
 func DeleteUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	id := ps.ByName("id")
-	deleteCount, err := uService.DeleteUserByIDString(id)
+	_, err := uService.DeleteUserByIDString(id)
 	if err != nil {
 		web.WriteInternalServerErrorResp(&w, err, "delete user failed")
 		return
 	}
-
-	web.WriteDeleteSucResp(&w, deleteCount)
+	web.WritePlainSucOkResp(&w)
 }

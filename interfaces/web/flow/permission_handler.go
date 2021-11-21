@@ -1,7 +1,6 @@
 package flow
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/fBloc/bloc-backend-go/interfaces/web"
@@ -52,54 +51,23 @@ func GetPermission(w http.ResponseWriter, r *http.Request, _ httprouter.Params) 
 }
 
 func AddUserPermission(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	var req PermissionReq
-	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
-		web.WriteBadRequestDataResp(&w, "not valid json data："+err.Error())
-		return
-	}
-	if req.FlowID == uuid.Nil {
-		web.WriteBadRequestDataResp(&w, "must have flow_id")
-		return
-	}
-	if !req.PermissionType.IsValid() {
-		web.WriteBadRequestDataResp(&w, "permission_type not valid")
-		return
-	}
-
-	aggF, err := fService.Flow.GetByID(req.FlowID)
-	if err != nil {
-		web.WriteInternalServerErrorResp(&w, err, "get flow by id error")
-		return
-	}
-	if aggF.IsZero() {
-		web.WriteBadRequestDataResp(&w, "flow_id find no flow")
-		return
-	}
-
-	// 检查当前用户是否对此function有操作添加用户的权限
-	reqUser, suc := req_context.GetReqUserFromContext(r.Context())
-	if !suc {
-		web.WriteInternalServerErrorResp(&w, nil,
-			"get requser from context failed")
-		return
-	}
-	if !aggF.UserCanAssignPermission(reqUser) {
-		web.WritePermissionNotEnough(&w, "need assign_permission permission")
+	req := BuildPermissionReqAndCheck(&w, r, r.Body)
+	if req == nil {
 		return
 	}
 
 	// 开始实际更新数据
+	var err error
 	if req.PermissionType == Read {
-		err = fService.Flow.AddReader(req.FlowID, reqUser.ID)
+		err = fService.Flow.AddReader(req.FlowID, req.UserID)
 	} else if req.PermissionType == Write {
-		err = fService.Flow.AddWriter(req.FlowID, reqUser.ID)
+		err = fService.Flow.AddWriter(req.FlowID, req.UserID)
 	} else if req.PermissionType == Execute {
-		err = fService.Flow.AddExecuter(req.FlowID, reqUser.ID)
+		err = fService.Flow.AddExecuter(req.FlowID, req.UserID)
 	} else if req.PermissionType == Delete {
-		err = fService.Flow.AddDeleter(req.FlowID, reqUser.ID)
+		err = fService.Flow.AddDeleter(req.FlowID, req.UserID)
 	} else if req.PermissionType == AssignPermission {
-		err = fService.Flow.AddAssigner(req.FlowID, reqUser.ID)
+		err = fService.Flow.AddAssigner(req.FlowID, req.UserID)
 	}
 	if err != nil {
 		web.WriteInternalServerErrorResp(&w, err, "add permission failed")
@@ -109,54 +77,23 @@ func AddUserPermission(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 }
 
 func DeleteUserPermission(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	var req PermissionReq
-	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
-		web.WriteBadRequestDataResp(&w, "not valid json data："+err.Error())
-		return
-	}
-	if req.FlowID == uuid.Nil {
-		web.WriteBadRequestDataResp(&w, "must have flow_id")
-		return
-	}
-	if !req.PermissionType.IsValid() {
-		web.WriteBadRequestDataResp(&w, "permission_type not valid")
-		return
-	}
-
-	aggF, err := fService.Flow.GetByID(req.FlowID)
-	if err != nil {
-		web.WriteInternalServerErrorResp(&w, err, "get flow by id error")
-		return
-	}
-	if aggF.IsZero() {
-		web.WriteBadRequestDataResp(&w, "flow_id find no flow")
-		return
-	}
-
-	// 检查当前用户是否对此function有操作添加用户的权限
-	reqUser, suc := req_context.GetReqUserFromContext(r.Context())
-	if !suc {
-		web.WriteInternalServerErrorResp(&w, nil,
-			"get requser from context failed")
-		return
-	}
-	if !aggF.UserCanAssignPermission(reqUser) {
-		web.WritePermissionNotEnough(&w, "need assign_permission permission")
+	req := BuildPermissionReqAndCheck(&w, r, r.Body)
+	if req == nil {
 		return
 	}
 
 	// 开始实际更新数据
+	var err error
 	if req.PermissionType == Read {
-		err = fService.Flow.RemoveReader(req.FlowID, reqUser.ID)
+		err = fService.Flow.RemoveReader(req.FlowID, req.UserID)
 	} else if req.PermissionType == Write {
-		err = fService.Flow.RemoveWriter(req.FlowID, reqUser.ID)
+		err = fService.Flow.RemoveWriter(req.FlowID, req.UserID)
 	} else if req.PermissionType == Execute {
-		err = fService.Flow.RemoveExecuter(req.FlowID, reqUser.ID)
+		err = fService.Flow.RemoveExecuter(req.FlowID, req.UserID)
 	} else if req.PermissionType == Delete {
-		err = fService.Flow.RemoveDeleter(req.FlowID, reqUser.ID)
+		err = fService.Flow.RemoveDeleter(req.FlowID, req.UserID)
 	} else if req.PermissionType == AssignPermission {
-		err = fService.Flow.RemoveAssigner(req.FlowID, reqUser.ID)
+		err = fService.Flow.RemoveAssigner(req.FlowID, req.UserID)
 	}
 	if err != nil {
 		web.WriteInternalServerErrorResp(&w, err, "remove user permission failed")
