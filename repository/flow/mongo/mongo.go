@@ -74,7 +74,7 @@ type mongoFlow struct {
 	TimeoutInSeconds              uint32                        `bson:"timeout_in_seconds,omitempty"`
 	RetryAmount                   uint16                        `bson:"retry_amount,omitempty"`
 	RetryIntervalInSecond         uint16                        `bson:"retry_interval_in_second,omitempty"`
-	PubWhileRunning               bool                          `bson:"pub_while_running,omitempty"`
+	AllowParallelRun              bool                          `bson:"allow_parallel_run,omitempty"`
 	ReadUserIDs                   []uuid.UUID                   `bson:"read_user_ids"`
 	WriteUserIDs                  []uuid.UUID                   `bson:"write_user_ids"`
 	ExecuteUserIDs                []uuid.UUID                   `bson:"execute_user_ids"`
@@ -98,7 +98,7 @@ func (m mongoFlow) ToAggregate() *aggregate.Flow {
 		TimeoutInSeconds:        m.TimeoutInSeconds,
 		RetryAmount:             m.RetryAmount,
 		RetryIntervalInSecond:   m.RetryIntervalInSecond,
-		PubWhileRunning:         m.PubWhileRunning,
+		AllowParallelRun:        m.AllowParallelRun,
 		ReadUserIDs:             m.ReadUserIDs,
 		WriteUserIDs:            m.WriteUserIDs,
 		ExecuteUserIDs:          m.ExecuteUserIDs,
@@ -150,7 +150,7 @@ func NewFromFlow(f *aggregate.Flow) *mongoFlow {
 		TimeoutInSeconds:        f.TimeoutInSeconds,
 		RetryAmount:             f.RetryAmount,
 		RetryIntervalInSecond:   f.RetryIntervalInSecond,
-		PubWhileRunning:         f.PubWhileRunning,
+		AllowParallelRun:        f.AllowParallelRun,
 		ReadUserIDs:             f.ReadUserIDs,
 		WriteUserIDs:            f.WriteUserIDs,
 		ExecuteUserIDs:          f.ExecuteUserIDs,
@@ -345,10 +345,10 @@ func (mr *MongoRepository) PatchCrontab(id uuid.UUID, c crontab.CrontabRepresent
 	return mr.mongoCollection.PatchByID(id, updater)
 }
 
-// PatchPubWhileRunning  更新是否在运行的时候有新的发布仍然发布
-func (mr *MongoRepository) PatchPubWhileRunning(id uuid.UUID, pub bool) error {
+// PatchAllowParallelRun  更新是否在运行的时候有新的发布仍然发布
+func (mr *MongoRepository) PatchAllowParallelRun(id uuid.UUID, pub bool) error {
 	updater := mongodb.NewUpdater().
-		AddSet("pub_while_running", pub)
+		AddSet("allow_parallel_run", pub)
 	return mr.mongoCollection.PatchByID(id, updater)
 }
 
@@ -547,7 +547,7 @@ func (mr *MongoRepository) CreateOnlineFromDraft(
 	aggF.DeleteUserIDs = latestFlow.DeleteUserIDs
 	aggF.AssignPermissionUserIDs = latestFlow.AssignPermissionUserIDs
 	// 运行配置
-	aggF.PubWhileRunning = latestFlow.PubWhileRunning
+	aggF.AllowParallelRun = latestFlow.AllowParallelRun
 	aggF.Crontab = latestFlow.Crontab
 	aggF.TriggerKey = latestFlow.TriggerKey
 	aggF.TimeoutInSeconds = latestFlow.TimeoutInSeconds

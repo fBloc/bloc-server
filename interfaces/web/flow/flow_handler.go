@@ -189,9 +189,9 @@ func SetExecuteControlAttributes(w http.ResponseWriter, r *http.Request, _ httpr
 	}
 
 	// >> 更新是否支持在运行的时候也发布
-	if reqFlow.PubWhileRunning != flowIns.PubWhileRunning {
+	if reqFlow.AllowParallelRun != flowIns.AllowParallelRun {
 		changedFieldAmount++
-		flowIns.PubWhileRunning = reqFlow.PubWhileRunning
+		flowIns.AllowParallelRun = reqFlow.AllowParallelRun
 	}
 
 	if changedFieldAmount > 0 {

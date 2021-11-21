@@ -42,7 +42,7 @@ type FlowRepository interface {
 	PatchPosition(id uuid.UUID, position interface{}) error
 	// PatchFuncs(id uuid.UUID, funcs map[string]*flow_bloc.) error
 	PatchCrontab(id uuid.UUID, c crontab.CrontabRepresent) error
-	PatchPubWhileRunning(id uuid.UUID, pub bool) error
+	PatchAllowParallelRun(id uuid.UUID, pub bool) error
 	PatchRetryStrategy(id uuid.UUID, amount, intervalInSecond uint16) error
 	PatchTriggerKey(id uuid.UUID, key string) error
 	PatchTimeout(id uuid.UUID, tOS uint32) error

@@ -130,8 +130,8 @@ type Flow struct {
 	CreateTime                    time.Time
 	Position                      interface{}
 	FlowFunctionIDMapFlowFunction map[string]*FlowFunction
-	// 是否允许正在运行时发布任务
-	PubWhileRunning bool
+	// 是否允许正在运行时再次运行
+	AllowParallelRun bool
 	// 运行触发
 	Crontab    crontab.CrontabRepresent
 	TriggerKey string

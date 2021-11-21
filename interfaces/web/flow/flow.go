@@ -102,7 +102,7 @@ type Flow struct {
 	TimeoutInSeconds      uint32                    `json:"timeout_in_seconds"`
 	RetryAmount           uint16                    `json:"retry_amount"`
 	RetryIntervalInSecond uint16                    `json:"retry_interval_in_second"`
-	PubWhileRunning       bool                      `json:"pub_while_running"`
+	AllowParallelRun      bool                      `json:"allow_parallel_run"`
 	// permission
 	Read             bool `json:"read"`
 	Write            bool `json:"write"`
@@ -171,7 +171,7 @@ func fromAggWithoutUserPermission(aggF *aggregate.Flow) *Flow {
 		TimeoutInSeconds:              aggF.TimeoutInSeconds,
 		RetryAmount:                   aggF.RetryAmount,
 		RetryIntervalInSecond:         aggF.RetryIntervalInSecond,
-		PubWhileRunning:               aggF.PubWhileRunning,
+		AllowParallelRun:              aggF.AllowParallelRun,
 	}
 	creator, err := fService.UserCacheService.GetUserByID(aggF.CreateUserID)
 	if err == nil && !creator.IsZero() {
