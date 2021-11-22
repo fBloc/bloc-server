@@ -275,18 +275,16 @@ func fromAggWithLatestRunFunctionView(aggF *aggregate.Flow, reqUser *aggregate.U
 			}(flowFuncID, functionRunRecordID, resp, &wg)
 		}
 
+		wg.Wait()
+		close(resp)
+
 		if retFlow.FlowFunctionIDMapRunStatus == nil {
 			retFlow.FlowFunctionIDMapRunStatus = make(
 				map[string]value_object.RunState, len(latestFlowRunRecord.FlowFuncIDMapFuncRunRecordID))
 		}
-		go func(resp chan funcRunState) {
-			for i := range resp {
-				retFlow.FlowFunctionIDMapRunStatus[i.flowfunctionID] = i.functionRunState
-			}
-		}(resp)
-
-		wg.Wait()
-		close(resp)
+		for i := range resp {
+			retFlow.FlowFunctionIDMapRunStatus[i.flowfunctionID] = i.functionRunState
+		}
 		retFlow.LatestRun = newLatestRunFromAgg(latestFlowRunRecord)
 	}
 	return retFlow
