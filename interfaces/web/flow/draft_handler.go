@@ -152,6 +152,18 @@ func PubDraft(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		return
 	}
 
+	// 权限检查
+	reqUser, suc := req_context.GetReqUserFromContext(r.Context())
+	if !suc {
+		web.WriteInternalServerErrorResp(&w, nil,
+			"get requser from context failed")
+		return
+	}
+	if !draftFlowIns.UserCanWrite(reqUser) {
+		web.WritePermissionNotEnough(&w, "need write permission to pub draft flow")
+	}
+	draftFlowIns.CreateUserID = reqUser.ID
+
 	// 正式提交的需要做有效性检测
 	startFlowBloc, ok := draftFlowIns.FlowFunctionIDMapFlowFunction[config.FlowFunctionStartID]
 	if !ok {
