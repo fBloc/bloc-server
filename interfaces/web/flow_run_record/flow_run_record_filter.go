@@ -11,7 +11,6 @@ import (
 	"github.com/fBloc/bloc-backend-go/internal/util"
 	"github.com/fBloc/bloc-backend-go/value_object"
 
-	"github.com/google/uuid"
 	"github.com/pkg/errors"
 )
 
@@ -99,7 +98,7 @@ func BuildFromWebRequestParams(
 		if filterInGetPath != web.FilterInGetPathEq {
 			return nil, nil, errors.New("flow_id only suport equal search")
 		}
-		flowUUID, err := uuid.Parse(fFRR.FlowIDStr)
+		flowUUID, err := value_object.ParseToUUID(fFRR.FlowIDStr)
 		if err != nil {
 			return nil, nil, errors.Wrap(err, "parse flow_id to uuid failed")
 		}
@@ -111,7 +110,7 @@ func BuildFromWebRequestParams(
 		if filterInGetPath != web.FilterInGetPathEq {
 			return nil, nil, errors.New("flow_origin_id only suport equal search")
 		}
-		originUUID, err := uuid.Parse(fFRR.FlowOriginIDStr)
+		originUUID, err := value_object.ParseToUUID(fFRR.FlowOriginIDStr)
 		if err != nil {
 			return nil, nil, errors.Wrap(err, "parse flow_origin_id to uuid failed")
 		}

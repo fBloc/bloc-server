@@ -5,8 +5,8 @@ import (
 
 	"github.com/fBloc/bloc-backend-go/interfaces/web"
 	"github.com/fBloc/bloc-backend-go/interfaces/web/req_context"
+	"github.com/fBloc/bloc-backend-go/value_object"
 
-	"github.com/google/uuid"
 	"github.com/julienschmidt/httprouter"
 )
 
@@ -17,7 +17,7 @@ func GetPermission(w http.ResponseWriter, r *http.Request, _ httprouter.Params) 
 		web.WriteBadRequestDataResp(&w, "get param must contain flow_id")
 		return
 	}
-	flowUUID, err := uuid.Parse(flowID)
+	flowUUID, err := value_object.ParseToUUID(flowID)
 	if err != nil {
 		web.WriteBadRequestDataResp(&w, "parse flow_id to uuid failed")
 		return

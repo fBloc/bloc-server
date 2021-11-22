@@ -7,7 +7,7 @@ import (
 
 	"github.com/fBloc/bloc-backend-go/interfaces/web"
 	"github.com/fBloc/bloc-backend-go/interfaces/web/req_context"
-	"github.com/google/uuid"
+	"github.com/fBloc/bloc-backend-go/value_object"
 )
 
 type FlowPermissionType int
@@ -29,8 +29,8 @@ func (fP *FlowPermissionType) IsValid() bool {
 
 type PermissionReq struct {
 	PermissionType FlowPermissionType `json:"permission_type"`
-	FlowID         uuid.UUID          `json:"flow_id"`
-	UserID         uuid.UUID          `json:"user_id"`
+	FlowID         value_object.UUID  `json:"flow_id"`
+	UserID         value_object.UUID  `json:"user_id"`
 }
 
 func BuildPermissionReqAndCheck(w *http.ResponseWriter, r *http.Request, body io.ReadCloser) *PermissionReq {
@@ -40,7 +40,7 @@ func BuildPermissionReqAndCheck(w *http.ResponseWriter, r *http.Request, body io
 		web.WriteBadRequestDataResp(w, "not valid json data："+err.Error())
 		return nil
 	}
-	if req.FlowID == uuid.Nil {
+	if req.FlowID.IsNil() {
 		web.WriteBadRequestDataResp(w, "must have flow_id")
 		return nil
 	}

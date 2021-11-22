@@ -14,8 +14,7 @@ import (
 	mongoFunction "github.com/fBloc/bloc-backend-go/repository/function/mongo"
 	"github.com/fBloc/bloc-backend-go/repository/function_run_record"
 	user_cache "github.com/fBloc/bloc-backend-go/services/userid_cache"
-
-	"github.com/google/uuid"
+	"github.com/fBloc/bloc-backend-go/value_object"
 )
 
 type FlowConfiguration func(fs *FlowService) error
@@ -150,9 +149,9 @@ func WithUserCacheService(
 }
 
 func (u *FlowService) GetLatestRunRecordByFlowID(
-	flowID uuid.UUID,
+	flowID value_object.UUID,
 ) (*aggregate.FlowRunRecord, error) {
-	if flowID == uuid.Nil {
+	if flowID.IsNil() {
 		return nil, nil
 	}
 	return u.FlowRunRecord.GetLatestByFlowID(flowID)

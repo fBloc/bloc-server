@@ -4,8 +4,7 @@ import (
 	"time"
 
 	"github.com/fBloc/bloc-backend-go/event"
-
-	"github.com/google/uuid"
+	"github.com/fBloc/bloc-backend-go/value_object"
 )
 
 type IptBriefAndKey struct {
@@ -14,13 +13,13 @@ type IptBriefAndKey struct {
 }
 
 type FunctionRunRecord struct {
-	ID                uuid.UUID
-	FlowID            uuid.UUID
-	FlowOriginID      uuid.UUID
+	ID                value_object.UUID
+	FlowID            value_object.UUID
+	FlowOriginID      value_object.UUID
 	ArrangementFlowID string
-	FunctionID        uuid.UUID
-	FlowFunctionID    string // TODO 改为flow_function_id
-	FlowRunRecordID   uuid.UUID
+	FunctionID        value_object.UUID
+	FlowFunctionID    string
+	FlowRunRecordID   value_object.UUID
 	Start             time.Time
 	End               time.Time
 	Suc               bool
@@ -43,7 +42,7 @@ func NewFunctionRunRecordFromFlowDriven(
 	flowFunctionID string,
 ) *FunctionRunRecord {
 	fRR := &FunctionRunRecord{
-		ID:              uuid.New(),
+		ID:              value_object.NewUUID(),
 		FlowID:          flowRunRecordIns.FlowID,
 		FlowOriginID:    flowRunRecordIns.FlowOriginID,
 		FunctionID:      functionIns.ID,
@@ -60,7 +59,7 @@ func (bh *FunctionRunRecord) IsZero() bool {
 	if bh == nil {
 		return true
 	}
-	return bh.ID == uuid.Nil
+	return bh.ID.IsNil()
 }
 
 func (bh *FunctionRunRecord) UsedSeconds() float64 {

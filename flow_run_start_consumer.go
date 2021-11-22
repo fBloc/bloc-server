@@ -4,8 +4,7 @@ import (
 	"github.com/fBloc/bloc-backend-go/aggregate"
 	"github.com/fBloc/bloc-backend-go/config"
 	"github.com/fBloc/bloc-backend-go/event"
-
-	"github.com/google/uuid"
+	"github.com/fBloc/bloc-backend-go/value_object"
 )
 
 func (blocApp *BlocApp) FlowTaskStartConsumer() {
@@ -26,7 +25,7 @@ func (blocApp *BlocApp) FlowTaskStartConsumer() {
 	for flowToRunEvent := range flowToRunEventChan {
 		flowRunRecordStr := flowToRunEvent.Identity()
 		logger.Infof("|--> get flow run start record id %s", flowRunRecordStr)
-		flowRunRecordUuid, err := uuid.Parse(flowRunRecordStr)
+		flowRunRecordUuid, err := value_object.ParseToUUID(flowRunRecordStr)
 		if err != nil {
 			// TODO 不应该panic
 			panic(err)
@@ -49,7 +48,7 @@ func (blocApp *BlocApp) FlowTaskStartConsumer() {
 		// 发布flow下的“第一层”functions任务
 		firstLayerDownstreamFlowFunctionIDS := flowIns.FlowFunctionIDMapFlowFunction[config.FlowFunctionStartID].DownstreamFlowFunctionIDs
 		flowblocidMapBlochisid := make(
-			map[string]uuid.UUID, len(firstLayerDownstreamFlowFunctionIDS))
+			map[string]value_object.UUID, len(firstLayerDownstreamFlowFunctionIDS))
 		for _, flowFunctionID := range firstLayerDownstreamFlowFunctionIDS {
 			flowFunction := flowIns.FlowFunctionIDMapFlowFunction[flowFunctionID]
 

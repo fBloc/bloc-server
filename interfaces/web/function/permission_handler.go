@@ -5,8 +5,8 @@ import (
 
 	"github.com/fBloc/bloc-backend-go/interfaces/web"
 	"github.com/fBloc/bloc-backend-go/interfaces/web/req_context"
+	"github.com/fBloc/bloc-backend-go/value_object"
 
-	"github.com/google/uuid"
 	"github.com/julienschmidt/httprouter"
 )
 
@@ -16,7 +16,7 @@ func GetPermissionByFunctionID(w http.ResponseWriter, r *http.Request, _ httprou
 		web.WriteBadRequestDataResp(&w, "get param must contain function_id")
 		return
 	}
-	functionUUID, err := uuid.Parse(functionID)
+	functionUUID, err := value_object.ParseToUUID(functionID)
 	if err != nil {
 		web.WriteBadRequestDataResp(&w, "parse function_id to uuid failed")
 		return

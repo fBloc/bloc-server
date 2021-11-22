@@ -7,8 +7,6 @@ import (
 	"github.com/fBloc/bloc-backend-go/internal/crontab"
 	"github.com/fBloc/bloc-backend-go/pkg/value_type"
 	"github.com/fBloc/bloc-backend-go/value_object"
-
-	"github.com/google/uuid"
 )
 
 type IptComponentConfig struct {
@@ -23,7 +21,7 @@ type IptComponentConfig struct {
 }
 
 type FlowFunction struct {
-	FunctionID                uuid.UUID
+	FunctionID                value_object.UUID
 	Function                  *Function
 	Note                      string
 	Position                  interface{}
@@ -119,13 +117,13 @@ func (flowFunc *FlowFunction) CheckValid(
 }
 
 type Flow struct {
-	ID                            uuid.UUID
+	ID                            value_object.UUID
 	Name                          string
 	IsDraft                       bool
 	Version                       uint
-	OriginID                      uuid.UUID
+	OriginID                      value_object.UUID
 	Newest                        bool
-	CreateUserID                  uuid.UUID
+	CreateUserID                  value_object.UUID
 	CreateUserName                string
 	CreateTime                    time.Time
 	Position                      interface{}
@@ -140,18 +138,18 @@ type Flow struct {
 	RetryAmount           uint16
 	RetryIntervalInSecond uint16
 	// 用于权限
-	ReadUserIDs             []uuid.UUID
-	WriteUserIDs            []uuid.UUID
-	ExecuteUserIDs          []uuid.UUID
-	DeleteUserIDs           []uuid.UUID
-	AssignPermissionUserIDs []uuid.UUID
+	ReadUserIDs             []value_object.UUID
+	WriteUserIDs            []value_object.UUID
+	ExecuteUserIDs          []value_object.UUID
+	DeleteUserIDs           []value_object.UUID
+	AssignPermissionUserIDs []value_object.UUID
 }
 
 func (flow *Flow) IsZero() bool {
 	if flow == nil {
 		return true
 	}
-	return flow.ID == uuid.UUID{}
+	return flow.ID.IsNil()
 }
 
 func (flow *Flow) HaveRetryStrategy() bool {

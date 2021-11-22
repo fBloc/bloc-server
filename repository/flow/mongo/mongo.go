@@ -13,7 +13,6 @@ import (
 	"github.com/fBloc/bloc-backend-go/repository/flow"
 	"github.com/fBloc/bloc-backend-go/value_object"
 
-	"github.com/google/uuid"
 	"github.com/pkg/errors"
 )
 
@@ -50,7 +49,7 @@ type mongoIptComponentConfig struct {
 }
 
 type mongoFlowFunction struct {
-	FunctionID                uuid.UUID                   `bson:"function_id"`
+	FunctionID                value_object.UUID           `bson:"function_id"`
 	Note                      string                      `bson:"note"`
 	Position                  interface{}                 `bson:"position"`
 	UpstreamFlowFunctionIDs   []string                    `bson:"upstream_flowfunction_ids"`
@@ -59,13 +58,13 @@ type mongoFlowFunction struct {
 }
 
 type mongoFlow struct {
-	ID                            uuid.UUID                     `bson:"id"`
+	ID                            value_object.UUID             `bson:"id"`
 	Name                          string                        `bson:"name"`
 	IsDraft                       bool                          `bson:"is_draft"`
 	Version                       uint                          `bson:"version"`
-	OriginID                      uuid.UUID                     `bson:"origin_id,omitempty"`
+	OriginID                      value_object.UUID             `bson:"origin_id,omitempty"`
 	Newest                        bool                          `bson:"newest"`
-	CreateUserID                  uuid.UUID                     `bson:"create_user_id"`
+	CreateUserID                  value_object.UUID             `bson:"create_user_id"`
 	CreateTime                    time.Time                     `bson:"create_time"`
 	Position                      interface{}                   `bson:"position"`
 	FlowFunctionIDMapFlowFunction map[string]*mongoFlowFunction `bson:"flowFunctionID_map_flowFunction"`
@@ -75,11 +74,11 @@ type mongoFlow struct {
 	RetryAmount                   uint16                        `bson:"retry_amount,omitempty"`
 	RetryIntervalInSecond         uint16                        `bson:"retry_interval_in_second,omitempty"`
 	AllowParallelRun              bool                          `bson:"allow_parallel_run,omitempty"`
-	ReadUserIDs                   []uuid.UUID                   `bson:"read_user_ids"`
-	WriteUserIDs                  []uuid.UUID                   `bson:"write_user_ids"`
-	ExecuteUserIDs                []uuid.UUID                   `bson:"execute_user_ids"`
-	DeleteUserIDs                 []uuid.UUID                   `bson:"delete_user_ids"`
-	AssignPermissionUserIDs       []uuid.UUID                   `bson:"assign_permission_user_ids"`
+	ReadUserIDs                   []value_object.UUID           `bson:"read_user_ids"`
+	WriteUserIDs                  []value_object.UUID           `bson:"write_user_ids"`
+	ExecuteUserIDs                []value_object.UUID           `bson:"execute_user_ids"`
+	DeleteUserIDs                 []value_object.UUID           `bson:"delete_user_ids"`
+	AssignPermissionUserIDs       []value_object.UUID           `bson:"assign_permission_user_ids"`
 }
 
 func (m mongoFlow) ToAggregate() *aggregate.Flow {
@@ -195,8 +194,8 @@ func (mr *MongoRepository) get(filter *mongodb.MongoFilter) (*aggregate.Flow, er
 	return flow.ToAggregate(), err
 }
 
-func (mr *MongoRepository) GetByID(id uuid.UUID) (*aggregate.Flow, error) {
-	if id == uuid.Nil {
+func (mr *MongoRepository) GetByID(id value_object.UUID) (*aggregate.Flow, error) {
+	if id.IsNil() {
 		return nil, errors.New("must have id")
 	}
 	return mr.get(mongodb.NewFilter().AddEqual("id", id))
@@ -206,22 +205,22 @@ func (mr *MongoRepository) GetByIDStr(id string) (*aggregate.Flow, error) {
 	if id == "" {
 		return nil, errors.New("id cannot be blank")
 	}
-	uuidFromStr, err := uuid.Parse(id)
+	uuidFromStr, err := value_object.ParseToUUID(id)
 	if err != nil {
 		return nil, errors.Wrap(err, "trans id to uuid failed")
 	}
 	return mr.GetByID(uuidFromStr)
 }
 
-func (mr *MongoRepository) GetOnlineByOriginID(originID uuid.UUID) (*aggregate.Flow, error) {
-	if originID == uuid.Nil {
+func (mr *MongoRepository) GetOnlineByOriginID(originID value_object.UUID) (*aggregate.Flow, error) {
+	if originID.IsNil() {
 		return nil, errors.New("must have origin_id")
 	}
 	return mr.get(mongodb.NewFilter().AddEqual("origin_id", originID).AddEqual("is_draft", false))
 }
 
-func (mr *MongoRepository) GetLatestByOriginID(originID uuid.UUID) (*aggregate.Flow, error) {
-	if originID == uuid.Nil {
+func (mr *MongoRepository) GetLatestByOriginID(originID value_object.UUID) (*aggregate.Flow, error) {
+	if originID.IsNil() {
 		return nil, errors.New("must have origin_id")
 	}
 	return mr.get(mongodb.NewFilter().AddEqual("origin_id", originID))
@@ -231,23 +230,23 @@ func (mr *MongoRepository) GetOnlineByOriginIDStr(originID string) (*aggregate.F
 	if originID == "" {
 		return nil, errors.New("origin_id cannot be blank")
 	}
-	uuidFromStr, err := uuid.Parse(originID)
+	uuidFromStr, err := value_object.ParseToUUID(originID)
 	if err != nil {
 		return nil, errors.Wrap(err, "trans origin_id to uuid failed")
 	}
 	return mr.GetOnlineByOriginID(uuidFromStr)
 }
 
-func (mr *MongoRepository) GetDraftByOriginID(originID uuid.UUID) (*aggregate.Flow, error) {
-	if originID == uuid.Nil {
+func (mr *MongoRepository) GetDraftByOriginID(originID value_object.UUID) (*aggregate.Flow, error) {
+	if originID.IsNil() {
 		return nil, errors.New("must have origin_id")
 	}
 	return mr.get(mongodb.NewFilter().AddEqual("origin_id", originID).AddEqual("is_draft", true))
 }
 
-func (mr *MongoRepository) FilterOnline(userID uuid.UUID, nameContains string) ([]aggregate.Flow, error) {
+func (mr *MongoRepository) FilterOnline(userID value_object.UUID, nameContains string) ([]aggregate.Flow, error) {
 	filter := mongodb.NewFilter().AddEqual("is_draft", false).AddEqual("newest", true)
-	if userID != uuid.Nil {
+	if !userID.IsNil() {
 		filter.AddEqual("read_user_ids", userID)
 	}
 	if nameContains != "" {
@@ -281,9 +280,9 @@ func (mr *MongoRepository) FilterCrontabFlows() ([]aggregate.Flow, error) {
 	return ret, err
 }
 
-func (mr *MongoRepository) FilterDraft(userID uuid.UUID, nameContains string) ([]aggregate.Flow, error) {
+func (mr *MongoRepository) FilterDraft(userID value_object.UUID, nameContains string) ([]aggregate.Flow, error) {
 	filter := mongodb.NewFilter().AddEqual("is_draft", true)
-	if userID != uuid.Nil {
+	if !userID.IsNil() {
 		filter.AddEqual("read_user_ids", userID)
 	}
 	if nameContains != "" {
@@ -302,31 +301,31 @@ func (mr *MongoRepository) FilterDraft(userID uuid.UUID, nameContains string) ([
 	return ret, err
 }
 
-func (mr *MongoRepository) PatchName(id uuid.UUID, name string) error {
+func (mr *MongoRepository) PatchName(id value_object.UUID, name string) error {
 	updater := mongodb.NewUpdater().
 		AddSet("name", name)
 	return mr.mongoCollection.PatchByID(id, updater)
 }
 
 // PatchTriggerKey 更新crontab配置
-func (mr *MongoRepository) PatchPosition(id uuid.UUID, position interface{}) error {
+func (mr *MongoRepository) PatchPosition(id value_object.UUID, position interface{}) error {
 	updater := mongodb.NewUpdater().AddSet("position", position)
 	return mr.mongoCollection.PatchByID(id, updater)
 }
 
 // OfflineByID 对flow进行下线
-func (mr *MongoRepository) OfflineByID(id uuid.UUID) error {
+func (mr *MongoRepository) OfflineByID(id value_object.UUID) error {
 	updater := mongodb.NewUpdater().AddSet("newest", false)
 	return mr.mongoCollection.PatchByID(id, updater)
 }
 
 // PatchTimeout 更新超时配置
-// func (mr *MongoRepository) PatchFuncs(id uuid.UUID, funcs map[string]*flow_bloc.FlowBloc) error {
+// func (mr *MongoRepository) PatchFuncs(id value_object.UUID, funcs map[string]*flow_bloc.FlowBloc) error {
 // 	updater := mongodb.NewUpdater().AddSet("funcs", funcs)
 // 	return mr.mongoCollection.PatchByID(id, updater)
 // }
 
-func (mr *MongoRepository) PatchRetryStrategy(id uuid.UUID, amount, intervalInSecond uint16) error {
+func (mr *MongoRepository) PatchRetryStrategy(id value_object.UUID, amount, intervalInSecond uint16) error {
 	if amount <= 0 || intervalInSecond <= 0 {
 		return errors.New("retry_amount & retry_interval_in_second must both > 0")
 	}
@@ -336,7 +335,7 @@ func (mr *MongoRepository) PatchRetryStrategy(id uuid.UUID, amount, intervalInSe
 	return mr.mongoCollection.PatchByID(id, updater)
 }
 
-func (mr *MongoRepository) PatchCrontab(id uuid.UUID, c crontab.CrontabRepresent) error {
+func (mr *MongoRepository) PatchCrontab(id value_object.UUID, c crontab.CrontabRepresent) error {
 	// 对于非空的crontab设置，需要检查格式是否正确
 	if !c.IsZero() && !c.IsValid() {
 		return errors.New("crontab expression not valid")
@@ -346,33 +345,33 @@ func (mr *MongoRepository) PatchCrontab(id uuid.UUID, c crontab.CrontabRepresent
 }
 
 // PatchAllowParallelRun  更新是否在运行的时候有新的发布仍然发布
-func (mr *MongoRepository) PatchAllowParallelRun(id uuid.UUID, pub bool) error {
+func (mr *MongoRepository) PatchAllowParallelRun(id value_object.UUID, pub bool) error {
 	updater := mongodb.NewUpdater().
 		AddSet("allow_parallel_run", pub)
 	return mr.mongoCollection.PatchByID(id, updater)
 }
 
 // PatchTriggerKey 更新crontab配置
-func (mr *MongoRepository) PatchTriggerKey(id uuid.UUID, key string) error {
+func (mr *MongoRepository) PatchTriggerKey(id value_object.UUID, key string) error {
 	updater := mongodb.NewUpdater().AddSet("trigger_key", key)
 	return mr.mongoCollection.PatchByID(id, updater)
 }
 
 // PatchTimeout 更新超时配置
-func (mr *MongoRepository) PatchTimeout(id uuid.UUID, tOS uint32) error {
+func (mr *MongoRepository) PatchTimeout(id value_object.UUID, tOS uint32) error {
 	updater := mongodb.NewUpdater().AddSet("timeout_in_seconds", tOS)
 	return mr.mongoCollection.PatchByID(id, updater)
 }
 
-func (mr *MongoRepository) ReplaceByID(id uuid.UUID, aggFlow *aggregate.Flow) error {
-	if id == uuid.Nil {
+func (mr *MongoRepository) ReplaceByID(id value_object.UUID, aggFlow *aggregate.Flow) error {
+	if id.IsNil() {
 		return errors.New("id cannot be nil")
 	}
 	mFlow := NewFromFlow(aggFlow)
 	return mr.mongoCollection.ReplaceByID(id, *mFlow)
 }
 
-func (mr *MongoRepository) userOperation(id, userID uuid.UUID, permType value_object.PermissionType, aod add_or_del.AddOrDel) error {
+func (mr *MongoRepository) userOperation(id, userID value_object.UUID, permType value_object.PermissionType, aod add_or_del.AddOrDel) error {
 	var roleStr string
 	if permType == value_object.Read {
 		roleStr = "read_user_ids"
@@ -397,42 +396,42 @@ func (mr *MongoRepository) userOperation(id, userID uuid.UUID, permType value_ob
 	return mr.mongoCollection.PatchByID(id, updater)
 }
 
-func (mr *MongoRepository) AddReader(id, userID uuid.UUID) error {
+func (mr *MongoRepository) AddReader(id, userID value_object.UUID) error {
 	return mr.userOperation(id, userID, value_object.Read, add_or_del.Add)
 }
-func (mr *MongoRepository) RemoveReader(id, userID uuid.UUID) error {
+func (mr *MongoRepository) RemoveReader(id, userID value_object.UUID) error {
 	return mr.userOperation(id, userID, value_object.Read, add_or_del.Remove)
 }
 
-func (mr *MongoRepository) AddWriter(id, userID uuid.UUID) error {
+func (mr *MongoRepository) AddWriter(id, userID value_object.UUID) error {
 	return mr.userOperation(id, userID, value_object.Write, add_or_del.Add)
 }
 
-func (mr *MongoRepository) RemoveWriter(id, userID uuid.UUID) error {
+func (mr *MongoRepository) RemoveWriter(id, userID value_object.UUID) error {
 	return mr.userOperation(id, userID, value_object.Write, add_or_del.Remove)
 }
 
-func (mr *MongoRepository) AddExecuter(id, userID uuid.UUID) error {
+func (mr *MongoRepository) AddExecuter(id, userID value_object.UUID) error {
 	return mr.userOperation(id, userID, value_object.Execute, add_or_del.Add)
 }
 
-func (mr *MongoRepository) RemoveExecuter(id, userID uuid.UUID) error {
+func (mr *MongoRepository) RemoveExecuter(id, userID value_object.UUID) error {
 	return mr.userOperation(id, userID, value_object.Execute, add_or_del.Remove)
 }
 
-func (mr *MongoRepository) AddDeleter(id, userID uuid.UUID) error {
+func (mr *MongoRepository) AddDeleter(id, userID value_object.UUID) error {
 	return mr.userOperation(id, userID, value_object.Delete, add_or_del.Add)
 }
 
-func (mr *MongoRepository) RemoveDeleter(id, userID uuid.UUID) error {
+func (mr *MongoRepository) RemoveDeleter(id, userID value_object.UUID) error {
 	return mr.userOperation(id, userID, value_object.Delete, add_or_del.Remove)
 }
 
-func (mr *MongoRepository) AddAssigner(id, userID uuid.UUID) error {
+func (mr *MongoRepository) AddAssigner(id, userID value_object.UUID) error {
 	return mr.userOperation(id, userID, value_object.AssignPermission, add_or_del.Add)
 }
 
-func (mr *MongoRepository) RemoveAssigner(id, userID uuid.UUID) error {
+func (mr *MongoRepository) RemoveAssigner(id, userID value_object.UUID) error {
 	return mr.userOperation(id, userID, value_object.AssignPermission, add_or_del.Remove)
 }
 
@@ -445,27 +444,27 @@ func (mr *MongoRepository) mongoCreateFromAgg(flow *aggregate.Flow) error {
 
 func (mr *MongoRepository) CreateDraftFromScratch(
 	name string,
-	createUserID uuid.UUID,
+	createUserID value_object.UUID,
 	position interface{},
 	funcs map[string]*aggregate.FlowFunction,
 ) (*aggregate.Flow, error) {
-	if createUserID == uuid.Nil {
+	if createUserID.IsNil() {
 		return nil, errors.New("must have create_user_id")
 	}
 	aggFlow := aggregate.Flow{
-		ID:                            uuid.New(),
+		ID:                            value_object.NewUUID(),
 		Name:                          name,
 		IsDraft:                       true,
-		OriginID:                      uuid.New(),
+		OriginID:                      value_object.NewUUID(),
 		CreateUserID:                  createUserID,
 		CreateTime:                    time.Now(),
 		Position:                      position,
 		FlowFunctionIDMapFlowFunction: funcs,
-		ReadUserIDs:                   []uuid.UUID{createUserID},
-		WriteUserIDs:                  []uuid.UUID{createUserID},
-		ExecuteUserIDs:                []uuid.UUID{createUserID},
-		DeleteUserIDs:                 []uuid.UUID{createUserID},
-		AssignPermissionUserIDs:       []uuid.UUID{createUserID},
+		ReadUserIDs:                   []value_object.UUID{createUserID},
+		WriteUserIDs:                  []value_object.UUID{createUserID},
+		ExecuteUserIDs:                []value_object.UUID{createUserID},
+		DeleteUserIDs:                 []value_object.UUID{createUserID},
+		AssignPermissionUserIDs:       []value_object.UUID{createUserID},
 	}
 
 	err := mr.mongoCreateFromAgg(&aggFlow)
@@ -478,14 +477,14 @@ func (mr *MongoRepository) CreateDraftFromScratch(
 
 func (mr *MongoRepository) CreateDraftFromExistFlow(
 	name string,
-	createUserID, originID uuid.UUID,
+	createUserID, originID value_object.UUID,
 	position interface{},
 	funcs map[string]*aggregate.FlowFunction,
 ) (*aggregate.Flow, error) {
-	if createUserID == uuid.Nil {
+	if createUserID.IsNil() {
 		return nil, errors.New("create_user_id cannot be blank")
 	}
-	if originID == uuid.Nil {
+	if originID.IsNil() {
 		return nil, errors.New("origin_id cannot be blank")
 	}
 	existFlow, err := mr.GetOnlineByOriginID(originID)
@@ -497,7 +496,7 @@ func (mr *MongoRepository) CreateDraftFromExistFlow(
 	}
 
 	aggFlow := aggregate.Flow{
-		ID:                            uuid.New(),
+		ID:                            value_object.NewUUID(),
 		Name:                          name,
 		IsDraft:                       true,
 		OriginID:                      originID,
@@ -564,15 +563,15 @@ func (mr *MongoRepository) CreateOnlineFromDraft(
 	return aggF, mr.mongoCreateFromAgg(aggF)
 }
 
-func (mr *MongoRepository) DeleteByID(id uuid.UUID) (int64, error) {
+func (mr *MongoRepository) DeleteByID(id value_object.UUID) (int64, error) {
 	return mr.mongoCollection.DeleteByID(id)
 }
 
-func (mr *MongoRepository) DeleteByOriginID(originID uuid.UUID) (int64, error) {
+func (mr *MongoRepository) DeleteByOriginID(originID value_object.UUID) (int64, error) {
 	return mr.mongoCollection.Delete(mongodb.NewFilter().AddEqual("origin_id", originID))
 }
 
-func (mr *MongoRepository) DeleteDraftByOriginID(originID uuid.UUID) (int64, error) {
+func (mr *MongoRepository) DeleteDraftByOriginID(originID value_object.UUID) (int64, error) {
 	return mr.mongoCollection.Delete(
 		mongodb.NewFilter().
 			AddEqual("is_draft", true).

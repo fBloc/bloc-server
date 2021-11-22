@@ -4,8 +4,6 @@ import (
 	"github.com/fBloc/bloc-backend-go/aggregate"
 	"github.com/fBloc/bloc-backend-go/services/flow_run_record"
 	"github.com/fBloc/bloc-backend-go/value_object"
-
-	"github.com/google/uuid"
 )
 
 var fFRService *flow_run_record.FlowRunRecordService
@@ -17,13 +15,13 @@ func InjectFlowRunRecordService(
 }
 
 type FlowFunctionRecord struct {
-	ID                           uuid.UUID                            `json:"id"`
-	ArrangementID                uuid.UUID                            `json:"arrangement_id,omitempty"`
+	ID                           value_object.UUID                    `json:"id"`
+	ArrangementID                value_object.UUID                    `json:"arrangement_id,omitempty"`
 	ArrangementFlowID            string                               `json:"arrangement_flow_id,omitempty"`
 	ArrangementRunRecordID       string                               `json:"arrangement_run_record_id,omitempty"`
-	FlowID                       uuid.UUID                            `json:"flow_id"`
-	FlowOriginID                 uuid.UUID                            `json:"flow_origin_id"`
-	FlowFuncIDMapFuncRunRecordID map[string]uuid.UUID                 `json:"flowFunctionID_map_functionRunRecordID"`
+	FlowID                       value_object.UUID                    `json:"flow_id"`
+	FlowOriginID                 value_object.UUID                    `json:"flow_origin_id"`
+	FlowFuncIDMapFuncRunRecordID map[string]value_object.UUID         `json:"flowFunctionID_map_functionRunRecordID"`
 	TriggerType                  value_object.TriggerType             `json:"trigger_type"`
 	TriggerKey                   string                               `json:"trigger_key"`
 	TriggerSource                value_object.FlowTriggeredSourceType `json:"trigger_source"`
@@ -47,7 +45,7 @@ func fromAgg(
 	}
 	retFlow := &FlowFunctionRecord{
 		ID:                           aggFRR.ID,
-		ArrangementID:                aggFRR.ArrangementID,
+		ArrangementID:                value_object.UUID(aggFRR.ArrangementID),
 		ArrangementFlowID:            aggFRR.ArrangementFlowID,
 		ArrangementRunRecordID:       aggFRR.ArrangementRunRecordID,
 		FlowID:                       aggFRR.FlowID,
@@ -65,16 +63,16 @@ func fromAgg(
 		TimeoutCanceled:              aggFRR.TimeoutCanceled,
 		Canceled:                     aggFRR.Canceled,
 	}
-	if aggFRR.CancelUserID == uuid.Nil && aggFRR.TriggerUserID == uuid.Nil {
+	if aggFRR.CancelUserID.IsNil() && aggFRR.TriggerUserID.IsNil() {
 		return retFlow
 	}
-	if aggFRR.CancelUserID != uuid.Nil {
+	if !aggFRR.CancelUserID.IsNil() {
 		user, _ := fFRService.UserCacheService.GetUserByID(aggFRR.CancelUserID)
 		if !user.IsZero() {
 			retFlow.CancelUserName = user.Name
 		}
 	}
-	if aggFRR.TriggerUserID != uuid.Nil {
+	if !aggFRR.TriggerUserID.IsNil() {
 		user, _ := fFRService.UserCacheService.GetUserByID(aggFRR.TriggerUserID)
 		if !user.IsZero() {
 			retFlow.TriggerUserName = user.Name

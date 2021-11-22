@@ -11,8 +11,6 @@ import (
 	"github.com/fBloc/bloc-backend-go/internal/json_date"
 	"github.com/fBloc/bloc-backend-go/repository/flow_run_record"
 	"github.com/fBloc/bloc-backend-go/value_object"
-
-	"github.com/google/uuid"
 )
 
 const (
@@ -39,18 +37,18 @@ func New(
 }
 
 type mongoFlowRunRecord struct {
-	ID                           uuid.UUID                            `bson:"id"`
-	ArrangementID                uuid.UUID                            `bson:"arrangement_id,omitempty"`
+	ID                           value_object.UUID                    `bson:"id"`
+	ArrangementID                value_object.UUID                    `bson:"arrangement_id,omitempty"`
 	ArrangementFlowID            string                               `bson:"arrangement_flow_id,omitempty"`
 	ArrangementRunRecordID       string                               `bson:"arrangement_task_id,omitempty"`
-	FlowID                       uuid.UUID                            `bson:"flow_id"`
-	FlowOriginID                 uuid.UUID                            `bson:"flow_origin_id"`
-	FlowFuncIDMapFuncRunRecordID map[string]uuid.UUID                 `bson:"flowFuncID_map_funcRunRecordID"`
+	FlowID                       value_object.UUID                    `bson:"flow_id"`
+	FlowOriginID                 value_object.UUID                    `bson:"flow_origin_id"`
+	FlowFuncIDMapFuncRunRecordID map[string]value_object.UUID         `bson:"flowFuncID_map_funcRunRecordID"`
 	TriggerTime                  time.Time                            `bson:"trigger_time"`
 	TriggerKey                   string                               `bson:"trigger_key"`
 	TriggerSource                value_object.FlowTriggeredSourceType `bson:"source_type"`
 	TriggerType                  value_object.TriggerType             `bson:"trigger_type"`
-	TriggerUserID                uuid.UUID                            `bson:"trigger_user_id"`
+	TriggerUserID                value_object.UUID                    `bson:"trigger_user_id"`
 	StartTime                    time.Time                            `bson:"start_time,omitempty"`
 	EndTime                      time.Time                            `bson:"end_time,omitempty"`
 	Status                       value_object.RunState                `bson:"status"`
@@ -58,7 +56,7 @@ type mongoFlowRunRecord struct {
 	RetriedAmount                uint16                               `bson:"retried_amount"`
 	TimeoutCanceled              bool                                 `bson:"timeout_canceled,omitempty"`
 	Canceled                     bool                                 `bson:"canceled"`
-	CancelUserID                 uuid.UUID                            `bson:"cancel_user_id"`
+	CancelUserID                 value_object.UUID                    `bson:"cancel_user_id"`
 	crontabRepresent             string                               `bson:"crontab_represent"`
 }
 
@@ -66,7 +64,7 @@ func (m *mongoFlowRunRecord) IsZero() bool {
 	if m == nil {
 		return true
 	}
-	if m.ID == uuid.Nil {
+	if m.ID.IsNil() {
 		return true
 	}
 	return false
@@ -169,13 +167,13 @@ func (mr *MongoRepository) get(
 }
 
 func (mr *MongoRepository) GetByID(
-	id uuid.UUID,
+	id value_object.UUID,
 ) (*aggregate.FlowRunRecord, error) {
 	return mr.get(mongodb.NewFilter().AddEqual("id", id))
 }
 
 func (mr *MongoRepository) ReGetToCheckIsCanceled(
-	id uuid.UUID,
+	id value_object.UUID,
 ) bool {
 	aggFRR, err := mr.get(mongodb.NewFilter().AddEqual("id", id))
 	if err != nil {
@@ -185,13 +183,13 @@ func (mr *MongoRepository) ReGetToCheckIsCanceled(
 }
 
 func (mr *MongoRepository) GetLatestByFlowOriginID(
-	flowOriginID uuid.UUID,
+	flowOriginID value_object.UUID,
 ) (*aggregate.FlowRunRecord, error) {
 	return mr.get(mongodb.NewFilter().AddEqual("flow_origin_id", flowOriginID))
 }
 
 func (mr *MongoRepository) GetLatestByFlowID(
-	flowID uuid.UUID,
+	flowID value_object.UUID,
 ) (*aggregate.FlowRunRecord, error) {
 	return mr.get(mongodb.NewFilter().AddEqual("flow_id", flowID))
 }
@@ -222,7 +220,7 @@ func (mr *MongoRepository) Filter(
 
 // 返回某个flow作为运行源的其全部`运行中`记录
 func (mr *MongoRepository) AllRunRecordOfFlowTriggeredByFlowID(
-	flowID uuid.UUID,
+	flowID value_object.UUID,
 ) ([]*aggregate.FlowRunRecord, error) {
 	var mFRRs []mongoFlowRunRecord
 	filter := value_object.NewRepositoryFilter()
@@ -249,7 +247,7 @@ func (mr *MongoRepository) AllRunRecordOfFlowTriggeredByFlowID(
 
 // update
 func (mr *MongoRepository) PatchDataForRetry(
-	id uuid.UUID, retriedAmount uint16,
+	id value_object.UUID, retriedAmount uint16,
 ) error {
 	return mr.mongoCollection.PatchByID(
 		id,
@@ -258,8 +256,8 @@ func (mr *MongoRepository) PatchDataForRetry(
 }
 
 func (mr *MongoRepository) PatchFlowFuncIDMapFuncRunRecordID(
-	id uuid.UUID,
-	FlowFuncIDMapFuncRunRecordID map[string]uuid.UUID,
+	id value_object.UUID,
+	FlowFuncIDMapFuncRunRecordID map[string]value_object.UUID,
 ) error {
 	return mr.mongoCollection.PatchByID(
 		id,
@@ -269,9 +267,9 @@ func (mr *MongoRepository) PatchFlowFuncIDMapFuncRunRecordID(
 }
 
 func (mr *MongoRepository) AddFlowFuncIDMapFuncRunRecordID(
-	id uuid.UUID,
+	id value_object.UUID,
 	flowFuncID string,
-	funcRunRecordID uuid.UUID,
+	funcRunRecordID value_object.UUID,
 ) error {
 	return mr.mongoCollection.PatchByID(
 		id,
@@ -281,7 +279,7 @@ func (mr *MongoRepository) AddFlowFuncIDMapFuncRunRecordID(
 	)
 }
 
-func (mr *MongoRepository) Start(id uuid.UUID) error {
+func (mr *MongoRepository) Start(id value_object.UUID) error {
 	return mr.mongoCollection.PatchByID(
 		id,
 		mongodb.NewUpdater().
@@ -289,7 +287,7 @@ func (mr *MongoRepository) Start(id uuid.UUID) error {
 			AddSet("start_time", time.Now()))
 }
 
-func (mr *MongoRepository) Suc(id uuid.UUID) error {
+func (mr *MongoRepository) Suc(id value_object.UUID) error {
 	return mr.mongoCollection.PatchByID(
 		id,
 		mongodb.NewUpdater().
@@ -297,7 +295,7 @@ func (mr *MongoRepository) Suc(id uuid.UUID) error {
 			AddSet("end_time", time.Now()))
 }
 
-func (mr *MongoRepository) Fail(id uuid.UUID, errorMsg string) error {
+func (mr *MongoRepository) Fail(id value_object.UUID, errorMsg string) error {
 	return mr.mongoCollection.PatchByID(
 		id,
 		mongodb.NewUpdater().
@@ -306,7 +304,7 @@ func (mr *MongoRepository) Fail(id uuid.UUID, errorMsg string) error {
 			AddSet("end_time", time.Now()))
 }
 
-func (mr *MongoRepository) TimeoutCancel(id uuid.UUID) error {
+func (mr *MongoRepository) TimeoutCancel(id value_object.UUID) error {
 	return mr.mongoCollection.PatchByID(
 		id,
 		mongodb.NewUpdater().
@@ -316,7 +314,7 @@ func (mr *MongoRepository) TimeoutCancel(id uuid.UUID) error {
 	)
 }
 
-func (mr *MongoRepository) UserCancel(id, userID uuid.UUID) error {
+func (mr *MongoRepository) UserCancel(id, userID value_object.UUID) error {
 	return mr.mongoCollection.PatchByID(
 		id,
 		mongodb.NewUpdater().

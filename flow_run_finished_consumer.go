@@ -2,8 +2,7 @@ package bloc
 
 import (
 	"github.com/fBloc/bloc-backend-go/event"
-
-	"github.com/google/uuid"
+	"github.com/fBloc/bloc-backend-go/value_object"
 )
 
 // FlowTaskConsumer 接收到flow完成的任务，若是arr_flow，继续发布下一层的arr_flow的任务
@@ -23,7 +22,7 @@ func (blocApp *BlocApp) FlowTaskFinishedConsumer() {
 	for flowRunFinishedEvent := range flowRunFinishedEventChan {
 		flowRunRecordStr := flowRunFinishedEvent.Identity()
 		logger.Infof("> FlowRunFinishedConsumer flow_run_record__id %s finished", flowRunRecordStr)
-		flowRunRecordUuid, err := uuid.Parse(flowRunRecordStr)
+		flowRunRecordUuid, err := value_object.ParseToUUID(flowRunRecordStr)
 		if err != nil {
 			// TODO 不应该panic
 			panic(err)

@@ -4,8 +4,7 @@ import (
 	"time"
 
 	"github.com/fBloc/bloc-backend-go/internal/util"
-
-	"github.com/google/uuid"
+	"github.com/fBloc/bloc-backend-go/value_object"
 )
 
 var salt = "may the force be with you"
@@ -18,7 +17,7 @@ func ChangeSalt(userSalt string) {
 }
 
 type User struct {
-	ID          uuid.UUID
+	ID          value_object.UUID
 	Name        string
 	RaWPassword string
 	Password    string
@@ -28,7 +27,7 @@ type User struct {
 
 func NewUser(name, rawPassword string, isSuper bool) User {
 	return User{
-		ID:          uuid.New(),
+		ID:          value_object.NewUUID(),
 		Name:        name,
 		RaWPassword: rawPassword,
 		Password:    encodePassword(rawPassword),
@@ -41,7 +40,7 @@ func (u *User) IsZero() bool {
 	if u == nil {
 		return true
 	}
-	return u.ID == uuid.Nil
+	return u.ID.IsNil()
 }
 
 func encodePassword(rawPassword string) string {

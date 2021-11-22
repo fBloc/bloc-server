@@ -7,8 +7,7 @@ import (
 	"github.com/fBloc/bloc-backend-go/pkg/function_developer_implement"
 	"github.com/fBloc/bloc-backend-go/pkg/ipt"
 	"github.com/fBloc/bloc-backend-go/pkg/opt"
-
-	"github.com/google/uuid"
+	"github.com/fBloc/bloc-backend-go/value_object"
 )
 
 type FunctionGroup struct {
@@ -49,7 +48,7 @@ func (functionGroup *FunctionGroup) AddFunction(
 		panic(err)
 	}
 	if sameIns.IsZero() {
-		aggFunction.ID = uuid.New()
+		aggFunction.ID = value_object.NewUUID()
 		err = funcRepo.Create(&aggFunction)
 		if err != nil {
 			panic(err)
@@ -59,7 +58,7 @@ func (functionGroup *FunctionGroup) AddFunction(
 	}
 
 	if functionGroup.blocApp.functionRepoIDMapExecuteFunction == nil {
-		functionGroup.blocApp.functionRepoIDMapExecuteFunction = make(map[uuid.UUID]function_developer_implement.FunctionDeveloperImplementInterface)
+		functionGroup.blocApp.functionRepoIDMapExecuteFunction = make(map[value_object.UUID]function_developer_implement.FunctionDeveloperImplementInterface)
 	}
 	functionGroup.blocApp.functionRepoIDMapExecuteFunction[aggFunction.ID] = userImplementedFunc
 	functionGroup.Functions = append(functionGroup.Functions, &aggFunction)

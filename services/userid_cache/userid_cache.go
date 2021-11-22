@@ -9,8 +9,7 @@ import (
 	"github.com/fBloc/bloc-backend-go/infrastructure/log"
 	"github.com/fBloc/bloc-backend-go/repository/user"
 	mongoUser "github.com/fBloc/bloc-backend-go/repository/user/mongo"
-
-	"github.com/google/uuid"
+	"github.com/fBloc/bloc-backend-go/value_object"
 )
 
 type UserConfiguration func(us *UserCacheService) error
@@ -65,12 +64,12 @@ func WithLogger(logger log.Logger) UserConfiguration {
 }
 
 type localCache struct {
-	userIDMapUser map[uuid.UUID]aggregate.User
+	userIDMapUser map[value_object.UUID]aggregate.User
 	sync.Mutex
 }
 
 var cache = &localCache{
-	userIDMapUser: make(map[uuid.UUID]aggregate.User),
+	userIDMapUser: make(map[value_object.UUID]aggregate.User),
 }
 
 func (us *UserCacheService) initialCache() {
@@ -78,14 +77,14 @@ func (us *UserCacheService) initialCache() {
 	if err != nil {
 		panic(err)
 	}
-	tmp := make(map[uuid.UUID]aggregate.User, len(allUsers))
+	tmp := make(map[value_object.UUID]aggregate.User, len(allUsers))
 	for _, i := range allUsers {
 		tmp[i.ID] = i
 	}
 	cache.userIDMapUser = tmp
 }
 
-func (us *UserCacheService) visitRepositoryByID(id uuid.UUID) (aggregate.User, error) {
+func (us *UserCacheService) visitRepositoryByID(id value_object.UUID) (aggregate.User, error) {
 	resp, err := us.user.GetByID(id)
 	if err != nil {
 		return aggregate.User{}, err
@@ -100,7 +99,7 @@ func (us *UserCacheService) visitRepositoryByID(id uuid.UUID) (aggregate.User, e
 	return *resp, nil
 }
 
-func (us *UserCacheService) GetUserByID(id uuid.UUID) (aggregate.User, error) {
+func (us *UserCacheService) GetUserByID(id value_object.UUID) (aggregate.User, error) {
 	if userIns, ok := cache.userIDMapUser[id]; ok {
 		return userIns, nil
 	}
@@ -111,7 +110,7 @@ func (us *UserCacheService) GetUserByIDString(id string) (aggregate.User, error)
 	if id == "" {
 		return aggregate.User{}, errors.New("id cannot be blank string")
 	}
-	uid, err := uuid.Parse(id)
+	uid, err := value_object.ParseToUUID(id)
 	if err != nil {
 		return aggregate.User{}, err
 	}

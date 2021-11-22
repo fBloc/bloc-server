@@ -10,7 +10,6 @@ import (
 	"github.com/fBloc/bloc-backend-go/internal/filter_options"
 	"github.com/fBloc/bloc-backend-go/value_object"
 
-	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/fBloc/bloc-backend-go/internal/util"
@@ -121,8 +120,8 @@ func NewCollection(
 }
 
 // GetByID get by id
-func (c *Collection) GetByID(id uuid.UUID, resultPointer interface{}) error {
-	if id == uuid.Nil {
+func (c *Collection) GetByID(id value_object.UUID, resultPointer interface{}) error {
+	if id.IsNil() {
 		return errors.New("id cannot be blank string")
 	}
 	return c.Get(NewFilter().AddEqual("id", id), &filter_options.FilterOption{}, resultPointer)
@@ -276,7 +275,7 @@ func (c *Collection) FindOneOrInsert(
 }
 
 // PatchByID partially update a doc, only update ipt fields
-func (c *Collection) PatchByID(id uuid.UUID, mSetter *MongoUpdater) error {
+func (c *Collection) PatchByID(id value_object.UUID, mSetter *MongoUpdater) error {
 	return c.Patch(NewFilter().AddEqual("id", id), mSetter)
 }
 
@@ -286,7 +285,7 @@ func (c *Collection) Patch(mFilter *MongoFilter, mSetter *MongoUpdater) error {
 }
 
 // UpdateByID require full doc, replace all except id
-func (c *Collection) ReplaceByID(id uuid.UUID, insertData interface{}) error {
+func (c *Collection) ReplaceByID(id value_object.UUID, insertData interface{}) error {
 	_, err := c.collection.ReplaceOne(
 		context.TODO(),
 		NewFilter().AddEqual("id", id).filter,
@@ -295,8 +294,8 @@ func (c *Collection) ReplaceByID(id uuid.UUID, insertData interface{}) error {
 }
 
 // DeleteByID delete
-func (c *Collection) DeleteByID(id uuid.UUID) (int64, error) {
-	if id == uuid.Nil {
+func (c *Collection) DeleteByID(id value_object.UUID) (int64, error) {
+	if id.IsNil() {
 		return 0, nil
 	}
 

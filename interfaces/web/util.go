@@ -3,12 +3,12 @@ package web
 import (
 	"errors"
 
-	"github.com/google/uuid"
+	"github.com/fBloc/bloc-backend-go/value_object"
 )
 
-func ParseStrValueToGoogleUUID(key, value string) (uuid.UUID, error) {
+func ParseStrValueToUUID(key, value string) (value_object.UUID, error) {
 	if value == "" {
-		return uuid.Nil, errors.New(key + " cannot be blank")
+		return value_object.NillUUID, errors.New(key + " cannot be blank")
 	}
-	return uuid.Parse(value)
+	return value_object.ParseToUUID(value)
 }

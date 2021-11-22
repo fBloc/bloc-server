@@ -6,8 +6,8 @@ import (
 
 	"github.com/fBloc/bloc-backend-go/interfaces/web"
 	"github.com/fBloc/bloc-backend-go/interfaces/web/req_context"
+	"github.com/fBloc/bloc-backend-go/value_object"
 
-	"github.com/google/uuid"
 	"github.com/julienschmidt/httprouter"
 )
 
@@ -130,7 +130,7 @@ func SetExecuteControlAttributes(w http.ResponseWriter, r *http.Request, _ httpr
 	}
 
 	// > id不能为空
-	if reqFlow.ID == uuid.Nil {
+	if reqFlow.ID.IsNil() {
 		web.WriteBadRequestDataResp(&w, "must have id field")
 		return
 	}
@@ -211,7 +211,7 @@ func DeleteFlowByOriginID(w http.ResponseWriter, r *http.Request, ps httprouter.
 	if originID == "" {
 		web.WriteBadRequestDataResp(&w, "origin_id param must exist")
 	}
-	uuOriginID, err := uuid.Parse(originID)
+	uuOriginID, err := value_object.ParseToUUID(originID)
 	if err != nil {
 		web.WriteBadRequestDataResp(&w,
 			"parse origin_id to uuid failed:", err.Error())

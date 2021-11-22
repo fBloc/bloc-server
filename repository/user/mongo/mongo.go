@@ -8,8 +8,8 @@ import (
 	"github.com/fBloc/bloc-backend-go/internal/conns/mongodb"
 	"github.com/fBloc/bloc-backend-go/internal/filter_options"
 	"github.com/fBloc/bloc-backend-go/repository/user"
+	"github.com/fBloc/bloc-backend-go/value_object"
 
-	"github.com/google/uuid"
 	"github.com/pkg/errors"
 )
 
@@ -37,11 +37,11 @@ func New(
 }
 
 type mongoUser struct {
-	ID         uuid.UUID `bson:"id"`
-	Name       string    `bson:"name"`
-	Password   string    `bson:"password"` // 加密的password
-	CreateTime time.Time `bson:"create_time"`
-	IsSuper    bool      `bson:"is_super"`
+	ID         value_object.UUID `bson:"id"`
+	Name       string            `bson:"name"`
+	Password   string            `bson:"password"` // 加密的password
+	CreateTime time.Time         `bson:"create_time"`
+	IsSuper    bool              `bson:"is_super"`
 }
 
 func (m mongoUser) ToAggregate() *aggregate.User {
@@ -113,7 +113,7 @@ func (mr *MongoRepository) GetByName(
 	return user.ToAggregate(), nil
 }
 
-func (mr *MongoRepository) GetByID(id uuid.UUID) (*aggregate.User, error) {
+func (mr *MongoRepository) GetByID(id value_object.UUID) (*aggregate.User, error) {
 	var user mongoUser
 	err := mr.mongoCollection.GetByID(id, &user)
 	if err != nil {
@@ -122,11 +122,11 @@ func (mr *MongoRepository) GetByID(id uuid.UUID) (*aggregate.User, error) {
 	return user.ToAggregate(), nil
 }
 
-func (mr *MongoRepository) PatchName(id uuid.UUID, name string) error {
+func (mr *MongoRepository) PatchName(id value_object.UUID, name string) error {
 	updater := mongodb.NewUpdater().AddSet("name", name)
 	return mr.mongoCollection.PatchByID(id, updater)
 }
 
-func (mr *MongoRepository) DeleteByID(id uuid.UUID) (int64, error) {
+func (mr *MongoRepository) DeleteByID(id value_object.UUID) (int64, error) {
 	return mr.mongoCollection.DeleteByID(id)
 }

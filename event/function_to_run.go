@@ -3,7 +3,7 @@ package event
 import (
 	"encoding/json"
 
-	"github.com/google/uuid"
+	"github.com/fBloc/bloc-backend-go/value_object"
 )
 
 func init() {
@@ -11,7 +11,7 @@ func init() {
 }
 
 type FunctionToRun struct {
-	FunctionRunRecordID uuid.UUID
+	FunctionRunRecordID value_object.UUID
 }
 
 func (event *FunctionToRun) Topic() string {

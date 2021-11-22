@@ -4,9 +4,8 @@ import (
 	"github.com/fBloc/bloc-backend-go/aggregate"
 	"github.com/fBloc/bloc-backend-go/internal/json_date"
 	"github.com/fBloc/bloc-backend-go/services/function_run_record"
+	"github.com/fBloc/bloc-backend-go/value_object"
 	"github.com/spf13/cast"
-
-	"github.com/google/uuid"
 )
 
 var fRRService *function_run_record.FunctionRunRecordService
@@ -23,13 +22,13 @@ type briefAndKey struct {
 }
 
 type FunctionRunRecord struct {
-	ID                          uuid.UUID              `json:"id"`
-	FlowID                      uuid.UUID              `json:"flow_id"`
-	FlowOriginID                uuid.UUID              `json:"flow_origin_id"`
+	ID                          value_object.UUID      `json:"id"`
+	FlowID                      value_object.UUID      `json:"flow_id"`
+	FlowOriginID                value_object.UUID      `json:"flow_origin_id"`
 	ArrangementFlowID           string                 `json:"arrangement_flow_id"`
-	FunctionID                  uuid.UUID              `json:"function_id"`
+	FunctionID                  value_object.UUID      `json:"function_id"`
 	FlowFunctionID              string                 `json:"flow_function_id"`
-	FlowRunRecordID             uuid.UUID              `json:"flow_run_record_id"`
+	FlowRunRecordID             value_object.UUID      `json:"flow_run_record_id"`
 	Start                       json_date.JsonDate     `json:"start"`
 	End                         json_date.JsonDate     `json:"end"`
 	Suc                         bool                   `json:"suc"`

@@ -8,8 +8,7 @@ import (
 	"github.com/fBloc/bloc-backend-go/internal/conns/mongodb"
 	"github.com/fBloc/bloc-backend-go/internal/filter_options"
 	"github.com/fBloc/bloc-backend-go/repository/function_execute_heartbeat"
-
-	"github.com/google/uuid"
+	"github.com/fBloc/bloc-backend-go/value_object"
 )
 
 const (
@@ -36,10 +35,10 @@ func New(
 }
 
 type mongoFunctionExecuteHeartBeat struct {
-	ID                  uuid.UUID `bson:"id"`
-	FunctionRunRecordID uuid.UUID `bson:"function_run_record_id"`
-	StartTime           time.Time `bson:"start_time`
-	LatestHeartbeatTime time.Time `bson:"latest_heartbeat_time"`
+	ID                  value_object.UUID `bson:"id"`
+	FunctionRunRecordID value_object.UUID `bson:"function_run_record_id"`
+	StartTime           time.Time         `bson:"start_time`
+	LatestHeartbeatTime time.Time         `bson:"latest_heartbeat_time"`
 }
 
 func (m *mongoFunctionExecuteHeartBeat) ToAggregate() *aggregate.FunctionExecuteHeartBeat {
@@ -68,7 +67,7 @@ func (mr *MongoRepository) Create(
 }
 
 func (mr *MongoRepository) GetByID(
-	id uuid.UUID,
+	id value_object.UUID,
 ) (*aggregate.FunctionExecuteHeartBeat, error) {
 	var m mongoFunctionExecuteHeartBeat
 	err := mr.mongoCollection.GetByID(id, &m)
@@ -97,14 +96,14 @@ func (mr *MongoRepository) AllDeads() ([]*aggregate.FunctionExecuteHeartBeat, er
 }
 
 func (mr *MongoRepository) AliveReport(
-	id uuid.UUID,
+	id value_object.UUID,
 ) error {
 	updater := mongodb.NewUpdater().AddSet("latest_heartbeat_time", time.Now())
 	return mr.mongoCollection.PatchByID(id, updater)
 }
 
 func (mr *MongoRepository) Delete(
-	id uuid.UUID,
+	id value_object.UUID,
 ) (int64, error) {
 	return mr.mongoCollection.Delete(
 		mongodb.NewFilter().AddEqual("id", id))

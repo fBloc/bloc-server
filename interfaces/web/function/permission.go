@@ -7,7 +7,7 @@ import (
 
 	"github.com/fBloc/bloc-backend-go/interfaces/web"
 	"github.com/fBloc/bloc-backend-go/interfaces/web/req_context"
-	"github.com/google/uuid"
+	"github.com/fBloc/bloc-backend-go/value_object"
 )
 
 type FunctionPermissionType int
@@ -27,8 +27,8 @@ func (fP *FunctionPermissionType) IsValid() bool {
 
 type PermissionReq struct {
 	PermissionType FunctionPermissionType `json:"permission_type"`
-	FunctionID     uuid.UUID              `json:"function_id"`
-	UserID         uuid.UUID              `json:"user_id"`
+	FunctionID     value_object.UUID      `json:"function_id"`
+	UserID         value_object.UUID      `json:"user_id"`
 }
 
 func BuildPermissionReqAndCheck(
@@ -40,7 +40,7 @@ func BuildPermissionReqAndCheck(
 		web.WriteBadRequestDataResp(w, "not valid json data："+err.Error())
 		return nil
 	}
-	if req.FunctionID == uuid.Nil {
+	if req.FunctionID.IsNil() {
 		web.WriteBadRequestDataResp(w, "must have function_id")
 		return nil
 	}

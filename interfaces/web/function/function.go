@@ -5,8 +5,8 @@ import (
 	"github.com/fBloc/bloc-backend-go/pkg/ipt"
 	"github.com/fBloc/bloc-backend-go/pkg/opt"
 	"github.com/fBloc/bloc-backend-go/services/function"
+	"github.com/fBloc/bloc-backend-go/value_object"
 
-	"github.com/google/uuid"
 	"github.com/pkg/errors"
 )
 
@@ -33,7 +33,7 @@ func MakeSureAllUserImplementFunctionsInRepository(
 		if !sameCoreIns.IsZero() { // 已经在存储层了，修改对应的ID
 			functions[index].ID = sameCoreIns.ID
 		} else { // 不在存储层，持久化之
-			functions[index].ID = uuid.New()
+			functions[index].ID = value_object.NewUUID()
 			err := fService.Function.Create(aggFunction)
 			if err != nil {
 				return errors.Wrap(err,
@@ -45,12 +45,12 @@ func MakeSureAllUserImplementFunctionsInRepository(
 }
 
 type Function struct {
-	ID          uuid.UUID    `json:"id"`
-	Name        string       `json:"name"`
-	GroupName   string       `json:"group_name"`
-	Description string       `json:"description"`
-	Ipt         ipt.IptSlice `json:"ipt"`
-	Opt         []*opt.Opt   `json:"opt"`
+	ID          value_object.UUID `json:"id"`
+	Name        string            `json:"name"`
+	GroupName   string            `json:"group_name"`
+	Description string            `json:"description"`
+	Ipt         ipt.IptSlice      `json:"ipt"`
+	Opt         []*opt.Opt        `json:"opt"`
 }
 
 func newFunctionFromAgg(aggF *aggregate.Function) *Function {

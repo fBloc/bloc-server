@@ -27,6 +27,7 @@ import (
 	funcRunRec_repository "github.com/fBloc/bloc-backend-go/repository/function_run_record"
 	mongo_funcRunRecord "github.com/fBloc/bloc-backend-go/repository/function_run_record/mongo"
 	mongo_user "github.com/fBloc/bloc-backend-go/repository/user/mongo"
+	"github.com/fBloc/bloc-backend-go/value_object"
 
 	"fmt"
 	"net"
@@ -35,8 +36,6 @@ import (
 
 	"github.com/fBloc/bloc-backend-go/infrastructure/mq/rabbit"
 	user_repository "github.com/fBloc/bloc-backend-go/repository/user"
-
-	"github.com/google/uuid"
 )
 
 type DefaultUserConfig struct {
@@ -174,8 +173,8 @@ func (congbder *ConfigBuilder) BuildUp() {
 type BlocApp struct {
 	Name                             string // 构建的项目名称
 	FunctionGroups                   []FunctionGroup
-	functionRepoIDMapFunction        map[uuid.UUID]aggregate.Function
-	functionRepoIDMapExecuteFunction map[uuid.UUID]function_developer_implement.FunctionDeveloperImplementInterface
+	functionRepoIDMapFunction        map[value_object.UUID]aggregate.Function
+	functionRepoIDMapExecuteFunction map[value_object.UUID]function_developer_implement.FunctionDeveloperImplementInterface
 	configBuilder                    *ConfigBuilder
 	httpServerLogger                 log.Logger
 	consumerLogger                   log.Logger
@@ -479,9 +478,9 @@ func (bA *BlocApp) GetOrCreateConsumerObjectStorage() object_storage.ObjectStora
 	return bA.consumerObjectStorage
 }
 
-func (bA *BlocApp) GetFunctionByRepoID(functionRepoID uuid.UUID) aggregate.Function {
+func (bA *BlocApp) GetFunctionByRepoID(functionRepoID value_object.UUID) aggregate.Function {
 	if bA.functionRepoIDMapFunction == nil {
-		bA.functionRepoIDMapFunction = make(map[uuid.UUID]aggregate.Function)
+		bA.functionRepoIDMapFunction = make(map[value_object.UUID]aggregate.Function)
 	}
 	if ins, ok := bA.functionRepoIDMapFunction[functionRepoID]; ok {
 		return ins
@@ -492,7 +491,7 @@ func (bA *BlocApp) GetFunctionByRepoID(functionRepoID uuid.UUID) aggregate.Funct
 		panic(err)
 	}
 
-	tmp := make(map[uuid.UUID]aggregate.Function, len(allFunctions))
+	tmp := make(map[value_object.UUID]aggregate.Function, len(allFunctions))
 	for _, i := range allFunctions {
 		tmp[i.ID] = *i
 	}
@@ -505,7 +504,7 @@ func (bA *BlocApp) GetFunctionByRepoID(functionRepoID uuid.UUID) aggregate.Funct
 }
 
 func (bA *BlocApp) GetExecuteFunctionByRepoID(
-	functionRepoID uuid.UUID,
+	functionRepoID value_object.UUID,
 ) function_developer_implement.FunctionDeveloperImplementInterface {
 	return bA.functionRepoIDMapExecuteFunction[functionRepoID]
 }

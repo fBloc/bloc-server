@@ -12,8 +12,6 @@ import (
 	"github.com/fBloc/bloc-backend-go/value_object"
 
 	"github.com/fBloc/bloc-backend-go/aggregate"
-
-	"github.com/google/uuid"
 )
 
 const (
@@ -40,18 +38,18 @@ func New(
 }
 
 type mongoFunction struct {
-	ID                      uuid.UUID    `bson:"id"`
-	Name                    string       `bson:"name"`
-	GroupName               string       `bson:"group_name"`
-	Description             string       `bson:"description"`
-	Ipts                    ipt.IptSlice `bson:"ipts"`
-	Opts                    []*opt.Opt   `bson:"opts"`
-	IptDigest               string       `bson:"ipt_digest"`
-	OptDigest               string       `bson:"opt_digest"`
-	ProcessStages           []string     `bson:"process_stages"`
-	ReadUserIDs             []uuid.UUID  `bson:"read_user_ids"`
-	ExecuteUserIDs          []uuid.UUID  `bson:"execute_user_ids"`
-	AssignPermissionUserIDs []uuid.UUID  `bson:"assign_permission_user_ids"`
+	ID                      value_object.UUID   `bson:"id"`
+	Name                    string              `bson:"name"`
+	GroupName               string              `bson:"group_name"`
+	Description             string              `bson:"description"`
+	Ipts                    ipt.IptSlice        `bson:"ipts"`
+	Opts                    []*opt.Opt          `bson:"opts"`
+	IptDigest               string              `bson:"ipt_digest"`
+	OptDigest               string              `bson:"opt_digest"`
+	ProcessStages           []string            `bson:"process_stages"`
+	ReadUserIDs             []value_object.UUID `bson:"read_user_ids"`
+	ExecuteUserIDs          []value_object.UUID `bson:"execute_user_ids"`
+	AssignPermissionUserIDs []value_object.UUID `bson:"assign_permission_user_ids"`
 }
 
 func (m *mongoFunction) ToAggregate() *aggregate.Function {
@@ -109,13 +107,13 @@ func (mr *MongoRepository) All() ([]*aggregate.Function, error) {
 	return ret, nil
 }
 
-func (mr *MongoRepository) IDMapFunctionAll() (map[uuid.UUID]*aggregate.Function, error) {
+func (mr *MongoRepository) IDMapFunctionAll() (map[value_object.UUID]*aggregate.Function, error) {
 	var m []mongoFunction
 	err := mr.mongoCollection.Filter(nil, nil, &m)
 	if err != nil {
 		return nil, err
 	}
-	ret := make(map[uuid.UUID]*aggregate.Function, len(m))
+	ret := make(map[value_object.UUID]*aggregate.Function, len(m))
 	for _, i := range m {
 		ret[i.ID] = i.ToAggregate()
 	}
@@ -123,7 +121,7 @@ func (mr *MongoRepository) IDMapFunctionAll() (map[uuid.UUID]*aggregate.Function
 }
 
 func (mr *MongoRepository) GetByID(
-	id uuid.UUID,
+	id value_object.UUID,
 ) (*aggregate.Function, error) {
 	var m mongoFunction
 	err := mr.mongoCollection.GetByID(id, &m)
@@ -148,23 +146,23 @@ func (mr *MongoRepository) GetSameIptOptFunction(
 	return m.ToAggregate(), nil
 }
 
-func (mr *MongoRepository) PatchName(id uuid.UUID, name string) error {
+func (mr *MongoRepository) PatchName(id value_object.UUID, name string) error {
 	updater := mongodb.NewUpdater().AddSet("name", name)
 	return mr.mongoCollection.PatchByID(id, updater)
 }
 
-func (mr *MongoRepository) PatchDescription(id uuid.UUID, desc string) error {
+func (mr *MongoRepository) PatchDescription(id value_object.UUID, desc string) error {
 	updater := mongodb.NewUpdater().AddSet("description", desc)
 	return mr.mongoCollection.PatchByID(id, updater)
 }
 
-func (mr *MongoRepository) PatchGroupName(id uuid.UUID, groupName string) error {
+func (mr *MongoRepository) PatchGroupName(id value_object.UUID, groupName string) error {
 	updater := mongodb.NewUpdater().AddSet("group_name", groupName)
 	return mr.mongoCollection.PatchByID(id, updater)
 }
 
 func (mr *MongoRepository) userOperation(
-	id, userID uuid.UUID, permType value_object.PermissionType, aod add_or_del.AddOrDel,
+	id, userID value_object.UUID, permType value_object.PermissionType, aod add_or_del.AddOrDel,
 ) error {
 	var roleStr string
 	if permType == value_object.Read {
@@ -186,25 +184,25 @@ func (mr *MongoRepository) userOperation(
 	return mr.mongoCollection.PatchByID(id, updater)
 }
 
-func (mr *MongoRepository) AddReader(id, userID uuid.UUID) error {
+func (mr *MongoRepository) AddReader(id, userID value_object.UUID) error {
 	return mr.userOperation(id, userID, value_object.Read, add_or_del.Add)
 }
-func (mr *MongoRepository) RemoveReader(id, userID uuid.UUID) error {
+func (mr *MongoRepository) RemoveReader(id, userID value_object.UUID) error {
 	return mr.userOperation(id, userID, value_object.Read, add_or_del.Remove)
 }
 
-func (mr *MongoRepository) AddExecuter(id, userID uuid.UUID) error {
+func (mr *MongoRepository) AddExecuter(id, userID value_object.UUID) error {
 	return mr.userOperation(id, userID, value_object.Execute, add_or_del.Add)
 }
 
-func (mr *MongoRepository) RemoveExecuter(id, userID uuid.UUID) error {
+func (mr *MongoRepository) RemoveExecuter(id, userID value_object.UUID) error {
 	return mr.userOperation(id, userID, value_object.Execute, add_or_del.Remove)
 }
 
-func (mr *MongoRepository) AddAssigner(id, userID uuid.UUID) error {
+func (mr *MongoRepository) AddAssigner(id, userID value_object.UUID) error {
 	return mr.userOperation(id, userID, value_object.AssignPermission, add_or_del.Add)
 }
 
-func (mr *MongoRepository) RemoveAssigner(id, userID uuid.UUID) error {
+func (mr *MongoRepository) RemoveAssigner(id, userID value_object.UUID) error {
 	return mr.userOperation(id, userID, value_object.AssignPermission, add_or_del.Remove)
 }

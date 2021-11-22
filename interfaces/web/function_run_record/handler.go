@@ -4,8 +4,8 @@ import (
 	"net/http"
 
 	"github.com/fBloc/bloc-backend-go/interfaces/web"
+	"github.com/fBloc/bloc-backend-go/value_object"
 
-	"github.com/google/uuid"
 	"github.com/julienschmidt/httprouter"
 )
 
@@ -15,7 +15,7 @@ func Get(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		web.WriteBadRequestDataResp(&w, "id cannot be null")
 		return
 	}
-	uuID, err := uuid.Parse(id)
+	uuID, err := value_object.ParseToUUID(id)
 	if err != nil {
 		web.WriteBadRequestDataResp(&w, "parse id to uuid failed")
 		return

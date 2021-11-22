@@ -9,8 +9,6 @@ import (
 	"github.com/fBloc/bloc-backend-go/pkg/value_type"
 	"github.com/fBloc/bloc-backend-go/services/flow"
 	"github.com/fBloc/bloc-backend-go/value_object"
-
-	"github.com/google/uuid"
 )
 
 var fService *flow.FlowService
@@ -51,7 +49,7 @@ type IptComponentConfig struct {
 }
 
 type FlowFunction struct {
-	FunctionID                uuid.UUID              `json:"function_id"`
+	FunctionID                value_object.UUID      `json:"function_id"`
 	Note                      string                 `json:"note"`
 	Position                  interface{}            `json:"position"`
 	UpstreamFlowFunctionIDs   []string               `json:"upstream_flowfunction_ids"`
@@ -85,13 +83,13 @@ func (flowFunc FlowFunction) formatToAggFlowFunction() *aggregate.FlowFunction {
 }
 
 type Flow struct {
-	ID                            uuid.UUID                `json:"id"`
+	ID                            value_object.UUID        `json:"id"`
 	Name                          string                   `json:"name"`
 	IsDraft                       bool                     `json:"is_draft"`
 	Version                       uint                     `json:"version"`
-	OriginID                      uuid.UUID                `json:"origin_id"`
+	OriginID                      value_object.UUID        `json:"origin_id"`
 	Newest                        bool                     `json:"newest"`
-	CreateUserID                  uuid.UUID                `json:"create_user_id,omitempty"`
+	CreateUserID                  value_object.UUID        `json:"create_user_id,omitempty"`
 	CreateUserName                string                   `json:"create_user_name"`
 	CreateTime                    json_date.JsonDate       `json:"create_time"`
 	Position                      interface{}              `json:"position"`
@@ -235,7 +233,7 @@ func fromAggWithLatestRunFunctionView(aggF *aggregate.Flow, reqUser *aggregate.U
 
 		for flowFuncID, functionRunRecordID := range latestFlowRunRecord.FlowFuncIDMapFuncRunRecordID {
 			go func(
-				flowFuncID string, functionRunRecordID uuid.UUID,
+				flowFuncID string, functionRunRecordID value_object.UUID,
 				retChan chan funcRunState, wg *sync.WaitGroup,
 			) {
 				defer wg.Done()

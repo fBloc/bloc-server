@@ -2,8 +2,7 @@ package user
 
 import (
 	"github.com/fBloc/bloc-backend-go/aggregate"
-
-	"github.com/google/uuid"
+	"github.com/fBloc/bloc-backend-go/value_object"
 )
 
 type UserRepository interface {
@@ -12,13 +11,13 @@ type UserRepository interface {
 
 	// read
 	GetByName(name string) (*aggregate.User, error)
-	GetByID(id uuid.UUID) (*aggregate.User, error)
+	GetByID(id value_object.UUID) (*aggregate.User, error)
 	All() (users []aggregate.User, err error)
 	FilterByNameContains(nameContains string) (users []aggregate.User, err error)
 
 	// update
-	PatchName(id uuid.UUID, name string) error
+	PatchName(id value_object.UUID, name string) error
 
 	// delete
-	DeleteByID(id uuid.UUID) (int64, error)
+	DeleteByID(id value_object.UUID) (int64, error)
 }

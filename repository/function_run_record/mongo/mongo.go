@@ -14,8 +14,6 @@ import (
 	"github.com/fBloc/bloc-backend-go/internal/filter_options"
 	"github.com/fBloc/bloc-backend-go/repository/function_run_record"
 	"github.com/fBloc/bloc-backend-go/value_object"
-
-	"github.com/google/uuid"
 )
 
 const (
@@ -47,13 +45,13 @@ type mongoIptBriefAndKey struct {
 }
 
 type mongoFunctionRunRecord struct {
-	ID                uuid.UUID               `bson:"id"`
-	FlowID            uuid.UUID               `bson:"flow_id"`
-	FlowOriginID      uuid.UUID               `bson:"flow_origin_id"`
+	ID                value_object.UUID       `bson:"id"`
+	FlowID            value_object.UUID       `bson:"flow_id"`
+	FlowOriginID      value_object.UUID       `bson:"flow_origin_id"`
 	ArrangementFlowID string                  `bson:"arrangement_flow_id"`
-	FunctionID        uuid.UUID               `bson:"function_id"`
+	FunctionID        value_object.UUID       `bson:"function_id"`
 	FlowFunctionID    string                  `bson:"flow_function_id"`
-	FlowRunRecordID   uuid.UUID               `bson:"flow_run_record_id"`
+	FlowRunRecordID   value_object.UUID       `bson:"flow_run_record_id"`
 	Start             time.Time               `bson:"start"`
 	End               time.Time               `bson:"end,omitempty"`
 	Suc               bool                    `bson:"suc"`
@@ -160,7 +158,7 @@ func (mr *MongoRepository) get(filter *mongodb.MongoFilter) (*aggregate.Function
 }
 
 func (mr *MongoRepository) GetByID(
-	id uuid.UUID,
+	id value_object.UUID,
 ) (*aggregate.FunctionRunRecord, error) {
 	return mr.get(mongodb.NewFilter().AddEqual("id", id))
 }
@@ -225,7 +223,7 @@ func (mr *MongoRepository) Filter(
 }
 
 func (mr *MongoRepository) FilterByFlowRunRecordID(
-	FlowRunRecordID uuid.UUID,
+	FlowRunRecordID value_object.UUID,
 ) ([]*aggregate.FunctionRunRecord, error) {
 	var mRRRs []mongoFunctionRunRecord
 	err := mr.mongoCollection.Filter(
@@ -244,32 +242,32 @@ func (mr *MongoRepository) FilterByFlowRunRecordID(
 }
 
 // Update
-func (mr *MongoRepository) PatchProgress(id uuid.UUID, progress float32) error {
+func (mr *MongoRepository) PatchProgress(id value_object.UUID, progress float32) error {
 	return mr.mongoCollection.PatchByID(
 		id,
 		mongodb.NewUpdater().AddSet("progress", progress))
 }
 
-func (mr *MongoRepository) PatchProgressMsg(id uuid.UUID, progressMsg string) error {
+func (mr *MongoRepository) PatchProgressMsg(id value_object.UUID, progressMsg string) error {
 	return mr.mongoCollection.PatchByID(
 		id,
 		mongodb.NewUpdater().AddSet("progress_msg", progressMsg))
 }
 
-func (mr *MongoRepository) PatchStageIndex(id uuid.UUID, progressStageIndex int) error {
+func (mr *MongoRepository) PatchStageIndex(id value_object.UUID, progressStageIndex int) error {
 	return mr.mongoCollection.PatchByID(
 		id,
 		mongodb.NewUpdater().AddSet("process_stage_index", progressStageIndex))
 }
 
-func (mr *MongoRepository) PatchProgressStages(id uuid.UUID, progressStages []string) error {
+func (mr *MongoRepository) PatchProgressStages(id value_object.UUID, progressStages []string) error {
 	return mr.mongoCollection.PatchByID(
 		id,
 		mongodb.NewUpdater().AddSet("process_stages", progressStages))
 }
 
 func (mr *MongoRepository) SaveIptBrief(
-	id uuid.UUID, ipts [][]interface{},
+	id value_object.UUID, ipts [][]interface{},
 	objectStorageImplement object_storage.ObjectStorage,
 ) error {
 	iptBAOk := make([][]mongoIptBriefAndKey, len(ipts), len(ipts))
@@ -299,7 +297,7 @@ func (mr *MongoRepository) SaveIptBrief(
 }
 
 // ClearProgress 清空进度相关的字段
-func (mr *MongoRepository) ClearProgress(id uuid.UUID) error {
+func (mr *MongoRepository) ClearProgress(id value_object.UUID) error {
 	return mr.mongoCollection.PatchByID(
 		id,
 		mongodb.NewUpdater().
@@ -311,7 +309,7 @@ func (mr *MongoRepository) ClearProgress(id uuid.UUID) error {
 }
 
 func (mr *MongoRepository) SaveSuc(
-	id uuid.UUID,
+	id value_object.UUID,
 	desc string, opt map[string]interface{}, brief map[string]string, pass bool,
 ) error {
 	return mr.mongoCollection.PatchByID(
@@ -326,7 +324,7 @@ func (mr *MongoRepository) SaveSuc(
 }
 
 func (mr *MongoRepository) SaveFail(
-	id uuid.UUID, errMsg string,
+	id value_object.UUID, errMsg string,
 ) error {
 	return mr.mongoCollection.PatchByID(
 		id,
@@ -336,7 +334,7 @@ func (mr *MongoRepository) SaveFail(
 }
 
 func (mr *MongoRepository) SaveCancel(
-	id uuid.UUID,
+	id value_object.UUID,
 ) error {
 	return mr.mongoCollection.PatchByID(
 		id,

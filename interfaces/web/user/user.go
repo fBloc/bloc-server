@@ -8,8 +8,7 @@ import (
 	"github.com/fBloc/bloc-backend-go/interfaces/web"
 	"github.com/fBloc/bloc-backend-go/internal/json_date"
 	"github.com/fBloc/bloc-backend-go/services/user"
-
-	"github.com/google/uuid"
+	"github.com/fBloc/bloc-backend-go/value_object"
 )
 
 var uService *user.UserService
@@ -39,8 +38,8 @@ func InitialUserExistOrCreate(
 type User struct {
 	Name        string             `json:"name"`
 	RaWPassword string             `json:"password"`
-	Token       uuid.UUID          `json:"token,omitempty"`
-	ID          uuid.UUID          `json:"id,omitempty"`
+	Token       value_object.UUID  `json:"token,omitempty"`
+	ID          value_object.UUID  `json:"id,omitempty"`
 	CreateTime  json_date.JsonDate `json:"create_time"`
 	IsSuper     bool               `json:"super"`
 }

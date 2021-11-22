@@ -12,13 +12,11 @@ import (
 	"github.com/fBloc/bloc-backend-go/pkg/value_type"
 	function_execute_heartbeat_repository "github.com/fBloc/bloc-backend-go/repository/function_execute_heartbeat"
 	"github.com/fBloc/bloc-backend-go/value_object"
-
-	"github.com/google/uuid"
 )
 
 func reportHeartBeat(
 	heartBeatRepo function_execute_heartbeat_repository.FunctionExecuteHeartbeatRepository,
-	heartBeatRecordID uuid.UUID,
+	heartBeatRecordID value_object.UUID,
 	done chan bool) {
 	ticker := time.NewTicker(aggregate.HeartBeatReportInterval)
 	defer ticker.Stop()
@@ -54,7 +52,7 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 
 	for functionToRunEvent := range funcToRunEventChan {
 		functionRunRecordIDStr := functionToRunEvent.Identity()
-		funcRunRecordUuid, err := uuid.Parse(functionRunRecordIDStr)
+		funcRunRecordUuid, err := value_object.ParseToUUID(functionRunRecordIDStr)
 		if err != nil {
 			// TODO 不应该panic
 			panic(err)
@@ -86,7 +84,7 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 		flowRunRecordIns, err := flowRunRecordRepo.GetByID(functionRecordIns.FlowRunRecordID)
 		flowFuncIDMapFuncRunRecordID := flowRunRecordIns.FlowFuncIDMapFuncRunRecordID
 		if flowFuncIDMapFuncRunRecordID == nil {
-			flowFuncIDMapFuncRunRecordID = make(map[string]uuid.UUID)
+			flowFuncIDMapFuncRunRecordID = make(map[string]value_object.UUID)
 		}
 
 		// 装配bloc_history对应bloc的IPT

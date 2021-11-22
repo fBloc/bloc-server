@@ -9,8 +9,7 @@ import (
 	minioLog "github.com/fBloc/bloc-backend-go/infrastructure/log/minio"
 	"github.com/fBloc/bloc-backend-go/repository/user"
 	mongoUser "github.com/fBloc/bloc-backend-go/repository/user/mongo"
-
-	"github.com/google/uuid"
+	"github.com/fBloc/bloc-backend-go/value_object"
 )
 
 type UserConfiguration func(us *UserService) error
@@ -113,8 +112,8 @@ func (u *UserService) AddUser(name, rawPassword string, isSuper bool) error {
 	return u.user.Create(aggregate.NewUser(name, rawPassword, isSuper))
 }
 
-func (u *UserService) DeleteUserByID(id uuid.UUID) (int64, error) {
-	if id == uuid.Nil {
+func (u *UserService) DeleteUserByID(id value_object.UUID) (int64, error) {
+	if id.IsNil() {
 		return 0, nil
 	}
 	return u.user.DeleteByID(id)
@@ -124,7 +123,7 @@ func (u *UserService) DeleteUserByIDString(id string) (int64, error) {
 	if id == "" {
 		return 0, nil
 	}
-	uuidFromStr, err := uuid.Parse(id)
+	uuidFromStr, err := value_object.ParseToUUID(id)
 	if err != nil {
 		return 0, errors.New("id not valid")
 	}

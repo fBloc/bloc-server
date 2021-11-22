@@ -3,7 +3,7 @@ package aggregate
 import (
 	"time"
 
-	"github.com/google/uuid"
+	"github.com/fBloc/bloc-backend-go/value_object"
 )
 
 const (
@@ -12,17 +12,17 @@ const (
 )
 
 type FunctionExecuteHeartBeat struct {
-	ID                  uuid.UUID
-	FunctionRunRecordID uuid.UUID
+	ID                  value_object.UUID
+	FunctionRunRecordID value_object.UUID
 	StartTime           time.Time
 	LatestHeartbeatTime time.Time
 }
 
 func NewFunctionExecuteHeartBeat(
-	functionRunRecordID uuid.UUID,
+	functionRunRecordID value_object.UUID,
 ) *FunctionExecuteHeartBeat {
 	return &FunctionExecuteHeartBeat{
-		ID:                  uuid.New(),
+		ID:                  value_object.NewUUID(),
 		FunctionRunRecordID: functionRunRecordID,
 		StartTime:           time.Now(),
 		LatestHeartbeatTime: time.Now(),
@@ -33,7 +33,7 @@ func (beb *FunctionExecuteHeartBeat) IsZero() bool {
 	if beb == nil {
 		return true
 	}
-	return beb.ID == uuid.Nil
+	return beb.ID.IsNil()
 }
 
 func (beb *FunctionExecuteHeartBeat) IsTimeout(thresholdInSecond float64) bool {

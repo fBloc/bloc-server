@@ -8,8 +8,8 @@ import (
 	"github.com/fBloc/bloc-backend-go/config"
 	"github.com/fBloc/bloc-backend-go/interfaces/web"
 	"github.com/fBloc/bloc-backend-go/interfaces/web/req_context"
+	"github.com/fBloc/bloc-backend-go/value_object"
 
-	"github.com/google/uuid"
 	"github.com/julienschmidt/httprouter"
 )
 
@@ -19,7 +19,7 @@ func GetDraftByOriginID(w http.ResponseWriter, r *http.Request, ps httprouter.Pa
 		web.WriteBadRequestDataResp(&w, "origin_id cannot be blank")
 		return
 	}
-	originUUID, err := uuid.Parse(originID)
+	originUUID, err := value_object.ParseToUUID(originID)
 	if err != nil {
 		web.WriteBadRequestDataResp(&w, "cannot parse origin_id to uuid")
 		return
@@ -90,7 +90,7 @@ func CreateDraft(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	// 保存, 特别说明：这里没有检测OriginID是否为空是因为
 	// 1. 若为空：表示新建
 	// 2. 不为空：表示创建的已有flow的修改
-	if reqFlow.OriginID != uuid.Nil {
+	if !reqFlow.OriginID.IsNil() {
 		arr, err := fService.Flow.GetDraftByOriginID(reqFlow.OriginID)
 		if err != nil {
 			web.WriteInternalServerErrorResp(&w, err, "GetDraftByOriginID error")
@@ -131,7 +131,7 @@ func CreateDraft(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 func PubDraft(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	// 从传入获取id
 	draftFlowID := ps.ByName("id")
-	draftFlowUUID, err := web.ParseStrValueToGoogleUUID("id", draftFlowID)
+	draftFlowUUID, err := web.ParseStrValueToUUID("id", draftFlowID)
 	if err != nil {
 		web.WriteBadRequestDataResp(&w, err.Error())
 		return
@@ -221,7 +221,7 @@ func UpdateDraft(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	}
 
 	// > id不能为空
-	if reqFlow.ID == uuid.Nil {
+	if reqFlow.ID.IsNil() {
 		web.WriteBadRequestDataResp(&w, "must have id field")
 		return
 	}
@@ -286,7 +286,7 @@ func DeleteDraftByOriginID(w http.ResponseWriter, r *http.Request, ps httprouter
 	if originID == "" {
 		web.WriteBadRequestDataResp(&w, "origin_id param must exist")
 	}
-	uuOriginID, err := uuid.Parse(originID)
+	uuOriginID, err := value_object.ParseToUUID(originID)
 	if err != nil {
 		web.WriteBadRequestDataResp(&w,
 			"parse origin_id to uuid failed:", err.Error())

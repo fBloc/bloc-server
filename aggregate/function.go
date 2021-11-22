@@ -4,12 +4,11 @@ import (
 	"github.com/fBloc/bloc-backend-go/pkg/function_developer_implement"
 	"github.com/fBloc/bloc-backend-go/pkg/ipt"
 	"github.com/fBloc/bloc-backend-go/pkg/opt"
-
-	"github.com/google/uuid"
+	"github.com/fBloc/bloc-backend-go/value_object"
 )
 
 type Function struct {
-	ID            uuid.UUID
+	ID            value_object.UUID
 	Name          string
 	GroupName     string
 	Description   string
@@ -20,9 +19,9 @@ type Function struct {
 	ProcessStages []string
 	ExeFunc       function_developer_implement.FunctionDeveloperImplementInterface
 	// 用于权限
-	ReadUserIDs             []uuid.UUID
-	ExecuteUserIDs          []uuid.UUID
-	AssignPermissionUserIDs []uuid.UUID
+	ReadUserIDs             []value_object.UUID
+	ExecuteUserIDs          []value_object.UUID
+	AssignPermissionUserIDs []value_object.UUID
 }
 
 func (f *Function) CoreString() string {
@@ -33,7 +32,7 @@ func (f *Function) IsZero() bool {
 	if f == nil {
 		return true
 	}
-	return f.ID == uuid.Nil
+	return f.ID.IsNil()
 }
 
 func (f *Function) String() string {
