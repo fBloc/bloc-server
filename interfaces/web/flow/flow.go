@@ -312,27 +312,32 @@ func fromAggSliceWithLatestRun(aggFs []aggregate.Flow, reqUser *aggregate.User) 
 	if len(aggFs) <= 0 {
 		return []*Flow{}
 	}
-	respChan := make(chan *Flow, len(aggFs))
+	type orderedFlow struct {
+		*Flow
+		flowIndex int
+	}
+
+	flowChan := make(chan *orderedFlow, len(aggFs))
 	wGroup := sync.WaitGroup{}
 	wGroup.Add(len(aggFs))
 
-	for _, aggF := range aggFs {
-		go func(wg *sync.WaitGroup, aF aggregate.Flow, retChan chan *Flow) {
+	for index, aggF := range aggFs {
+		go func(wg *sync.WaitGroup, index int, aF aggregate.Flow, flowChan chan *orderedFlow) {
 			defer wg.Done()
 			retFlow := fromAggWithLatestRunFlowView(&aF, reqUser)
 			if retFlow.IsZero() {
 				return
 			}
-			retChan <- retFlow
-		}(&wGroup, aggF, respChan)
+			flowChan <- &orderedFlow{flowIndex: index, Flow: retFlow}
+		}(&wGroup, index, aggF, flowChan)
 	}
 
 	wGroup.Wait()
-	close(respChan)
+	close(flowChan)
 
-	ret := make([]*Flow, 0, len(aggFs))
-	for f := range respChan {
-		ret = append(ret, f)
+	ret := make([]*Flow, len(aggFs))
+	for orderedFlow := range flowChan {
+		ret[orderedFlow.flowIndex] = orderedFlow.Flow
 	}
 
 	return ret
@@ -344,9 +349,9 @@ func fromAggSlice(aggFs []aggregate.Flow, reqUser *aggregate.User) []*Flow {
 		return []*Flow{}
 	}
 
-	ret := make([]*Flow, 0, len(aggFs))
-	for _, aggF := range aggFs {
-		ret = append(ret, fromAgg(&aggF, reqUser))
+	ret := make([]*Flow, len(aggFs))
+	for index, aggF := range aggFs {
+		ret[index] = fromAgg(&aggF, reqUser)
 	}
 
 	return ret
