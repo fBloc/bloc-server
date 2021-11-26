@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/fBloc/bloc-backend-go/infrastructure/log"
-	minioLog "github.com/fBloc/bloc-backend-go/infrastructure/log/minio"
 	"github.com/fBloc/bloc-backend-go/repository/flow_run_record"
 	mongoFRRC "github.com/fBloc/bloc-backend-go/repository/flow_run_record/mongo"
 	user_cache "github.com/fBloc/bloc-backend-go/services/userid_cache"
@@ -13,7 +12,7 @@ import (
 type FlowRunRecordConfiguration func(fRRS *FlowRunRecordService) error
 
 type FlowRunRecordService struct {
-	logger           log.Logger
+	logger           *log.Logger
 	UserCacheService *user_cache.UserCacheService
 	FlowRunRecord    flow_run_record.FlowRunRecordRepository
 }
@@ -40,18 +39,9 @@ func WithUserCacheService(
 	}
 }
 
-func WithLogger(logger log.Logger) FlowRunRecordConfiguration {
+func WithLogger(logger *log.Logger) FlowRunRecordConfiguration {
 	return func(us *FlowRunRecordService) error {
 		us.logger = logger
-		return nil
-	}
-}
-
-func WithMinioLogger(
-	name string, bucketName string, addresses []string, key, password string,
-) FlowRunRecordConfiguration {
-	return func(us *FlowRunRecordService) error {
-		us.logger = minioLog.New(name, bucketName, addresses, key, password)
 		return nil
 	}
 }

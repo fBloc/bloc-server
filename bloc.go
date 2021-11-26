@@ -8,7 +8,8 @@ import (
 	"github.com/fBloc/bloc-backend-go/event"
 	mongo_futureEventStorage "github.com/fBloc/bloc-backend-go/event/mongo_event_storage"
 	"github.com/fBloc/bloc-backend-go/infrastructure/log"
-	minio_log "github.com/fBloc/bloc-backend-go/infrastructure/log/minio"
+	"github.com/fBloc/bloc-backend-go/infrastructure/log_collect_backend"
+	minio_logBackend "github.com/fBloc/bloc-backend-go/infrastructure/log_collect_backend/minio"
 	"github.com/fBloc/bloc-backend-go/infrastructure/mq"
 	"github.com/fBloc/bloc-backend-go/infrastructure/object_storage"
 	minioInf "github.com/fBloc/bloc-backend-go/infrastructure/object_storage/minio"
@@ -176,8 +177,9 @@ type BlocApp struct {
 	functionRepoIDMapFunction        map[value_object.UUID]aggregate.Function
 	functionRepoIDMapExecuteFunction map[value_object.UUID]function_developer_implement.FunctionDeveloperImplementInterface
 	configBuilder                    *ConfigBuilder
-	httpServerLogger                 log.Logger
-	consumerLogger                   log.Logger
+	httpServerLogger                 *log.Logger
+	consumerLogger                   *log.Logger
+	logBackEnd                       log_collect_backend.LogBackEnd
 	userRepository                   user_repository.UserRepository
 	flowRepository                   flow_repository.FlowRepository
 	functionRepository               function_repository.FunctionRepository
@@ -241,50 +243,60 @@ func (bA *BlocApp) RegisterFunctionGroup(name string) *FunctionGroup {
 	return &functionGroup
 }
 
-func (bA *BlocApp) GetOrCreateHttpLogger() log.Logger {
-	if bA.httpServerLogger != nil {
-		return bA.httpServerLogger
+func (bA *BlocApp) GetOrCreateLogBackEnd() log_collect_backend.LogBackEnd {
+	if bA.logBackEnd != nil {
+		return bA.logBackEnd
 	}
-	bA.Lock()
-	defer bA.Unlock()
 
-	minioLogger := minio_log.New(
-		bA.Name+"-http_server",
+	bA.logBackEnd = minio_logBackend.New(
 		bA.configBuilder.minioConf.BucketName,
 		bA.configBuilder.minioConf.Addresses,
 		bA.configBuilder.minioConf.AccessKey,
 		bA.configBuilder.minioConf.AccessPassword)
+	return bA.logBackEnd
+}
 
-	bA.httpServerLogger = minioLogger
-	// bA.consumerLogger = console_log.New()
+func (bA *BlocApp) GetOrCreateHttpLogger() *log.Logger {
+	bA.Lock()
+	defer bA.Unlock()
+	if !bA.httpServerLogger.IsZero() {
+		return bA.httpServerLogger
+	}
+
+	bA.httpServerLogger = log.New(
+		value_object.HttpServerLog.String(),
+		bA.GetOrCreateLogBackEnd())
 	return bA.httpServerLogger
 }
 
-func (bA *BlocApp) GetOrCreateConsumerLogger() log.Logger {
-	if bA.consumerLogger != nil {
-		return bA.consumerLogger
-	}
+func (bA *BlocApp) GetOrCreateConsumerLogger() *log.Logger {
 	bA.Lock()
 	defer bA.Unlock()
+	if !bA.consumerLogger.IsZero() {
+		return bA.consumerLogger
+	}
 
-	minioLogger := minio_log.New(
-		bA.Name+"-consumer",
-		bA.configBuilder.minioConf.BucketName,
-		bA.configBuilder.minioConf.Addresses,
-		bA.configBuilder.minioConf.AccessKey,
-		bA.configBuilder.minioConf.AccessPassword)
-
-	bA.consumerLogger = minioLogger
-	// bA.consumerLogger = console_log.New()
+	logBackEnd := bA.GetOrCreateLogBackEnd()
+	logger := log.New(
+		value_object.ConsumerLog.String(),
+		logBackEnd)
+	bA.consumerLogger = logger
 	return bA.consumerLogger
 }
 
+func (bA *BlocApp) CreateFunctionRunLogger(funcRunRecordID value_object.UUID) *log.Logger {
+	logBackEnd := bA.GetOrCreateLogBackEnd()
+	return log.New(
+		value_object.FuncRunRecordLog.String()+"-"+funcRunRecordID.String(),
+		logBackEnd)
+}
+
 func (bA *BlocApp) GetOrCreateUserRepository() user_repository.UserRepository {
+	bA.Lock()
+	defer bA.Unlock()
 	if bA.userRepository != nil {
 		return bA.userRepository
 	}
-	bA.Lock()
-	defer bA.Unlock()
 
 	ur, err := mongo_user.New(
 		context.Background(),
@@ -304,11 +316,11 @@ func (bA *BlocApp) GetOrCreateUserRepository() user_repository.UserRepository {
 }
 
 func (bA *BlocApp) GetOrCreateFlowRepository() flow_repository.FlowRepository {
+	bA.Lock()
+	defer bA.Unlock()
 	if bA.flowRepository != nil {
 		return bA.flowRepository
 	}
-	bA.Lock()
-	defer bA.Unlock()
 
 	fr, err := mongo_flow.New(
 		context.Background(),
@@ -328,11 +340,11 @@ func (bA *BlocApp) GetOrCreateFlowRepository() flow_repository.FlowRepository {
 }
 
 func (bA *BlocApp) GetOrCreateFunctionRepository() function_repository.FunctionRepository {
+	bA.Lock()
+	defer bA.Unlock()
 	if bA.functionRepository != nil {
 		return bA.functionRepository
 	}
-	bA.Lock()
-	defer bA.Unlock()
 
 	fR, err := mongo_func.New(
 		context.Background(),
@@ -352,11 +364,11 @@ func (bA *BlocApp) GetOrCreateFunctionRepository() function_repository.FunctionR
 }
 
 func (bA *BlocApp) GetOrCreateFunctionRunRecordRepository() funcRunRec_repository.FunctionRunRecordRepository {
+	bA.Lock()
+	defer bA.Unlock()
 	if bA.functionRunRecordRepository != nil {
 		return bA.functionRunRecordRepository
 	}
-	bA.Lock()
-	defer bA.Unlock()
 
 	fR, err := mongo_funcRunRecord.New(
 		context.Background(),
@@ -376,11 +388,11 @@ func (bA *BlocApp) GetOrCreateFunctionRunRecordRepository() funcRunRec_repositor
 }
 
 func (bA *BlocApp) GetOrCreateFlowRunRecordRepository() flowRunRecord_repository.FlowRunRecordRepository {
+	bA.Lock()
+	defer bA.Unlock()
 	if bA.flowRunRecordRepository != nil {
 		return bA.flowRunRecordRepository
 	}
-	bA.Lock()
-	defer bA.Unlock()
 
 	fR, err := mongo_flowRunRecord.New(
 		context.Background(),
@@ -400,11 +412,11 @@ func (bA *BlocApp) GetOrCreateFlowRunRecordRepository() flowRunRecord_repository
 }
 
 func (bA *BlocApp) GetOrCreateFuncRunHBeatRepository() function_execute_heartbeat_repository.FunctionExecuteHeartbeatRepository {
+	bA.Lock()
+	defer bA.Unlock()
 	if bA.functionExecuteHBeatRepository != nil {
 		return bA.functionExecuteHBeatRepository
 	}
-	bA.Lock()
-	defer bA.Unlock()
 
 	fR, err := mongo_funcRunHBeat.New(
 		context.Background(),
@@ -424,11 +436,11 @@ func (bA *BlocApp) GetOrCreateFuncRunHBeatRepository() function_execute_heartbea
 }
 
 func (bA *BlocApp) GetOrCreateEventMQ() mq.MsgQueue {
+	bA.Lock()
+	defer bA.Unlock()
 	if bA.eventMQ != nil {
 		return bA.eventMQ
 	}
-	bA.Lock()
-	defer bA.Unlock()
 
 	rabbitMQ := rabbit.InitChannel(bA.configBuilder.RabbitConf)
 	bA.eventMQ = rabbitMQ
@@ -437,11 +449,11 @@ func (bA *BlocApp) GetOrCreateEventMQ() mq.MsgQueue {
 }
 
 func (bA *BlocApp) GetOrCreateFutureEventStorage() event.FuturePubEventStorage {
+	bA.Lock()
+	defer bA.Unlock()
 	if bA.futureEventStorage != nil {
 		return bA.futureEventStorage
 	}
-	bA.Lock()
-	defer bA.Unlock()
 
 	mongoStorage, err := mongo_futureEventStorage.New(
 		context.Background(),
@@ -461,11 +473,11 @@ func (bA *BlocApp) GetOrCreateFutureEventStorage() event.FuturePubEventStorage {
 }
 
 func (bA *BlocApp) GetOrCreateConsumerObjectStorage() object_storage.ObjectStorage {
+	bA.Lock()
+	defer bA.Unlock()
 	if bA.consumerObjectStorage != nil {
 		return bA.consumerObjectStorage
 	}
-	bA.Lock()
-	defer bA.Unlock()
 
 	minioOS := minioInf.New(
 		bA.configBuilder.minioConf.Addresses,

@@ -77,7 +77,15 @@ func (oSMR *ObjectStorageMinioRepository) GetPartial(key string, amount int64) (
 	return data, nil
 }
 
-func (oSMR *ObjectStorageMinioRepository) ListObjectKeys(filter value_object.ObjectStorageKeyFilter) ([]string, error) {
-	// TODO
-	return []string{}, nil
+func (oSMR *ObjectStorageMinioRepository) ListObjectKeys(
+	filter value_object.ObjectStorageKeyFilter,
+) ([]string, error) {
+	respChan := oSMR.client.ListObjects(
+		context.Background(), oSMR.bucketName, minio.ListObjectsOptions{Prefix: filter.StartWith},
+	)
+	var ret []string
+	for resp := range respChan {
+		ret = append(ret, resp.Key)
+	}
+	return ret, nil
 }

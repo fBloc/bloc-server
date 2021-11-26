@@ -15,7 +15,7 @@ import (
 type UserConfiguration func(us *UserCacheService) error
 
 type UserCacheService struct {
-	logger log.Logger
+	logger *log.Logger
 	user   user.UserRepository
 }
 
@@ -56,7 +56,7 @@ func WithUser(uR user.UserRepository) UserConfiguration {
 	}
 }
 
-func WithLogger(logger log.Logger) UserConfiguration {
+func WithLogger(logger *log.Logger) UserConfiguration {
 	return func(us *UserCacheService) error {
 		us.logger = logger
 		return nil

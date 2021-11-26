@@ -6,7 +6,6 @@ import (
 
 	"github.com/fBloc/bloc-backend-go/aggregate"
 	"github.com/fBloc/bloc-backend-go/infrastructure/log"
-	minioLog "github.com/fBloc/bloc-backend-go/infrastructure/log/minio"
 	"github.com/fBloc/bloc-backend-go/repository/user"
 	mongoUser "github.com/fBloc/bloc-backend-go/repository/user/mongo"
 	"github.com/fBloc/bloc-backend-go/value_object"
@@ -15,7 +14,7 @@ import (
 type UserConfiguration func(us *UserService) error
 
 type UserService struct {
-	logger log.Logger
+	logger *log.Logger
 	user   user.UserRepository
 }
 
@@ -52,19 +51,9 @@ func WithMongoUserRepository(hosts []string, port int, db, user, password string
 	}
 }
 
-func WithLogger(logger log.Logger) UserConfiguration {
+func WithLogger(logger *log.Logger) UserConfiguration {
 	return func(us *UserService) error {
 		us.logger = logger
-		return nil
-	}
-}
-
-func WithMinioLogger(
-	name string, bucketName string,
-	addresses []string, key, password string,
-) UserConfiguration {
-	return func(us *UserService) error {
-		us.logger = minioLog.New(name, bucketName, addresses, key, password)
 		return nil
 	}
 }

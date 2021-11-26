@@ -5,7 +5,6 @@ import (
 
 	"github.com/fBloc/bloc-backend-go/aggregate"
 	"github.com/fBloc/bloc-backend-go/infrastructure/log"
-	minioLog "github.com/fBloc/bloc-backend-go/infrastructure/log/minio"
 	flow_repo "github.com/fBloc/bloc-backend-go/repository/flow"
 	mongo_flow "github.com/fBloc/bloc-backend-go/repository/flow/mongo"
 	"github.com/fBloc/bloc-backend-go/repository/flow_run_record"
@@ -20,7 +19,7 @@ import (
 type FlowConfiguration func(fs *FlowService) error
 
 type FlowService struct {
-	logger            log.Logger
+	logger            *log.Logger
 	Flow              flow_repo.FlowRepository
 	FlowRunRecord     flow_run_record.FlowRunRecordRepository
 	Function          function.FunctionRepository
@@ -39,7 +38,7 @@ func NewFlowService(cfgs ...FlowConfiguration) (*FlowService, error) {
 	return fs, nil
 }
 
-func WithLogger(logger log.Logger) FlowConfiguration {
+func WithLogger(logger *log.Logger) FlowConfiguration {
 	return func(fs *FlowService) error {
 		fs.logger = logger
 		return nil
@@ -126,15 +125,6 @@ func WithFunctionRepository(
 ) FlowConfiguration {
 	return func(fs *FlowService) error {
 		fs.Function = f
-		return nil
-	}
-}
-
-func WithMinioLogger(
-	name string, bucketName string, addresses []string, key, password string,
-) FlowConfiguration {
-	return func(fs *FlowService) error {
-		fs.logger = minioLog.New(name, bucketName, addresses, key, password)
 		return nil
 	}
 }

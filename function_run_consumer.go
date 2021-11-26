@@ -210,8 +210,9 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 		var funcRunOpt *value_object.FunctionRunOpt
 		ctx := context.Background()
 		ctx, cancelFunctionExecute := context.WithCancel(ctx)
+		funcRunRecordLogger := blocApp.CreateFunctionRunLogger(funcRunRecordUuid)
 		go func() {
-			executeFunc.Run(ctx, functionIns.Ipts, progressReportChan, functionRunOptChan)
+			executeFunc.Run(ctx, functionIns.Ipts, progressReportChan, functionRunOptChan, funcRunRecordLogger)
 		}()
 		for {
 			select {
@@ -253,6 +254,7 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 		cancelFunctionExecute()
 		close(progressReportChan)
 		cancelCheckTimer.Stop()
+		funcRunRecordLogger.ForceUpload()
 		done <- true
 		if funcRunOpt.Suc { // 若运行成功，需要将每个输出保存到oss中
 			logger.Infof("|----> function run record id %s suc", functionRunRecordIDStr)
@@ -326,7 +328,6 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 							// TODO
 						}
 						if !functionRunRecordIns.Finished() {
-							fmt.Println("2")
 							flowFinished = false
 							break
 						}

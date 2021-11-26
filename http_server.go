@@ -9,6 +9,7 @@ import (
 	"github.com/fBloc/bloc-backend-go/interfaces/web/flow_run_record"
 	"github.com/fBloc/bloc-backend-go/interfaces/web/function"
 	"github.com/fBloc/bloc-backend-go/interfaces/web/function_run_record"
+	"github.com/fBloc/bloc-backend-go/interfaces/web/log_data"
 	"github.com/fBloc/bloc-backend-go/interfaces/web/middleware"
 	"github.com/fBloc/bloc-backend-go/interfaces/web/object_storage"
 	"github.com/fBloc/bloc-backend-go/interfaces/web/user"
@@ -26,13 +27,12 @@ import (
 func (blocApp *BlocApp) RunHttpServer() {
 	router := httprouter.New()
 
-	httpLogger := blocApp.GetOrCreateHttpLogger()
-
+	httpConsumer := blocApp.GetOrCreateHttpLogger()
 	// TODO 放这里合适吗？
 	event.InjectMq(blocApp.GetOrCreateEventMQ())
 
 	uCacheService, err := user_cache.NewUserCacheService(
-		user_cache.WithLogger(httpLogger),
+		user_cache.WithLogger(httpConsumer),
 		user_cache.WithUser(blocApp.GetOrCreateUserRepository()),
 	)
 	if err != nil {
@@ -46,7 +46,7 @@ func (blocApp *BlocApp) RunHttpServer() {
 	{
 		// initial relied services
 		userService, err := user_service.NewUserService(
-			user_service.WithLogger(blocApp.GetOrCreateHttpLogger()),
+			user_service.WithLogger(httpConsumer),
 			user_service.WithUserRepository(blocApp.GetOrCreateUserRepository()))
 		if err != nil {
 			panic(err)
@@ -70,7 +70,7 @@ func (blocApp *BlocApp) RunHttpServer() {
 	{
 		// initial relied services
 		funcService, err := function_service.NewFunctionService(
-			function_service.WithLogger(httpLogger),
+			function_service.WithLogger(httpConsumer),
 			function_service.WithFunctionRepository(
 				blocApp.GetOrCreateFunctionRepository()),
 			function_service.WithUserCacheService(uCacheService),
@@ -103,7 +103,7 @@ func (blocApp *BlocApp) RunHttpServer() {
 	// function_run_record
 	{
 		fRRS, err := functionRunRecord_service.NewService(
-			functionRunRecord_service.WithLogger(httpLogger),
+			functionRunRecord_service.WithLogger(httpConsumer),
 			functionRunRecord_service.WithFunctionRunRecordRepository(
 				blocApp.GetOrCreateFunctionRunRecordRepository()),
 			functionRunRecord_service.WithUserCacheService(uCacheService),
@@ -123,7 +123,7 @@ func (blocApp *BlocApp) RunHttpServer() {
 	{
 		// initial relied services
 		flowService, err := flow_service.NewFlowService(
-			flow_service.WithLogger(httpLogger),
+			flow_service.WithLogger(httpConsumer),
 			flow_service.WithFlowRepository(
 				blocApp.GetOrCreateFlowRepository(),
 			),
@@ -194,7 +194,7 @@ func (blocApp *BlocApp) RunHttpServer() {
 	{
 		// initial relied services
 		flowRunRecordService, err := flowRunRecord_service.NewService(
-			flowRunRecord_service.WithLogger(httpLogger),
+			flowRunRecord_service.WithLogger(httpConsumer),
 			flowRunRecord_service.WithFlowRunRecordRepository(
 				blocApp.GetOrCreateFlowRunRecordRepository()),
 			flowRunRecord_service.WithUserCacheService(uCacheService),
@@ -217,6 +217,17 @@ func (blocApp *BlocApp) RunHttpServer() {
 		{
 			basicPath := "/api/v1/object_storage"
 			router.GET(basicPath+"/get_string_value_by_key/:key", object_storage.GetValueByKeyReturnString)
+		}
+	}
+
+	// log
+	{
+		log_data.InjectLogCollectBackend(
+			blocApp.GetOrCreateLogBackEnd(),
+		)
+		{
+			basicPath := "/api/v1/log"
+			router.POST(basicPath+"/pull_log_between_time", log_data.PullLog)
 		}
 	}
 

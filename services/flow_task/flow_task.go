@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/fBloc/bloc-backend-go/infrastructure/log"
-	minioLog "github.com/fBloc/bloc-backend-go/infrastructure/log/minio"
 	"github.com/fBloc/bloc-backend-go/repository/flow"
 	mongoFlow "github.com/fBloc/bloc-backend-go/repository/flow/mongo"
 	"github.com/fBloc/bloc-backend-go/repository/flow_run_record"
@@ -23,15 +22,6 @@ type FlowTaskService struct {
 func WithLogger(logger log.Logger) FlowTaskConfiguration {
 	return func(fts *FlowTaskService) error {
 		fts.logger = logger
-		return nil
-	}
-}
-
-func WithMinioLogger(
-	name string, bucketName string, addresses []string, key, password string,
-) FlowTaskConfiguration {
-	return func(fts *FlowTaskService) error {
-		fts.logger = minioLog.New(name, bucketName, addresses, key, password)
 		return nil
 	}
 }

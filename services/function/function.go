@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/fBloc/bloc-backend-go/infrastructure/log"
-	minioLog "github.com/fBloc/bloc-backend-go/infrastructure/log/minio"
 	"github.com/fBloc/bloc-backend-go/repository/function"
 	mongoFunc "github.com/fBloc/bloc-backend-go/repository/function/mongo"
 	user_cache "github.com/fBloc/bloc-backend-go/services/userid_cache"
@@ -13,7 +12,7 @@ import (
 type FunctionConfiguration func(fs *FunctionService) error
 
 type FunctionService struct {
-	logger           log.Logger
+	logger           *log.Logger
 	Function         function.FunctionRepository
 	UserCacheService *user_cache.UserCacheService
 }
@@ -31,18 +30,9 @@ func NewFunctionService(
 	return fs, nil
 }
 
-func WithLogger(logger log.Logger) FunctionConfiguration {
+func WithLogger(logger *log.Logger) FunctionConfiguration {
 	return func(us *FunctionService) error {
 		us.logger = logger
-		return nil
-	}
-}
-
-func WithMinioLogger(
-	name string, bucketName string, addresses []string, key, password string,
-) FunctionConfiguration {
-	return func(fs *FunctionService) error {
-		fs.logger = minioLog.New(name, bucketName, addresses, key, password)
 		return nil
 	}
 }
