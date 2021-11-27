@@ -13,6 +13,7 @@ import (
 type msg struct {
 	Level value_object.LogLevel `json:"level"`
 	Data  string                `json:"data"`
+	Time  time.Time             `json:"time"`
 }
 
 type Logger struct {
@@ -48,6 +49,7 @@ func (
 	defer logger.Unlock()
 
 	logger.data = append(logger.data, &msg{
+		Time:  time.Now(),
 		Level: value_object.Info,
 		Data:  fmt.Sprintf(format, a...),
 	})
@@ -60,6 +62,7 @@ func (
 	defer logger.Unlock()
 
 	logger.data = append(logger.data, &msg{
+		Time:  time.Now(),
 		Level: value_object.Warning,
 		Data:  fmt.Sprintf(format, a...),
 	})
@@ -72,6 +75,7 @@ func (
 	defer logger.Unlock()
 
 	logger.data = append(logger.data, &msg{
+		Time:  time.Now(),
 		Level: value_object.Error,
 		Data:  fmt.Sprintf(format, a...),
 	})
@@ -105,14 +109,14 @@ func (logger *Logger) upload() {
 	defer ticker.Stop()
 
 	for range ticker.C {
-		// if len(logger.data) <= 0 {
-		// 	continue
-		// }
+		if len(logger.data) <= 0 {
+			continue
+		}
 
 		logger.Lock()
 
 		// 上传日志
-		data, err := json.Marshal([]*msg{{Level: value_object.Error, Data: "dddddd"}})
+		data, err := json.Marshal(logger.data)
 		logger.data = logger.data[:0]
 		logger.Unlock()
 

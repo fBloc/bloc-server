@@ -2,18 +2,24 @@ package function_run_record
 
 import (
 	"github.com/fBloc/bloc-backend-go/aggregate"
+	"github.com/fBloc/bloc-backend-go/infrastructure/log_collect_backend"
 	"github.com/fBloc/bloc-backend-go/internal/json_date"
 	"github.com/fBloc/bloc-backend-go/services/function_run_record"
 	"github.com/fBloc/bloc-backend-go/value_object"
 	"github.com/spf13/cast"
 )
 
+var logBackend log_collect_backend.LogBackEnd
 var fRRService *function_run_record.FunctionRunRecordService
 
 func InjectFunctionRunRecordService(
 	fRRS *function_run_record.FunctionRunRecordService,
 ) {
 	fRRService = fRRS
+}
+
+func InjectLogCollectBackend(l log_collect_backend.LogBackEnd) {
+	logBackend = l
 }
 
 type briefAndKey struct {

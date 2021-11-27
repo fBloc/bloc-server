@@ -1,7 +1,7 @@
 package minio
 
 import (
-	"errors"
+	"encoding/json"
 	"fmt"
 	"sort"
 	"strconv"
@@ -41,16 +41,11 @@ func (
 	return backEnd.objectStorage.Set(key, data)
 }
 
-func (backEnd *MinioLogBackendRepository) PullDataBetween(
+func (backEnd *MinioLogBackendRepository) ListKeysBetween(
 	prefixKey string,
 	timeStart, timeEnd time.Time,
 ) ([]string, error) {
-	if !timeStart.Before(timeEnd) {
-		return []string{}, errors.New("time_start is not before time_end")
-	}
-	if timeEnd.Sub(timeStart) > 24*time.Hour {
-		return []string{}, errors.New("not support gap duration > 1 day")
-	}
+	// 构建尽可能精确的prefix
 	startTimeStampStr := strconv.FormatInt(timeStart.Unix(), 10)
 	endTimeStampStr := strconv.FormatInt(timeEnd.Unix(), 10)
 	commonTimePrefix := ""
@@ -64,14 +59,18 @@ func (backEnd *MinioLogBackendRepository) PullDataBetween(
 		}
 		break
 	}
-
 	searchKeysPrefix := prefixKey + "-" + commonTimePrefix
+
+	// 查询出全部的key
 	keys, err := backEnd.objectStorage.ListObjectKeys(
 		value_object.ObjectStorageKeyFilter{
 			StartWith: searchKeysPrefix})
 	if err != nil {
-		return nil, err
+		return []string{}, err
 	}
+
+	// 确保key有序，早的在列表开头
+	// TODO maybe minio return is already sorted？？
 	var validTimeStamps []int64
 	for _, k := range keys {
 		splitedKeys := strings.Split(k, "-")
@@ -91,19 +90,50 @@ func (backEnd *MinioLogBackendRepository) PullDataBetween(
 		validTimeStamps,
 		func(i, j int) bool { return validTimeStamps[i] < validTimeStamps[j] })
 
+	var ret []string
+	for _, i := range validTimeStamps {
+		ret = append(ret, fmt.Sprintf("%s-%d", prefixKey, i))
+	}
+	return ret, nil
+}
+
+func (backEnd *MinioLogBackendRepository) PullDataByKey(
+	key string,
+) ([]interface{}, error) {
+	data, err := backEnd.objectStorage.Get(key)
+	if err != nil {
+		return []interface{}{}, err
+	}
+	var ret []interface{}
+	err = json.Unmarshal(data, &ret)
+	if err != nil {
+		return []interface{}{}, err
+	}
+
+	return ret, nil
+}
+
+func (backEnd *MinioLogBackendRepository) PullDataBetween(
+	prefixKey string,
+	timeStart, timeEnd time.Time,
+) ([]string, error) {
+	sortedLogKeys, err := backEnd.ListKeysBetween(prefixKey, timeStart, timeEnd)
+	if err != nil {
+		return nil, err
+	}
+
 	var wg sync.WaitGroup
-	wg.Add(len(validTimeStamps))
+	wg.Add(len(sortedLogKeys))
 	type respLogByteWithIndex struct {
 		logString string
 		index     int
 	}
-	logSlice := make([]respLogByteWithIndex, 0, len(validTimeStamps))
+	logSlice := make([]respLogByteWithIndex, 0, len(sortedLogKeys))
 	var mu sync.Mutex
-	for index, timeStamp := range validTimeStamps {
-		go func(wg *sync.WaitGroup, index int, timeStamp int64) {
+	for index, key := range sortedLogKeys {
+		go func(wg *sync.WaitGroup, index int, key string) {
 			defer wg.Done()
-			thisLog, err := backEnd.objectStorage.Get(
-				fmt.Sprintf("%s-%d", prefixKey, timeStamp))
+			thisLog, err := backEnd.objectStorage.Get(key)
 			if err != nil {
 				return
 			}
@@ -112,7 +142,7 @@ func (backEnd *MinioLogBackendRepository) PullDataBetween(
 				index:     index,
 				logString: string(thisLog)})
 			defer mu.Unlock()
-		}(&wg, index, timeStamp)
+		}(&wg, index, key)
 	}
 	wg.Wait()
 

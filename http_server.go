@@ -112,11 +112,14 @@ func (blocApp *BlocApp) RunHttpServer() {
 			panic(err)
 		}
 		function_run_record.InjectFunctionRunRecordService(fRRS)
+		function_run_record.InjectLogCollectBackend(blocApp.GetOrCreateLogBackEnd())
 
 		// router
 		basicPath := "/api/v1/function_run_record"
 		router.GET(basicPath, middleware.LoginAuth(function_run_record.Filter))
 		router.GET(basicPath+"/get_by_id/:id", middleware.LoginAuth(function_run_record.Get))
+		router.GET(basicPath+"/list_logkeys_by_id/:id", middleware.LoginAuth(function_run_record.ListLogKeys))
+		router.GET(basicPath+"/get_log_by_logkey/:log_key", middleware.LoginAuth(function_run_record.GetLogByKey))
 	}
 
 	// flow相关
