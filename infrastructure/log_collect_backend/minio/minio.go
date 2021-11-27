@@ -45,12 +45,14 @@ func (backEnd *MinioLogBackendRepository) ListKeysBetween(
 	prefixKey string,
 	timeStart, timeEnd time.Time,
 ) ([]string, error) {
+	// 因为日志后缀精确到秒，故去掉nanosec信息
+	timeStart = time.Date(timeStart.Year(), timeStart.Month(), timeStart.Day(), timeStart.Hour(), timeStart.Minute(), timeStart.Second(), 0, time.UTC)
+	timeEnd = time.Date(timeEnd.Year(), timeEnd.Month(), timeEnd.Day(), timeEnd.Hour(), timeEnd.Minute(), timeEnd.Second(), 0, time.UTC)
 	// 构建尽可能精确的prefix
 	startTimeStampStr := strconv.FormatInt(timeStart.Unix(), 10)
 	endTimeStampStr := strconv.FormatInt(timeEnd.Unix(), 10)
 	commonTimePrefix := ""
-	startIndex, endIndex := 0, 0
-	for {
+	for startIndex, endIndex := 0, 0; startIndex < 10; {
 		if startTimeStampStr[startIndex] == endTimeStampStr[endIndex] {
 			commonTimePrefix += string(startTimeStampStr[startIndex])
 			startIndex++
@@ -79,7 +81,7 @@ func (backEnd *MinioLogBackendRepository) ListKeysBetween(
 		if err != nil {
 			panic(err)
 		}
-		tmp := time.Unix(i, 0)
+		tmp := time.Unix(i, 0).UTC()
 		if tmp.Before(timeStart) || tmp.After(timeEnd) {
 			continue
 		}
