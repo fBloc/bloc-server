@@ -19,7 +19,7 @@ import (
 type FlowConfiguration func(fs *FlowService) error
 
 type FlowService struct {
-	logger            *log.Logger
+	Logger            *log.Logger
 	Flow              flow_repo.FlowRepository
 	FlowRunRecord     flow_run_record.FlowRunRecordRepository
 	Function          function.FunctionRepository
@@ -40,7 +40,7 @@ func NewFlowService(cfgs ...FlowConfiguration) (*FlowService, error) {
 
 func WithLogger(logger *log.Logger) FlowConfiguration {
 	return func(fs *FlowService) error {
-		fs.logger = logger
+		fs.Logger = logger
 		return nil
 	}
 }

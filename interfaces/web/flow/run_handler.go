@@ -44,10 +44,14 @@ func Run(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	aggFlowRunRecord := aggregate.NewUserTriggeredRunRecord(*flowIns, reqUser.ID)
 	err = fService.FlowRunRecord.Create(aggFlowRunRecord)
 	if err != nil {
+		fService.Logger.Errorf("user %s trigger flow run failed. origin_id %s, error: %s",
+			reqUser.Name, flowOriginID, err.Error())
 		web.WriteInternalServerErrorResp(
 			&w, err,
 			"create flow run record to repository failed")
 	}
+	fService.Logger.Infof("user %s triggered flow run. origin_id %s",
+		reqUser.Name, flowOriginID)
 	event.PubEvent(&event.FlowToRun{FlowRunRecordID: aggFlowRunRecord.ID})
 
 	web.WritePlainSucOkResp(&w)
@@ -98,6 +102,8 @@ func CancelRun(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 			return
 		}
 	}
+	fService.Logger.Infof("user %s canceld flow run. origin_id %s",
+		reqUser.Name, flowOriginID)
 
 	web.WritePlainSucOkResp(&w)
 }
