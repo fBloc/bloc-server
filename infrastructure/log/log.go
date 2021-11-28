@@ -137,6 +137,6 @@ func (logger *Logger) upload() {
 
 func (logger *Logger) PullLogBetweenTime(
 	timeStart, timeEnd time.Time,
-) ([]string, error) {
+) ([]interface{}, error) {
 	return logger.logBackend.PullDataBetween(logger.name, timeStart, timeEnd)
 }

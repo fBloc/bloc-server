@@ -118,7 +118,7 @@ func (backEnd *MinioLogBackendRepository) PullDataByKey(
 func (backEnd *MinioLogBackendRepository) PullDataBetween(
 	prefixKey string,
 	timeStart, timeEnd time.Time,
-) ([]string, error) {
+) ([]interface{}, error) {
 	sortedLogKeys, err := backEnd.ListKeysBetween(prefixKey, timeStart, timeEnd)
 	if err != nil {
 		return nil, err
@@ -127,22 +127,23 @@ func (backEnd *MinioLogBackendRepository) PullDataBetween(
 	var wg sync.WaitGroup
 	wg.Add(len(sortedLogKeys))
 	type respLogByteWithIndex struct {
-		logString string
-		index     int
+		logData interface{}
+		index   int
 	}
 	logSlice := make([]respLogByteWithIndex, 0, len(sortedLogKeys))
 	var mu sync.Mutex
 	for index, key := range sortedLogKeys {
 		go func(wg *sync.WaitGroup, index int, key string) {
 			defer wg.Done()
-			thisLog, err := backEnd.objectStorage.Get(key)
+			data, err := backEnd.PullDataByKey(key)
 			if err != nil {
 				return
 			}
 			mu.Lock()
+
 			logSlice = append(logSlice, respLogByteWithIndex{
-				index:     index,
-				logString: string(thisLog)})
+				index:   index,
+				logData: data})
 			defer mu.Unlock()
 		}(&wg, index, key)
 	}
@@ -152,9 +153,9 @@ func (backEnd *MinioLogBackendRepository) PullDataBetween(
 		return logSlice[i].index < logSlice[j].index
 	})
 
-	var resp []string
+	var resp []interface{}
 	for _, j := range logSlice {
-		resp = append(resp, j.logString)
+		resp = append(resp, j.logData)
 	}
 
 	return resp, nil

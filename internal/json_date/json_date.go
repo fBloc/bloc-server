@@ -3,12 +3,13 @@ package json_date
 import (
 	"bytes"
 	"fmt"
+	"strings"
 	"time"
 )
 
 var cstSh, _ = time.LoadLocation("Asia/Shanghai")
 
-const timeFormat = "2006-01-02 15:04:05"
+const timeFormat = time.RFC3339
 
 type JsonDate struct {
 	Time time.Time
@@ -37,8 +38,20 @@ func (t *JsonDate) String() string {
 }
 
 func (t *JsonDate) UnmarshalJSON(b []byte) error {
-	b = bytes.Trim(b, "\"")
-	ext, err := time.ParseInLocation(timeFormat, string(b), cstSh)
+	s := string(bytes.Trim(b, "\""))
+	ext, err := time.Parse(timeFormat, s)
+	if !strings.HasSuffix(s, "Z") {
+		utcGap, err := time.Parse("15:04", s[len(s)-5:])
+		if err != nil {
+			return err
+		}
+
+		if strings.Contains(s, "+") {
+			ext = ext.Add(-time.Duration(utcGap.Hour()) * time.Hour).Add(-time.Duration(utcGap.Second()) * time.Second)
+		} else {
+			ext = ext.Add(time.Duration(utcGap.Hour()) * time.Hour).Add(time.Duration(utcGap.Second()) * time.Second)
+		}
+	}
 	if err != nil {
 		return err
 	}
