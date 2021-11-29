@@ -72,16 +72,6 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 			continue
 		}
 
-		// 开启当前正在运行的function的心跳上报
-		done := make(chan bool)
-		heartBeatIns := aggregate.NewFunctionExecuteHeartBeat(funcRunRecordUuid)
-		err = heartBeatRepo.Create(heartBeatIns)
-		if err != nil {
-			logger.Errorf("create heart_beat failed: %v", err)
-		} else {
-			go reportHeartBeat(heartBeatRepo, funcRunRecordUuid, done)
-		}
-
 		flowIns, err := flowRepo.GetByID(functionRecordIns.FlowID)
 		if err != nil {
 			logger.Errorf(
@@ -89,6 +79,7 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 				functionRecordIns.FlowID.String())
 			continue
 		}
+
 		flowRunRecordIns, err := flowRunRecordRepo.GetByID(functionRecordIns.FlowRunRecordID)
 		if err != nil {
 			logger.Errorf(
@@ -103,6 +94,61 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 
 		// 装配bloc_history对应bloc的IPT
 		flowFunction := flowIns.FlowFunctionIDMapFlowFunction[functionRecordIns.FlowFunctionID]
+		// 需确保所有上游节点都已经运行完成了
+		upstreamAllSucFinished := true
+		upstreamFunctionIntercepted := false
+		for _, i := range flowFunction.UpstreamFlowFunctionIDs {
+			upstreamFunctionRunRecordID, ok := flowRunRecordIns.FlowFuncIDMapFuncRunRecordID[i]
+			if !ok { // 不存在表示没有运行完
+				logger.Infof(
+					"upstream function not run finished. upstream flow_function_id: %s", i)
+				upstreamAllSucFinished = false
+				break
+			}
+			upstreamFunctionRunRecordIns, err := funcRunRecordRepo.GetByID(upstreamFunctionRunRecordID)
+			if err != nil {
+				logger.Errorf(
+					"get upstream function run record ins error:%v. upstream_function_run_record_id: %s",
+					err, upstreamFunctionRunRecordID.String())
+				upstreamAllSucFinished = false
+				break
+			}
+			if upstreamFunctionRunRecordIns.IsZero() {
+				logger.Errorf(
+					"get upstream function run record ins nil. upstream_function_run_record_id: %s",
+					upstreamFunctionRunRecordID.String())
+				upstreamAllSucFinished = false
+				break
+			}
+			if !upstreamFunctionRunRecordIns.Finished() {
+				logger.Infof(
+					"upstream function is not finished. upstream_function_run_record_id: %s",
+					upstreamFunctionRunRecordID.String())
+				upstreamAllSucFinished = false
+				break
+			}
+			if !upstreamFunctionRunRecordIns.Pass {
+				logger.Infof(
+					"upstream function intercepted. breakout. upstream_function_run_record_id: %s",
+					upstreamFunctionRunRecordID.String())
+				upstreamFunctionIntercepted = true
+				break
+			}
+		}
+		if !upstreamAllSucFinished {
+			logger.Infof("upstream not all finished. break out")
+			event.PubEventAtCertainTime(functionToRunEvent, time.Now().Add(5*time.Second))
+			continue
+		}
+		if upstreamFunctionIntercepted {
+			// 上游有节点明确表示拦截了，不能继续往下执行。
+			flowRunRecordRepo.Intercepted(flowRunRecordIns.ID, "TODO")
+			flowRunRecordRepo.Suc(flowRunRecordIns.ID)
+			event.PubEvent(&event.FlowRunFinished{
+				FlowRunRecordID: flowRunRecordIns.ID,
+			})
+			continue
+		}
 		functionIns := blocApp.GetFunctionByRepoID(functionRecordIns.FunctionID)
 		logger.Infof("|----> function id %s", functionIns.ID)
 		if functionIns.IsZero() {
@@ -226,6 +272,16 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 				flowRunRecordRepo.TimeoutCancel(flowRunRecordIns.ID)
 				continue
 			}
+		}
+
+		// 开启当前正在运行的function的心跳上报
+		done := make(chan bool)
+		heartBeatIns := aggregate.NewFunctionExecuteHeartBeat(funcRunRecordUuid)
+		err = heartBeatRepo.Create(heartBeatIns)
+		if err != nil {
+			logger.Errorf("create heart_beat failed: %v", err)
+		} else {
+			go reportHeartBeat(heartBeatRepo, funcRunRecordUuid, done)
 		}
 
 		cancelCheckTimer := time.NewTicker(6 * time.Second)
@@ -378,6 +434,7 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 					}
 				}
 			} else { // 运行拦截，此function节点以下的节点不用再运行了，此步骤拦截
+				flowRunRecordRepo.Intercepted(flowRunRecordIns.ID, "TODO")
 				flowRunRecordRepo.Suc(flowRunRecordIns.ID)
 				event.PubEvent(&event.FlowRunFinished{
 					FlowRunRecordID: flowRunRecordIns.ID,

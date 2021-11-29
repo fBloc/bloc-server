@@ -44,6 +44,7 @@ type FlowRunRecordRepository interface {
 	Start(id value_object.UUID) error
 	Suc(id value_object.UUID) error
 	Fail(id value_object.UUID, errorMsg string) error
+	Intercepted(id value_object.UUID, msg string) error
 	TimeoutCancel(id value_object.UUID) error
 	UserCancel(id, userID value_object.UUID) error
 

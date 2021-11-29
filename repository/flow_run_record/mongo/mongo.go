@@ -53,6 +53,7 @@ type mongoFlowRunRecord struct {
 	EndTime                      time.Time                            `bson:"end_time,omitempty"`
 	Status                       value_object.RunState                `bson:"status"`
 	ErrorMsg                     string                               `bson:"error_msg,omitempty"`
+	InterceptMsg                 string                               `bson:"intercept_msg,omitempty"`
 	RetriedAmount                uint16                               `bson:"retried_amount"`
 	TimeoutCanceled              bool                                 `bson:"timeout_canceled,omitempty"`
 	Canceled                     bool                                 `bson:"canceled"`
@@ -300,6 +301,15 @@ func (mr *MongoRepository) Fail(id value_object.UUID, errorMsg string) error {
 		mongodb.NewUpdater().
 			AddSet("status", value_object.Fail).
 			AddSet("error_msg", errorMsg).
+			AddSet("end_time", time.Now()))
+}
+
+func (mr *MongoRepository) Intercepted(id value_object.UUID, msg string) error {
+	return mr.mongoCollection.PatchByID(
+		id,
+		mongodb.NewUpdater().
+			AddSet("status", value_object.Intercepted).
+			AddSet("intercept_msg", msg).
 			AddSet("end_time", time.Now()))
 }
 
