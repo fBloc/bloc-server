@@ -13,12 +13,12 @@ import (
 type FunctionTaskConfiguration func(fs *FunctionTaskService) error
 
 type FunctionTaskService struct {
-	logger             log.Logger
+	logger             *log.Logger
 	Functions          function.FunctionRepository
 	FunctionRunRecords function_run_record.FunctionRunRecordRepository
 }
 
-func WithLogger(logger log.Logger) FunctionTaskConfiguration {
+func WithLogger(logger *log.Logger) FunctionTaskConfiguration {
 	return func(us *FunctionTaskService) error {
 		us.logger = logger
 		return nil

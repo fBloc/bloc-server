@@ -54,8 +54,10 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 		functionRunRecordIDStr := functionToRunEvent.Identity()
 		funcRunRecordUuid, err := value_object.ParseToUUID(functionRunRecordIDStr)
 		if err != nil {
-			// TODO 不应该panic
-			panic(err)
+			logger.Errorf(
+				"parse received function_run_record_id(%s) to uuid failed.",
+				functionRunRecordIDStr)
+			continue
 		}
 
 		logger.Infof("|--> get function run record id %s", functionRunRecordIDStr)
@@ -70,18 +72,30 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 			continue
 		}
 
-		// 开启当前正在处理的bloc的心跳上报goroutine
+		// 开启当前正在运行的function的心跳上报
 		done := make(chan bool)
 		heartBeatIns := aggregate.NewFunctionExecuteHeartBeat(funcRunRecordUuid)
 		err = heartBeatRepo.Create(heartBeatIns)
 		if err != nil {
-			// TODO
+			logger.Errorf("create heart_beat failed: %v", err)
+		} else {
+			go reportHeartBeat(heartBeatRepo, funcRunRecordUuid, done)
 		}
-		go reportHeartBeat(heartBeatRepo, funcRunRecordUuid, done)
 
-		//flowIns := flow.GetLatestFlowByOriginID(blocHisIns.FlowID)
 		flowIns, err := flowRepo.GetByID(functionRecordIns.FlowID)
+		if err != nil {
+			logger.Errorf(
+				"get flow by flow_id failed. flow_id: %s",
+				functionRecordIns.FlowID.String())
+			continue
+		}
 		flowRunRecordIns, err := flowRunRecordRepo.GetByID(functionRecordIns.FlowRunRecordID)
+		if err != nil {
+			logger.Errorf(
+				"get flow_run_record_ins from flow_run_record_id(%s) failed",
+				functionRecordIns.FlowRunRecordID.String())
+			continue
+		}
 		flowFuncIDMapFuncRunRecordID := flowRunRecordIns.FlowFuncIDMapFuncRunRecordID
 		if flowFuncIDMapFuncRunRecordID == nil {
 			flowFuncIDMapFuncRunRecordID = make(map[string]value_object.UUID)
@@ -92,7 +106,10 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 		functionIns := blocApp.GetFunctionByRepoID(functionRecordIns.FunctionID)
 		logger.Infof("|----> function id %s", functionIns.ID)
 		if functionIns.IsZero() {
-			// todo 不应该出现此情况啊！
+			logger.Errorf(
+				"get nil function_ins by function_id: %s",
+				functionRecordIns.FunctionID.String())
+			continue
 		}
 
 		// 装配输入参数到blocHis实例【从flowBloc中配置的输入参数的来源（manual/connection）获得】
@@ -107,6 +124,13 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 					// 找到上游对应节点的运行记录并从其opt中取出要的数据
 					upstreamBlocHisID := flowFuncIDMapFuncRunRecordID[componentIpt.FlowFunctionID]
 					upstreamFuncRunRecordIns, err := funcRunRecordRepo.GetByID(upstreamBlocHisID)
+					if err != nil {
+						funcRunRecordRepo.SaveFail(
+							functionRecordIns.ID,
+							"ipt value get from upstream connection failed")
+						functionRecordIns.Ipts[paramIndex][componentIndex] = err.Error()
+						continue
+					}
 					if upstreamFuncRunRecordIns.IsZero() {
 						funcRunRecordRepo.SaveFail(
 							functionRecordIns.ID,
@@ -282,7 +306,7 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 			logger.Errorf("|----> function run record id %s run failed", functionRunRecordIDStr)
 		}
 
-		if funcRunOpt.Suc { // TODO 运行成功, 保存输出Opt到blocHis 这提示写的啥
+		if funcRunOpt.Suc {
 			funcRunRecordRepo.SaveSuc(
 				funcRunRecordUuid, funcRunOpt.Description,
 				funcRunOpt.Detail, funcRunOpt.Brief, funcRunOpt.Pass)
@@ -303,13 +327,20 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 							flowRunRecordIns.ID,
 							downStreamFlowFunctionID,
 							downStreamFunctionRunRecord.ID)
+						if err != nil {
+							logger.Errorf(
+								`flowRunRecordRepo.AddFlowFuncIDMapFuncRunRecordID error: %v.
+								flow_run_record_id:%s`,
+								flowRunRecordIns.ID.String(), err)
+							// TODO 咋办？
+						}
 						flowRunRecordIns.FlowFuncIDMapFuncRunRecordID[downStreamFlowFunctionID] = downStreamFunctionRunRecord.ID
 					}
-				} else { // 此bloc没有下游了，进行检查flow是否全部运行成功从而完成了，
+				} else { // 此函数节点没有下游了。进行检查flow是否全部运行成功从而完成了，
 					/*
 						检测要点：
-							因为 FlowblocidMapBlochisid 有此flow每个bloc运行历史的对应记录
-							从flow中看是不是每个bloc都在FlowblocidMapBlochisid有对应的记录并且对应的记录是完成了的
+							因为 FlowFunctionIDMapFlowFunction 有此flow每个function运行历史的对应记录
+							从而检查是不是都有效完成了
 					*/
 					toCheckFlowFunctionIDMapDone := make(map[string]bool, len(flowIns.FlowFunctionIDMapFlowFunction))
 					for flowFunctionID := range flowIns.FlowFunctionIDMapFlowFunction {
@@ -325,7 +356,12 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 						}
 						functionRunRecordIns, err := funcRunRecordRepo.GetByID(funcRunRecordID)
 						if err != nil {
-							// TODO
+							logger.Errorf(
+								"get function_run_record by function_run_record_id(%s) error: %s",
+								funcRunRecordID.String(), err.Error())
+							// 先保守处理为未完成运行
+							flowFinished = false
+							break
 						}
 						if !functionRunRecordIns.Finished() {
 							flowFinished = false
@@ -367,7 +403,6 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 						futureTime,
 					)
 				}
-			} else { // TODO arrangement触发
 			}
 		}
 	}

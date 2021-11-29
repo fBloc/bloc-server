@@ -57,7 +57,6 @@ type mongoFlowRunRecord struct {
 	TimeoutCanceled              bool                                 `bson:"timeout_canceled,omitempty"`
 	Canceled                     bool                                 `bson:"canceled"`
 	CancelUserID                 value_object.UUID                    `bson:"cancel_user_id"`
-	crontabRepresent             string                               `bson:"crontab_represent"`
 }
 
 func (m *mongoFlowRunRecord) IsZero() bool {

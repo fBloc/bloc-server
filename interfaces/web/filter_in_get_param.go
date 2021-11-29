@@ -101,7 +101,7 @@ func ParseReqQueryToGroupedFilters(queryMap url.Values) (map[FilterInGetPath][]s
 
 	ret := make(map[FilterInGetPath][]string, maxFilterInGetPath-1)
 	var theFilterInGetPath FilterInGetPath
-	for reqKey, _ := range queryMap {
+	for reqKey := range queryMap {
 		val := queryMap.Get(reqKey)
 		theFilterInGetPath = FilterInGetPathEq
 

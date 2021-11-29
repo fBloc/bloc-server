@@ -270,7 +270,7 @@ func (mr *MongoRepository) SaveIptBrief(
 	id value_object.UUID, ipts [][]interface{},
 	objectStorageImplement object_storage.ObjectStorage,
 ) error {
-	iptBAOk := make([][]mongoIptBriefAndKey, len(ipts), len(ipts))
+	iptBAOk := make([][]mongoIptBriefAndKey, len(ipts))
 	for paramIndex, param := range ipts {
 		iptBAOk[paramIndex] = make([]mongoIptBriefAndKey, 0, len(param))
 		for componentIndex, componentVal := range param {

@@ -91,8 +91,7 @@ func (rmq *RabbitMQ) initQueueAndBindToExchange(
 }
 
 func (rmq *RabbitMQ) Pub(topic string, data []byte) error {
-	var err error
-	err = rmq.channel.Publish(
+	err := rmq.channel.Publish(
 		topicExchangeName, // exchange
 		topic,             // routing key
 		false,             // mandatory

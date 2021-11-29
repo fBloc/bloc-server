@@ -48,7 +48,6 @@ func PubEvent(event DomainEvent) error {
 
 	err = driver.mqIns.Pub(event.Topic(), eventByteData)
 	if err != nil {
-		panic(err)
 		return errors.Wrap(err, "pub event failed")
 	}
 	return nil

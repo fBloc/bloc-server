@@ -294,7 +294,7 @@ func DeleteDraftByOriginID(w http.ResponseWriter, r *http.Request, ps httprouter
 	uuOriginID, err := value_object.ParseToUUID(originID)
 	if err != nil {
 		web.WriteBadRequestDataResp(&w,
-			"parse origin_id to uuid failed:", err.Error())
+			"parse origin_id to uuid failed: %v", err)
 		return
 	}
 

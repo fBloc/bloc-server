@@ -27,13 +27,15 @@ func (blocApp *BlocApp) FlowTaskStartConsumer() {
 		logger.Infof("|--> get flow run start record id %s", flowRunRecordStr)
 		flowRunRecordUuid, err := value_object.ParseToUUID(flowRunRecordStr)
 		if err != nil {
-			// TODO 不应该panic
-			panic(err)
+			logger.Errorf(
+				"parse flow_run_record_id to uuid failed: %s", flowRunRecordStr)
+			continue
 		}
 		flowRunIns, err := flowRunRepo.GetByID(flowRunRecordUuid)
 		if err != nil {
-			// TODO
-			panic(err)
+			logger.Errorf(
+				"get flow_run_record by id. flow_run_record_id: %s", flowRunRecordStr)
+			continue
 		}
 		if flowRunIns.Canceled {
 			continue
@@ -41,8 +43,9 @@ func (blocApp *BlocApp) FlowTaskStartConsumer() {
 
 		flowIns, err := flowRepo.GetByID(flowRunIns.FlowID)
 		if err != nil {
-			// TODO
-			panic(err)
+			logger.Errorf(
+				"get flow from flow_run_record.flow_id error: %v", err)
+			continue
 		}
 
 		// 发布flow下的“第一层”functions任务
@@ -54,7 +57,10 @@ func (blocApp *BlocApp) FlowTaskStartConsumer() {
 
 			functionIns := blocApp.GetFunctionByRepoID(flowFunction.FunctionID)
 			if functionIns.IsZero() {
-				// TODO 不应该有此情况
+				logger.Errorf(
+					"find flow's first layer function failed. function_id: %s",
+					flowFunction.FunctionID.String())
+				goto PubFailed
 			}
 
 			aggFunctionRunRecord := aggregate.NewFunctionRunRecordFromFlowDriven(
@@ -62,7 +68,10 @@ func (blocApp *BlocApp) FlowTaskStartConsumer() {
 				flowFunctionID)
 			err := functionRunRecordRepo.Create(aggFunctionRunRecord)
 			if err != nil {
-				// TODO
+				logger.Errorf(
+					"create flow's first layer function_run_record failed. function_id: %s, err: %v",
+					flowFunction.FunctionID.String(), err)
+				goto PubFailed
 			}
 			flowblocidMapBlochisid[flowFunctionID] = aggFunctionRunRecord.ID
 		}
@@ -70,8 +79,14 @@ func (blocApp *BlocApp) FlowTaskStartConsumer() {
 		err = flowRunRepo.PatchFlowFuncIDMapFuncRunRecordID(
 			flowRunIns.ID, flowRunIns.FlowFuncIDMapFuncRunRecordID)
 		if err != nil {
-			// TODO
+			logger.Errorf(
+				"update flow_run_record's flowFuncID_map_funcRunRecordID field failed: %s",
+				err.Error())
+			goto PubFailed
 		}
 		flowRunRepo.Start(flowRunIns.ID)
+		continue
+	PubFailed:
+		flowRunRepo.Fail(flowRunIns.ID, "pub flow's first lay functions failed")
 	}
 }

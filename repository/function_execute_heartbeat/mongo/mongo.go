@@ -37,7 +37,7 @@ func New(
 type mongoFunctionExecuteHeartBeat struct {
 	ID                  value_object.UUID `bson:"id"`
 	FunctionRunRecordID value_object.UUID `bson:"function_run_record_id"`
-	StartTime           time.Time         `bson:"start_time`
+	StartTime           time.Time         `bson:"start_time"`
 	LatestHeartbeatTime time.Time         `bson:"latest_heartbeat_time"`
 }
 

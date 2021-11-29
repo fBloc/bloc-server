@@ -14,12 +14,12 @@ type FlowTaskConfiguration func(fs *FlowTaskService) error
 
 // 聚合静态的flow和flow_run_record
 type FlowTaskService struct {
-	logger        log.Logger
+	logger        *log.Logger
 	flow          flow.FlowRepository
 	flowRunRecord flow_run_record.FlowRunRecordRepository
 }
 
-func WithLogger(logger log.Logger) FlowTaskConfiguration {
+func WithLogger(logger *log.Logger) FlowTaskConfiguration {
 	return func(fts *FlowTaskService) error {
 		fts.logger = logger
 		return nil

@@ -140,8 +140,7 @@ func Pull(exchange, queue string, autoAck bool, msg chan mq_msg.MqMsg) {
 
 	go func() {
 		for d := range msgs {
-			var m mq_msg.MqMsg
-			m = mqMsg{&d}
+			m := mqMsg{&d}
 			msg <- m
 		}
 	}()

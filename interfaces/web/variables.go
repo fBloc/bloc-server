@@ -1,6 +1,8 @@
 package web
 
+type RequestContextKey string
+
 const (
-	RequestContextUserKey = "req_user"
-	RequestContextUUIDKey = "req_uuid"
+	RequestContextUserKey RequestContextKey = "req_user"
+	RequestContextUUIDKey RequestContextKey = "req_uuid"
 )
