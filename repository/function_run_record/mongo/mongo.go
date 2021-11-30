@@ -45,51 +45,51 @@ type mongoIptBriefAndKey struct {
 }
 
 type mongoFunctionRunRecord struct {
-	ID                value_object.UUID       `bson:"id"`
-	FlowID            value_object.UUID       `bson:"flow_id"`
-	FlowOriginID      value_object.UUID       `bson:"flow_origin_id"`
-	ArrangementFlowID string                  `bson:"arrangement_flow_id"`
-	FunctionID        value_object.UUID       `bson:"function_id"`
-	FlowFunctionID    string                  `bson:"flow_function_id"`
-	FlowRunRecordID   value_object.UUID       `bson:"flow_run_record_id"`
-	Start             time.Time               `bson:"start"`
-	End               time.Time               `bson:"end,omitempty"`
-	Suc               bool                    `bson:"suc"`
-	Pass              bool                    `bson:"pass"`
-	Canceled          bool                    `bson:"canceled,omitempty"`
-	Description       string                  `bson:"description,omitempty"`
-	ErrorMsg          string                  `bson:"error_msg,omitempty"`
-	IptBriefAndObskey [][]mongoIptBriefAndKey `bson:"ipt,omitempty"`
-	Opt               map[string]interface{}  `bson:"opt,omitempty"`
-	OptBrief          map[string]string       `bson:"opt_brief,omitempty"`
-	Progress          float32                 `bson:"progress"`
-	ProgressMsg       []string                `bson:"progress_msg"`
-	ProcessStages     []string                `bson:"process_stages"`
-	ProcessStageIndex int                     `bson:"process_stage_index"`
+	ID                        value_object.UUID       `bson:"id"`
+	FlowID                    value_object.UUID       `bson:"flow_id"`
+	FlowOriginID              value_object.UUID       `bson:"flow_origin_id"`
+	ArrangementFlowID         string                  `bson:"arrangement_flow_id"`
+	FunctionID                value_object.UUID       `bson:"function_id"`
+	FlowFunctionID            string                  `bson:"flow_function_id"`
+	FlowRunRecordID           value_object.UUID       `bson:"flow_run_record_id"`
+	Start                     time.Time               `bson:"start"`
+	End                       time.Time               `bson:"end,omitempty"`
+	Suc                       bool                    `bson:"suc"`
+	InterceptBelowFunctionRun bool                    `bson:"intercept_below_function_run"`
+	Canceled                  bool                    `bson:"canceled,omitempty"`
+	Description               string                  `bson:"description,omitempty"`
+	ErrorMsg                  string                  `bson:"error_msg,omitempty"`
+	IptBriefAndObskey         [][]mongoIptBriefAndKey `bson:"ipt,omitempty"`
+	Opt                       map[string]interface{}  `bson:"opt,omitempty"`
+	OptBrief                  map[string]string       `bson:"opt_brief,omitempty"`
+	Progress                  float32                 `bson:"progress"`
+	ProgressMsg               []string                `bson:"progress_msg"`
+	ProcessStages             []string                `bson:"process_stages"`
+	ProcessStageIndex         int                     `bson:"process_stage_index"`
 }
 
 func NewFromAggregate(fRR *aggregate.FunctionRunRecord) *mongoFunctionRunRecord {
 	resp := mongoFunctionRunRecord{
-		ID:                fRR.ID,
-		FlowID:            fRR.FlowID,
-		FlowOriginID:      fRR.FlowOriginID,
-		ArrangementFlowID: fRR.ArrangementFlowID,
-		FunctionID:        fRR.FunctionID,
-		FlowFunctionID:    fRR.FlowFunctionID,
-		FlowRunRecordID:   fRR.FlowRunRecordID,
-		Start:             fRR.Start,
-		End:               fRR.End,
-		Suc:               fRR.Suc,
-		Pass:              fRR.Pass,
-		Canceled:          fRR.Canceled,
-		Description:       fRR.Description,
-		ErrorMsg:          fRR.ErrorMsg,
-		Opt:               fRR.Opt,
-		OptBrief:          fRR.OptBrief,
-		Progress:          fRR.Progress,
-		ProgressMsg:       fRR.ProgressMsg,
-		ProcessStages:     fRR.ProcessStages,
-		ProcessStageIndex: fRR.ProcessStageIndex,
+		ID:                        fRR.ID,
+		FlowID:                    fRR.FlowID,
+		FlowOriginID:              fRR.FlowOriginID,
+		ArrangementFlowID:         fRR.ArrangementFlowID,
+		FunctionID:                fRR.FunctionID,
+		FlowFunctionID:            fRR.FlowFunctionID,
+		FlowRunRecordID:           fRR.FlowRunRecordID,
+		Start:                     fRR.Start,
+		End:                       fRR.End,
+		Suc:                       fRR.Suc,
+		InterceptBelowFunctionRun: fRR.InterceptBelowFunctionRun,
+		Canceled:                  fRR.Canceled,
+		Description:               fRR.Description,
+		ErrorMsg:                  fRR.ErrorMsg,
+		Opt:                       fRR.Opt,
+		OptBrief:                  fRR.OptBrief,
+		Progress:                  fRR.Progress,
+		ProgressMsg:               fRR.ProgressMsg,
+		ProcessStages:             fRR.ProcessStages,
+		ProcessStageIndex:         fRR.ProcessStageIndex,
 	}
 	resp.IptBriefAndObskey = make([][]mongoIptBriefAndKey, len(fRR.IptBriefAndObskey))
 	for i, param := range fRR.IptBriefAndObskey {
@@ -106,26 +106,26 @@ func NewFromAggregate(fRR *aggregate.FunctionRunRecord) *mongoFunctionRunRecord 
 
 func (m mongoFunctionRunRecord) ToAggregate() *aggregate.FunctionRunRecord {
 	resp := aggregate.FunctionRunRecord{
-		ID:                m.ID,
-		FlowID:            m.FlowID,
-		FlowOriginID:      m.FlowOriginID,
-		ArrangementFlowID: m.ArrangementFlowID,
-		FunctionID:        m.FunctionID,
-		FlowFunctionID:    m.FlowFunctionID,
-		FlowRunRecordID:   m.FlowRunRecordID,
-		Start:             m.Start,
-		End:               m.End,
-		Suc:               m.Suc,
-		Pass:              m.Pass,
-		Canceled:          m.Canceled,
-		Description:       m.Description,
-		ErrorMsg:          m.ErrorMsg,
-		Opt:               m.Opt,
-		OptBrief:          m.OptBrief,
-		Progress:          m.Progress,
-		ProgressMsg:       m.ProgressMsg,
-		ProcessStages:     m.ProcessStages,
-		ProcessStageIndex: m.ProcessStageIndex,
+		ID:                        m.ID,
+		FlowID:                    m.FlowID,
+		FlowOriginID:              m.FlowOriginID,
+		ArrangementFlowID:         m.ArrangementFlowID,
+		FunctionID:                m.FunctionID,
+		FlowFunctionID:            m.FlowFunctionID,
+		FlowRunRecordID:           m.FlowRunRecordID,
+		Start:                     m.Start,
+		End:                       m.End,
+		Suc:                       m.Suc,
+		InterceptBelowFunctionRun: m.InterceptBelowFunctionRun,
+		Canceled:                  m.Canceled,
+		Description:               m.Description,
+		ErrorMsg:                  m.ErrorMsg,
+		Opt:                       m.Opt,
+		OptBrief:                  m.OptBrief,
+		Progress:                  m.Progress,
+		ProgressMsg:               m.ProgressMsg,
+		ProcessStages:             m.ProcessStages,
+		ProcessStageIndex:         m.ProcessStageIndex,
 	}
 	resp.IptBriefAndObskey = make([][]aggregate.IptBriefAndKey, len(m.IptBriefAndObskey))
 	for i, param := range m.IptBriefAndObskey {
@@ -310,14 +310,15 @@ func (mr *MongoRepository) ClearProgress(id value_object.UUID) error {
 
 func (mr *MongoRepository) SaveSuc(
 	id value_object.UUID,
-	desc string, opt map[string]interface{}, brief map[string]string, pass bool,
+	desc string, opt map[string]interface{},
+	brief map[string]string, intercepted bool,
 ) error {
 	return mr.mongoCollection.PatchByID(
 		id,
 		mongodb.NewUpdater().
 			AddSet("end", time.Now()).
 			AddSet("suc", true).
-			AddSet("pass", pass).
+			AddSet("intercept_below_function_run", intercepted).
 			AddSet("opt", opt).
 			AddSet("opt_brief", brief).
 			AddSet("description", desc))

@@ -308,7 +308,7 @@ func (mr *MongoRepository) Intercepted(id value_object.UUID, msg string) error {
 	return mr.mongoCollection.PatchByID(
 		id,
 		mongodb.NewUpdater().
-			AddSet("status", value_object.Intercepted).
+			AddSet("status", value_object.Suc).
 			AddSet("intercept_msg", msg).
 			AddSet("end_time", time.Now()))
 }

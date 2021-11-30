@@ -13,28 +13,28 @@ type IptBriefAndKey struct {
 }
 
 type FunctionRunRecord struct {
-	ID                value_object.UUID
-	FlowID            value_object.UUID
-	FlowOriginID      value_object.UUID
-	ArrangementFlowID string
-	FunctionID        value_object.UUID
-	FlowFunctionID    string
-	FlowRunRecordID   value_object.UUID
-	Start             time.Time
-	End               time.Time
-	Suc               bool
-	Pass              bool
-	Canceled          bool
-	Description       string
-	ErrorMsg          string
-	Ipts              [][]interface{}    // 实际调用user implement function的时候，根据用户前端输入的匹配规则/值，获取到实际值填充进此字段，作为参数传递给函数
-	IptBriefAndObskey [][]IptBriefAndKey // Ipts中的值可能非常大，在前端显示的时候不可能全部显示，故进行截断，将真实值保存到对象存储，需要的时候才查看真实值
-	Opt               map[string]interface{}
-	OptBrief          map[string]string
-	Progress          float32
-	ProgressMsg       []string
-	ProcessStages     []string
-	ProcessStageIndex int
+	ID                        value_object.UUID
+	FlowID                    value_object.UUID
+	FlowOriginID              value_object.UUID
+	ArrangementFlowID         string
+	FunctionID                value_object.UUID
+	FlowFunctionID            string
+	FlowRunRecordID           value_object.UUID
+	Start                     time.Time
+	End                       time.Time
+	Suc                       bool
+	InterceptBelowFunctionRun bool
+	Canceled                  bool
+	Description               string
+	ErrorMsg                  string
+	Ipts                      [][]interface{}    // 实际调用user implement function的时候，根据用户前端输入的匹配规则/值，获取到实际值填充进此字段，作为参数传递给函数
+	IptBriefAndObskey         [][]IptBriefAndKey // Ipts中的值可能非常大，在前端显示的时候不可能全部显示，故进行截断，将真实值保存到对象存储，需要的时候才查看真实值
+	Opt                       map[string]interface{}
+	OptBrief                  map[string]string
+	Progress                  float32
+	ProgressMsg               []string
+	ProcessStages             []string
+	ProcessStageIndex         int
 }
 
 func NewFunctionRunRecordFromFlowDriven(

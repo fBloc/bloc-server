@@ -38,7 +38,7 @@ type FunctionRunRecord struct {
 	Start                       json_date.JsonDate     `json:"start"`
 	End                         json_date.JsonDate     `json:"end"`
 	Suc                         bool                   `json:"suc"`
-	Pass                        bool                   `json:"pass"`
+	InterceptBelowFunctionRun   bool                   `json:"intercept_below_function_run"`
 	Canceled                    bool                   `json:"canceled,omitempty"`
 	Description                 string                 `json:"description"`
 	ErrorMsg                    string                 `json:"error_msg"`
@@ -84,7 +84,7 @@ func fromAgg(
 		Start:                       json_date.New(aggFRR.Start),
 		End:                         json_date.New(aggFRR.End),
 		Suc:                         aggFRR.Suc,
-		Pass:                        aggFRR.Pass,
+		InterceptBelowFunctionRun:   aggFRR.InterceptBelowFunctionRun,
 		Canceled:                    aggFRR.Canceled,
 		Description:                 aggFRR.Description,
 		ErrorMsg:                    aggFRR.ErrorMsg,

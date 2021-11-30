@@ -92,7 +92,7 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 			flowFuncIDMapFuncRunRecordID = make(map[string]value_object.UUID)
 		}
 
-		// 装配bloc_history对应bloc的IPT
+		// 装配function_run_record对应function的具体输入参数值
 		flowFunction := flowIns.FlowFunctionIDMapFlowFunction[functionRecordIns.FlowFunctionID]
 		// 需确保所有上游节点都已经运行完成了
 		upstreamAllSucFinished := true
@@ -127,7 +127,9 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 				upstreamAllSucFinished = false
 				break
 			}
-			if !upstreamFunctionRunRecordIns.Pass {
+			if upstreamFunctionRunRecordIns.InterceptBelowFunctionRun {
+				// 为什么会出现这种情况的说明：可能有两个上游节点，其中一个成功、另一个决定拦截
+				// 成功的发布下游节点的时候会发布此节点
 				logger.Infof(
 					"upstream function intercepted. breakout. upstream_function_run_record_id: %s",
 					upstreamFunctionRunRecordID.String())
@@ -158,7 +160,7 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 			continue
 		}
 
-		// 装配输入参数到blocHis实例【从flowBloc中配置的输入参数的来源（manual/connection）获得】
+		// 装配输入参数到function_run_record实例【从flowFunction中配置的输入参数的来源（manual/connection）获得】
 		functionRecordIns.Ipts = make([][]interface{}, len(flowFunction.ParamIpts))
 		for paramIndex, paramIpt := range flowFunction.ParamIpts {
 			functionRecordIns.Ipts[paramIndex] = make([]interface{}, len(paramIpt))
@@ -168,8 +170,8 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 					value = componentIpt.Value
 				} else if componentIpt.IptWay == value_object.Connection {
 					// 找到上游对应节点的运行记录并从其opt中取出要的数据
-					upstreamBlocHisID := flowFuncIDMapFuncRunRecordID[componentIpt.FlowFunctionID]
-					upstreamFuncRunRecordIns, err := funcRunRecordRepo.GetByID(upstreamBlocHisID)
+					upstreamFuncRunRecordID := flowFuncIDMapFuncRunRecordID[componentIpt.FlowFunctionID]
+					upstreamFuncRunRecordIns, err := funcRunRecordRepo.GetByID(upstreamFuncRunRecordID)
 					if err != nil {
 						funcRunRecordRepo.SaveFail(
 							functionRecordIns.ID,
@@ -242,7 +244,7 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 		}
 
 		// > 装配IPT成功
-		// > 调用exeBloc开始实际运行代码
+		// > 调用executeFunction开始实际运行代码
 		executeFunc := blocApp.GetExecuteFunctionByRepoID(functionIns.ID)
 
 		// 实际开始运行
@@ -338,7 +340,7 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 		done <- true
 		if funcRunOpt.Suc { // 若运行成功，需要将每个输出保存到oss中
 			logger.Infof("|----> function run record id %s suc", functionRunRecordIDStr)
-			// 将blocOpt的具体每个opt保存到oss并且替换值value, 输出的前50个字符保存到brief中方便前端展示
+			// 将functionOpt的具体每个opt field保存到oss并且替换值value, 输出的前50个字符保存到brief中方便前端展示
 			for optKey, optVal := range funcRunOpt.Detail {
 				uploadByte, _ := json.Marshal(optVal)
 				ossKey := functionRunRecordIDStr + "_" + optKey
@@ -365,9 +367,9 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 		if funcRunOpt.Suc {
 			funcRunRecordRepo.SaveSuc(
 				funcRunRecordUuid, funcRunOpt.Description,
-				funcRunOpt.Detail, funcRunOpt.Brief, funcRunOpt.Pass)
+				funcRunOpt.Detail, funcRunOpt.Brief, funcRunOpt.InterceptBelowFunctionRun)
 
-			if funcRunOpt.Pass { // 运行通过
+			if !funcRunOpt.InterceptBelowFunctionRun { // 成功运行完成且不拦截
 				if len(flowFunction.DownstreamFlowFunctionIDs) > 0 { // 若有下游待运行的function节点
 					// 创建并发布下游节点
 					for _, downStreamFlowFunctionID := range flowFunction.DownstreamFlowFunctionIDs {
@@ -406,7 +408,7 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 					flowFinished := true
 					for toCheckFlowFunctionID := range toCheckFlowFunctionIDMapDone {
 						funcRunRecordID, ok := flowFuncIDMapFuncRunRecordID[toCheckFlowFunctionID]
-						if !ok { // 表示此flow_bloc还没有运行记录
+						if !ok { // 表示此flow_function还没有运行记录
 							flowFinished = false
 							break
 						}
@@ -430,16 +432,23 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 						event.PubEvent(&event.FlowRunFinished{
 							FlowRunRecordID: flowRunRecordIns.ID,
 						})
-						logger.Infof("|------> pub finished flow_task__id from all finished: %s", flowRunRecordIns.ID)
+						logger.Infof(
+							"|------> pub finished flow_task__id from all finished: %s",
+							flowRunRecordIns.ID)
 					}
 				}
 			} else { // 运行拦截，此function节点以下的节点不用再运行了，此步骤拦截
-				flowRunRecordRepo.Intercepted(flowRunRecordIns.ID, "TODO")
-				flowRunRecordRepo.Suc(flowRunRecordIns.ID)
+				flowRunRecordRepo.Intercepted(
+					flowRunRecordIns.ID,
+					fmt.Sprintf(
+						"intercepted by function: %s-%s",
+						functionIns.GroupName, functionIns.Name))
 				event.PubEvent(&event.FlowRunFinished{
 					FlowRunRecordID: flowRunRecordIns.ID,
 				})
-				logger.Infof("|------> pub finished flow_run_record__id from intercepted: %s", flowRunRecordIns.ID)
+				logger.Infof(
+					"|------> pub finished flow_run_record__id from intercepted: %s",
+					flowRunRecordIns.ID)
 			}
 		} else { // function节点运行失败, 处理有重试的情况
 			if !flowRunRecordIns.IsFromArrangement() { // 非arrangement触发

@@ -11,7 +11,6 @@ const (
 	TimeoutCanceled
 	Suc
 	Fail
-	Intercepted
 	maxRunStatus
 )
 
