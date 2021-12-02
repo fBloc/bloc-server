@@ -26,6 +26,8 @@ type FlowRunRecordRepository interface {
 		filter value_object.RepositoryFilter,
 		filterOption value_object.RepositoryFilterOption,
 	) ([]*aggregate.FlowRunRecord, error)
+	FilterRunningRecordsOfCertainFlow(
+		flowID value_object.UUID) ([]*aggregate.FlowRunRecord, error)
 	AllRunRecordOfFlowTriggeredByFlowID(
 		flowID value_object.UUID,
 	) ([]*aggregate.FlowRunRecord, error)
@@ -41,12 +43,14 @@ type FlowRunRecordRepository interface {
 		flowFuncID string,
 		funcRunRecordID value_object.UUID,
 	) error
+
 	Start(id value_object.UUID) error
 	Suc(id value_object.UUID) error
 	Fail(id value_object.UUID, errorMsg string) error
 	Intercepted(id value_object.UUID, msg string) error
 	TimeoutCancel(id value_object.UUID) error
 	UserCancel(id, userID value_object.UUID) error
+	NotAllowedParallelRun(id value_object.UUID) error
 
 	// Delete
 }

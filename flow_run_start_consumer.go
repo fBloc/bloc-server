@@ -47,6 +47,26 @@ func (blocApp *BlocApp) FlowTaskStartConsumer() {
 				"get flow from flow_run_record.flow_id error: %v", err)
 			continue
 		}
+		if !flowIns.AllowParallelRun { // 若不允许同时运行，需要进行检测是不是有正在运行的
+			// TODO 这里存在高并发的时候还是会并行运行的情况，后续需要处理
+			runningFlows, err := flowRunRepo.FilterRunningRecordsOfCertainFlow(flowIns.ID)
+			if err != nil {
+				logger.Errorf(
+					"filter running flow records error: %v", err)
+				continue
+			}
+			if len(runningFlows) > 0 {
+				logger.Infof(
+					"this flow won't run because had been set not allowed parallel run")
+				err = flowRunRepo.NotAllowedParallelRun(flowRunIns.ID)
+				if err != nil {
+					logger.Errorf(
+						"save NotAllowedParallelRun of flow_id(%s) failed",
+						flowRunIns.ID.String())
+				}
+				continue
+			}
+		}
 
 		// 发布flow下的“第一层”functions任务
 		firstLayerDownstreamFlowFunctionIDS := flowIns.FlowFunctionIDMapFlowFunction[config.FlowFunctionStartID].DownstreamFlowFunctionIDs

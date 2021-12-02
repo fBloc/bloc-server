@@ -16,6 +16,7 @@ type RepositoryFilter struct {
 	lt                  map[string]interface{}
 	lte                 map[string]interface{}
 	fieldExist          []string
+	fieldNotExist       []string
 	fieldValueNotNull   []string
 }
 
@@ -129,6 +130,14 @@ func (rf *RepositoryFilter) AddNotNull(key string) *RepositoryFilter {
 	return rf
 }
 
+func (rf *RepositoryFilter) AddNotExist(key string) *RepositoryFilter {
+	if rf.fieldNotExist == nil {
+		rf.fieldNotExist = make([]string, 0)
+	}
+	rf.fieldNotExist = append(rf.fieldNotExist, key)
+	return rf
+}
+
 func (rf *RepositoryFilter) GetStrContains() map[string]string {
 	return rf.strValueContains
 }
@@ -175,6 +184,10 @@ func (rf *RepositoryFilter) AddNotIn(key string, val interface{}) *RepositoryFil
 
 func (rf *RepositoryFilter) GetFiledExist() []string {
 	return rf.fieldExist
+}
+
+func (rf *RepositoryFilter) GetFiledNotExist() []string {
+	return rf.fieldNotExist
 }
 
 func (rf *RepositoryFilter) AddExist(field string) *RepositoryFilter {

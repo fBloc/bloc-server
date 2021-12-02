@@ -200,6 +200,26 @@ func (mr *MongoRepository) GetLatestByArrangementFlowID(
 	return mr.get(mongodb.NewFilter().AddEqual("arrangement_flow_id", arrangementFlowID))
 }
 
+func (mr *MongoRepository) FilterRunningRecordsOfCertainFlow(
+	flowID value_object.UUID) ([]*aggregate.FlowRunRecord, error) {
+	filter := value_object.NewRepositoryFilter()
+	filter.AddEqual("flow_id", flowID).AddNotExist("end_time")
+
+	var mFRRs []mongoFlowRunRecord
+	err := mr.mongoCollection.CommonFilter(
+		*filter, *value_object.NewRepositoryFilterOption(), &mFRRs)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := make([]*aggregate.FlowRunRecord, 0, len(mFRRs))
+	for _, i := range mFRRs {
+		resp = append(resp, i.ToAggregate())
+	}
+
+	return resp, nil
+}
+
 func (mr *MongoRepository) Filter(
 	filter value_object.RepositoryFilter,
 	filterOption value_object.RepositoryFilterOption,
@@ -295,6 +315,15 @@ func (mr *MongoRepository) Suc(id value_object.UUID) error {
 			AddSet("end_time", time.Now()))
 }
 
+func (mr *MongoRepository) NotAllowedParallelRun(
+	id value_object.UUID) error {
+	return mr.mongoCollection.PatchByID(
+		id,
+		mongodb.NewUpdater().
+			AddSet("status", value_object.NotAllowedParallelCancel).
+			AddSet("end_time", time.Now()))
+}
+
 func (mr *MongoRepository) Fail(id value_object.UUID, errorMsg string) error {
 	return mr.mongoCollection.PatchByID(
 		id,
@@ -308,7 +337,7 @@ func (mr *MongoRepository) Intercepted(id value_object.UUID, msg string) error {
 	return mr.mongoCollection.PatchByID(
 		id,
 		mongodb.NewUpdater().
-			AddSet("status", value_object.Suc).
+			AddSet("status", value_object.InterceptedCancel).
 			AddSet("intercept_msg", msg).
 			AddSet("end_time", time.Now()))
 }

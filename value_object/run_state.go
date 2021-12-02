@@ -11,6 +11,8 @@ const (
 	TimeoutCanceled
 	Suc
 	Fail
+	InterceptedCancel
+	NotAllowedParallelCancel
 	maxRunStatus
 )
 

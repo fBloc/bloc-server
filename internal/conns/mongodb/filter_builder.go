@@ -48,6 +48,11 @@ func newMongoFilterFromCommonFilter(cFilter value_object.RepositoryFilter) *Mong
 		filter.AddExist(i)
 	}
 
+	mustNotExistFields := cFilter.GetFiledNotExist()
+	for _, i := range mustNotExistFields {
+		filter.AddNotExist(i)
+	}
+
 	gte := cFilter.GetGte()
 	for k, v := range gte {
 		filter.AddGte(k, v)
@@ -93,6 +98,11 @@ func (mf *MongoFilter) AddIn(key string, val []interface{}) *MongoFilter {
 
 func (mf *MongoFilter) AddExist(key string) *MongoFilter {
 	mf.filter[key] = bson.M{"$exists": true, "$ne": ""}
+	return mf
+}
+
+func (mf *MongoFilter) AddNotExist(key string) *MongoFilter {
+	mf.filter[key] = bson.M{"$exists": false}
 	return mf
 }
 
