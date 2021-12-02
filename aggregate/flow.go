@@ -34,23 +34,30 @@ type FlowFunction struct {
 func (flowFunc *FlowFunction) CheckValid(
 	flowFuncIDMapFlowFunction map[string]*FlowFunction,
 ) (bool, string) {
-	// TODO 优化错误输出的提示信息，要能够提供精确的信息
 	// 所有节点都应该要有输入节点
 	if len(flowFunc.UpstreamFlowFunctionIDs) <= 0 {
-		return false, "flowFunc must have input flowFunc"
+		return false, fmt.Sprintf(
+			"「%s」节点没有上游节点 - 不允许",
+			flowFunc.Note)
 	}
 
 	// 节点上游id必须是在数据里的（防止前端传过来的数据不对）
 	for _, funcID := range flowFunc.UpstreamFlowFunctionIDs {
 		if _, ok := flowFuncIDMapFlowFunction[funcID]; !ok {
-			return false, fmt.Sprintf("节点上游id(%s)无效", funcID)
+			return false, fmt.Sprintf(
+				`「%s」节点填写的上游节点flow_function_id(%s)无效
+				-没有找到对应的flow_function_id`,
+				flowFunc.Note, funcID)
 		}
 	}
 
 	// 节点下游id必须是在数据里的（防止前端传过来的数据不对）
 	for _, funcID := range flowFunc.DownstreamFlowFunctionIDs {
 		if _, ok := flowFuncIDMapFlowFunction[funcID]; !ok {
-			return false, fmt.Sprintf("节点下游id(%s)无效", funcID)
+			return false, fmt.Sprintf(
+				`「%s」节点填写的下游节点flow_function_id(%s)无效
+				-没有找到对应的flow_function_id`,
+				flowFunc.Note, funcID)
 		}
 	}
 
@@ -62,7 +69,8 @@ func (flowFunc *FlowFunction) CheckValid(
 				thisParamIpt := flowFunc.Function.Ipts[iptIndex]
 				if thisParamIpt.Must {
 					return false, fmt.Sprintf(
-						"节点参数序列为%d - %d必填",
+						"「%s」节点第%d个ipt下的第%d个component要求必填，但是没填",
+						flowFunc.Note,
 						iptIndex, componentIndex)
 				}
 				continue
@@ -72,7 +80,9 @@ func (flowFunc *FlowFunction) CheckValid(
 				// connection写的节点ID是否存在
 				if _, ok := flowFuncIDMapFlowFunction[componentParamConfig.FlowFunctionID]; !ok {
 					return false, fmt.Sprintf(
-						"节点参数序列为%d - %d设置的输入链接节点id(%s)无效-没有此id的节点",
+						`「%s」节点第%d个ipt下的第%d个component输入的上游flow_function节点id(%s)无效
+						-没有此flow_function_id的上游节点`,
+						flowFunc.Note,
 						iptIndex, componentIndex, componentParamConfig.FlowFunctionID,
 					)
 				}
@@ -86,7 +96,12 @@ func (flowFunc *FlowFunction) CheckValid(
 					}
 				}
 				if !isUpstreamFuncNodeID {
-					return false, "节点写的参数输入链接并不是节点的上游节点，无效"
+					return false, fmt.Sprintf(
+						`「%s」节点第%d个ipt下的第%d个component输入的上游flow_function节点id(%s)无效
+						-此flow_function_id对应的节点不是直接上游节点、不能作为输入`,
+						flowFunc.Note,
+						iptIndex, componentIndex, componentParamConfig.FlowFunctionID,
+					)
 				}
 
 				// 3. 检查对应出参的类型是不是和此参数的输入要求类型一致
