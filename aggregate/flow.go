@@ -106,16 +106,20 @@ func (flowFunc *FlowFunction) CheckValid(
 
 				// 3. 检查对应出参的类型是不是和此参数的输入要求类型一致
 				// TODO 这里的iptNode.Function为nil，需要想办法处理附上function实例才能检查
-				// iptNode := flowFuncIDMapFlowFunction[componentParamConfig.FlowFunctionID]
-				// for _, optItem := range iptNode.Function.Opts {
-				// 	if optItem.Key != componentParamConfig.Key {
-				// 		continue
-				// 	}
-				// 	if optItem.ValueType != componentParamConfig.ValueType {
-				// 		return false, "connection value type wrong"
-				// 	}
-				// 	return true, ""
-				// }
+				iptNode := flowFuncIDMapFlowFunction[componentParamConfig.FlowFunctionID]
+				for _, optItem := range iptNode.Function.Opts {
+					if optItem.Key != componentParamConfig.Key {
+						continue
+					}
+					if optItem.ValueType != componentParamConfig.ValueType {
+						return false, fmt.Sprintf(
+							`「%s」节点第%d个ipt下的第%d个component输入的上游flow_function节点id(%s)无效
+							-此flow_function_id对应的节点不是直接上游节点、不能作为输入`,
+							flowFunc.Note,
+							iptIndex, componentIndex, componentParamConfig.FlowFunctionID)
+					}
+					return true, ""
+				}
 			} else if componentParamConfig.IptWay == value_object.UserIpt { // 配置的参数输入方式是用户输入的值
 				valueValid := value_type.CheckValueTypeValueValid(
 					componentParamConfig.ValueType, componentParamConfig.Value)

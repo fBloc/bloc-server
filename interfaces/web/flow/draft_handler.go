@@ -142,7 +142,7 @@ func PubDraft(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	// 从id获取到flowIns
 	draftFlowIns, err := fService.Flow.GetByID(draftFlowUUID)
 	if err != nil {
-		web.WriteInternalServerErrorResp(&w, err, "find flow by id failed")
+		web.WriteInternalServerErrorResp(&w, err, "find draft flow by id failed")
 		return
 	}
 	if draftFlowIns.IsZero() {
@@ -169,7 +169,7 @@ func PubDraft(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	// 正式提交的需要做有效性检测
 	startFlowBloc, ok := draftFlowIns.FlowFunctionIDMapFlowFunction[config.FlowFunctionStartID]
 	if !ok {
-		web.WriteBadRequestDataResp(&w, "有效性检测失败，缺少开始bloc")
+		web.WriteBadRequestDataResp(&w, "有效性检测失败，缺少开始节点")
 		return
 	}
 	if len(startFlowBloc.DownstreamFlowFunctionIDs) <= 0 {
@@ -182,6 +182,8 @@ func PubDraft(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		web.WriteBadRequestDataResp(&w, "访问全部function信息（用于补全引用）时失败")
 		return
 	}
+	// 检查FlowFunctionIDMapFlowFunction下面配置的每个function_id是否正确
+	// 同时也将查到的function赋予到对应的值，方便后续的连接类型有效性检查
 	for flowFuncID, flowFunc := range draftFlowIns.FlowFunctionIDMapFlowFunction {
 		if flowFuncID == config.FlowFunctionStartID {
 			continue
@@ -189,11 +191,18 @@ func PubDraft(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		function, ok := funcIDMapFunction[flowFunc.FunctionID]
 		if !ok {
 			web.WriteBadRequestDataResp(&w, fmt.Sprintf(
-				"ID为%s节点的function_id不对，找不到对应的function",
-				flowFunc.FunctionID))
+				"节点「%s」填写的function_id(%s)不对，找不到对应的function",
+				flowFunc.Note, flowFunc.FunctionID))
 			return
 		}
 		flowFunc.Function = function
+	}
+
+	// 具体开始检查每个节点的各项配置是否正确/有效
+	for flowFuncID, flowFunc := range draftFlowIns.FlowFunctionIDMapFlowFunction {
+		if flowFuncID == config.FlowFunctionStartID {
+			continue
+		}
 		valid, errorStr := flowFunc.CheckValid(
 			draftFlowIns.FlowFunctionIDMapFlowFunction,
 		)
