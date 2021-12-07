@@ -12,6 +12,7 @@ import (
 	"github.com/fBloc/bloc-backend-go/interfaces/web/log_data"
 	"github.com/fBloc/bloc-backend-go/interfaces/web/middleware"
 	"github.com/fBloc/bloc-backend-go/interfaces/web/object_storage"
+	"github.com/fBloc/bloc-backend-go/interfaces/web/register_function"
 	"github.com/fBloc/bloc-backend-go/interfaces/web/user"
 	flow_service "github.com/fBloc/bloc-backend-go/services/flow"
 	flowRunRecord_service "github.com/fBloc/bloc-backend-go/services/flow_run_record"
@@ -231,6 +232,14 @@ func (blocApp *BlocApp) RunHttpServer() {
 		{
 			basicPath := "/api/v1/log"
 			router.POST(basicPath+"/pull_log_between_time", log_data.PullLog)
+		}
+	}
+
+	// consumer interaction about
+	{
+		basicPath := "/api/v1/function_app"
+		{
+			router.POST(basicPath+"/register_functions", register_function.RegisterFunctions)
 		}
 	}
 
