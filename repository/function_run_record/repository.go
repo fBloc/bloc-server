@@ -4,6 +4,8 @@ import (
 	"github.com/fBloc/bloc-backend-go/aggregate"
 	"github.com/fBloc/bloc-backend-go/infrastructure/object_storage"
 	"github.com/fBloc/bloc-backend-go/internal/filter_options"
+	"github.com/fBloc/bloc-backend-go/pkg/ipt"
+	"github.com/fBloc/bloc-backend-go/pkg/value_type"
 	"github.com/fBloc/bloc-backend-go/value_object"
 )
 
@@ -35,14 +37,17 @@ type FunctionRunRecordRepository interface {
 		id value_object.UUID, progressStages []string,
 	) error
 	SaveIptBrief(
-		id value_object.UUID, ipts [][]interface{},
+		id value_object.UUID,
+		iptConfig ipt.IptSlice,
+		ipts [][]interface{},
 		objectStorageImplement object_storage.ObjectStorage,
 	) error
 
 	ClearProgress(id value_object.UUID) error
 	SaveSuc(
-		id value_object.UUID, desc string, opt map[string]interface{},
-		brief map[string]string, intercepted bool,
+		id value_object.UUID, desc string,
+		keyMapValueType map[string]value_type.ValueType,
+		opt map[string]interface{}, brief map[string]string, intercepted bool,
 	) error
 	SaveCancel(id value_object.UUID) error
 	SaveFail(id value_object.UUID, errMsg string) error

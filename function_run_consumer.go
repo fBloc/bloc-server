@@ -97,44 +97,47 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 		// 需确保所有上游节点都已经运行完成了
 		upstreamAllSucFinished := true
 		upstreamFunctionIntercepted := false
-		for _, i := range flowFunction.UpstreamFlowFunctionIDs {
-			upstreamFunctionRunRecordID, ok := flowRunRecordIns.FlowFuncIDMapFuncRunRecordID[i]
-			if !ok { // 不存在表示没有运行完
-				logger.Infof(
-					"upstream function not run finished. upstream flow_function_id: %s", i)
-				upstreamAllSucFinished = false
-				break
-			}
-			upstreamFunctionRunRecordIns, err := funcRunRecordRepo.GetByID(upstreamFunctionRunRecordID)
-			if err != nil {
-				logger.Errorf(
-					"get upstream function run record ins error:%v. upstream_function_run_record_id: %s",
-					err, upstreamFunctionRunRecordID.String())
-				upstreamAllSucFinished = false
-				break
-			}
-			if upstreamFunctionRunRecordIns.IsZero() {
-				logger.Errorf(
-					"get upstream function run record ins nil. upstream_function_run_record_id: %s",
-					upstreamFunctionRunRecordID.String())
-				upstreamAllSucFinished = false
-				break
-			}
-			if !upstreamFunctionRunRecordIns.Finished() {
-				logger.Infof(
-					"upstream function is not finished. upstream_function_run_record_id: %s",
-					upstreamFunctionRunRecordID.String())
-				upstreamAllSucFinished = false
-				break
-			}
-			if upstreamFunctionRunRecordIns.InterceptBelowFunctionRun {
-				// 为什么会出现这种情况的说明：可能有两个上游节点，其中一个成功、另一个决定拦截
-				// 成功的发布下游节点的时候会发布此节点
-				logger.Infof(
-					"upstream function intercepted. breakout. upstream_function_run_record_id: %s",
-					upstreamFunctionRunRecordID.String())
-				upstreamFunctionIntercepted = true
-				break
+		if len(flowFunction.UpstreamFlowFunctionIDs) > 1 { // 在只有一个上游节点的情况下，不需要检测
+
+			for _, i := range flowFunction.UpstreamFlowFunctionIDs {
+				upstreamFunctionRunRecordID, ok := flowRunRecordIns.FlowFuncIDMapFuncRunRecordID[i]
+				if !ok { // 不存在表示没有运行完
+					logger.Infof(
+						"upstream function not run finished. upstream flow_function_id: %s", i)
+					upstreamAllSucFinished = false
+					break
+				}
+				upstreamFunctionRunRecordIns, err := funcRunRecordRepo.GetByID(upstreamFunctionRunRecordID)
+				if err != nil {
+					logger.Errorf(
+						"get upstream function run record ins error:%v. upstream_function_run_record_id: %s",
+						err, upstreamFunctionRunRecordID.String())
+					upstreamAllSucFinished = false
+					break
+				}
+				if upstreamFunctionRunRecordIns.IsZero() {
+					logger.Errorf(
+						"get upstream function run record ins nil. upstream_function_run_record_id: %s",
+						upstreamFunctionRunRecordID.String())
+					upstreamAllSucFinished = false
+					break
+				}
+				if !upstreamFunctionRunRecordIns.Finished() {
+					logger.Infof(
+						"upstream function is not finished. upstream_function_run_record_id: %s",
+						upstreamFunctionRunRecordID.String())
+					upstreamAllSucFinished = false
+					break
+				}
+				if upstreamFunctionRunRecordIns.InterceptBelowFunctionRun {
+					// 为什么会出现这种情况的说明：可能有两个上游节点，其中一个成功、另一个决定拦截
+					// 成功的发布下游节点的时候会发布此节点
+					logger.Infof(
+						"upstream function intercepted. breakout. upstream_function_run_record_id: %s",
+						upstreamFunctionRunRecordID.String())
+					upstreamFunctionIntercepted = true
+					break
+				}
 			}
 		}
 		if !upstreamAllSucFinished {
@@ -224,8 +227,8 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 		}
 
 		err = funcRunRecordRepo.SaveIptBrief(
-			funcRunRecordUuid, functionRecordIns.Ipts,
-			objectStorage)
+			funcRunRecordUuid, functionIns.Ipts,
+			functionRecordIns.Ipts, objectStorage)
 		if err != nil {
 			// TODO 修改为更为合适的处理
 			panic(err)
@@ -364,9 +367,13 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 			logger.Errorf("|----> function run record id %s run failed", functionRunRecordIDStr)
 		}
 
+		optKeyMapValueType := make(map[string]value_type.ValueType)
+		for _, i := range functionIns.Opts {
+			optKeyMapValueType[i.Key] = i.ValueType
+		}
 		if funcRunOpt.Suc {
 			funcRunRecordRepo.SaveSuc(
-				funcRunRecordUuid, funcRunOpt.Description,
+				funcRunRecordUuid, funcRunOpt.Description, optKeyMapValueType,
 				funcRunOpt.Detail, funcRunOpt.Brief, funcRunOpt.InterceptBelowFunctionRun)
 
 			if !funcRunOpt.InterceptBelowFunctionRun { // 成功运行完成且不拦截

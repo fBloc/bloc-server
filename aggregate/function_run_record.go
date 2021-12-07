@@ -4,12 +4,14 @@ import (
 	"time"
 
 	"github.com/fBloc/bloc-backend-go/event"
+	"github.com/fBloc/bloc-backend-go/pkg/value_type"
 	"github.com/fBloc/bloc-backend-go/value_object"
 )
 
 type IptBriefAndKey struct {
-	Brief   interface{}
-	FullKey string
+	ValueType value_type.ValueType
+	Brief     interface{}
+	FullKey   string
 }
 
 type FunctionRunRecord struct {
@@ -31,6 +33,7 @@ type FunctionRunRecord struct {
 	IptBriefAndObskey         [][]IptBriefAndKey // Ipts中的值可能非常大，在前端显示的时候不可能全部显示，故进行截断，将真实值保存到对象存储，需要的时候才查看真实值
 	Opt                       map[string]interface{}
 	OptBrief                  map[string]string
+	OptKeyMapValueType        map[string]value_type.ValueType
 	Progress                  float32
 	ProgressMsg               []string
 	ProcessStages             []string

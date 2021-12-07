@@ -12,6 +12,8 @@ import (
 	"github.com/fBloc/bloc-backend-go/infrastructure/object_storage"
 	"github.com/fBloc/bloc-backend-go/internal/conns/mongodb"
 	"github.com/fBloc/bloc-backend-go/internal/filter_options"
+	"github.com/fBloc/bloc-backend-go/pkg/ipt"
+	"github.com/fBloc/bloc-backend-go/pkg/value_type"
 	"github.com/fBloc/bloc-backend-go/repository/function_run_record"
 	"github.com/fBloc/bloc-backend-go/value_object"
 )
@@ -40,32 +42,34 @@ func New(
 }
 
 type mongoIptBriefAndKey struct {
-	Brief   interface{} `bson:"brief"`
-	FullKey string      `bson:"full_key"`
+	ValueType value_type.ValueType `bson:"value_type"`
+	Brief     interface{}          `bson:"brief"`
+	FullKey   string               `bson:"full_key"`
 }
 
 type mongoFunctionRunRecord struct {
-	ID                        value_object.UUID       `bson:"id"`
-	FlowID                    value_object.UUID       `bson:"flow_id"`
-	FlowOriginID              value_object.UUID       `bson:"flow_origin_id"`
-	ArrangementFlowID         string                  `bson:"arrangement_flow_id"`
-	FunctionID                value_object.UUID       `bson:"function_id"`
-	FlowFunctionID            string                  `bson:"flow_function_id"`
-	FlowRunRecordID           value_object.UUID       `bson:"flow_run_record_id"`
-	Start                     time.Time               `bson:"start"`
-	End                       time.Time               `bson:"end,omitempty"`
-	Suc                       bool                    `bson:"suc"`
-	InterceptBelowFunctionRun bool                    `bson:"intercept_below_function_run"`
-	Canceled                  bool                    `bson:"canceled,omitempty"`
-	Description               string                  `bson:"description,omitempty"`
-	ErrorMsg                  string                  `bson:"error_msg,omitempty"`
-	IptBriefAndObskey         [][]mongoIptBriefAndKey `bson:"ipt,omitempty"`
-	Opt                       map[string]interface{}  `bson:"opt,omitempty"`
-	OptBrief                  map[string]string       `bson:"opt_brief,omitempty"`
-	Progress                  float32                 `bson:"progress"`
-	ProgressMsg               []string                `bson:"progress_msg"`
-	ProcessStages             []string                `bson:"process_stages"`
-	ProcessStageIndex         int                     `bson:"process_stage_index"`
+	ID                        value_object.UUID               `bson:"id"`
+	FlowID                    value_object.UUID               `bson:"flow_id"`
+	FlowOriginID              value_object.UUID               `bson:"flow_origin_id"`
+	ArrangementFlowID         string                          `bson:"arrangement_flow_id"`
+	FunctionID                value_object.UUID               `bson:"function_id"`
+	FlowFunctionID            string                          `bson:"flow_function_id"`
+	FlowRunRecordID           value_object.UUID               `bson:"flow_run_record_id"`
+	Start                     time.Time                       `bson:"start"`
+	End                       time.Time                       `bson:"end,omitempty"`
+	Suc                       bool                            `bson:"suc"`
+	InterceptBelowFunctionRun bool                            `bson:"intercept_below_function_run"`
+	Canceled                  bool                            `bson:"canceled,omitempty"`
+	Description               string                          `bson:"description,omitempty"`
+	ErrorMsg                  string                          `bson:"error_msg,omitempty"`
+	IptBriefAndObskey         [][]mongoIptBriefAndKey         `bson:"ipt,omitempty"`
+	Opt                       map[string]interface{}          `bson:"opt,omitempty"`
+	OptBrief                  map[string]string               `bson:"opt_brief,omitempty"`
+	OptKeyMapValueType        map[string]value_type.ValueType `bson:"optKey_map_valueType,omitempty"`
+	Progress                  float32                         `bson:"progress"`
+	ProgressMsg               []string                        `bson:"progress_msg"`
+	ProcessStages             []string                        `bson:"process_stages"`
+	ProcessStageIndex         int                             `bson:"process_stage_index"`
 }
 
 func NewFromAggregate(fRR *aggregate.FunctionRunRecord) *mongoFunctionRunRecord {
@@ -86,6 +90,7 @@ func NewFromAggregate(fRR *aggregate.FunctionRunRecord) *mongoFunctionRunRecord 
 		ErrorMsg:                  fRR.ErrorMsg,
 		Opt:                       fRR.Opt,
 		OptBrief:                  fRR.OptBrief,
+		OptKeyMapValueType:        fRR.OptKeyMapValueType,
 		Progress:                  fRR.Progress,
 		ProgressMsg:               fRR.ProgressMsg,
 		ProcessStages:             fRR.ProcessStages,
@@ -96,8 +101,9 @@ func NewFromAggregate(fRR *aggregate.FunctionRunRecord) *mongoFunctionRunRecord 
 		resp.IptBriefAndObskey[i] = make([]mongoIptBriefAndKey, len(param))
 		for j, component := range param {
 			resp.IptBriefAndObskey[i][j] = mongoIptBriefAndKey{
-				Brief:   component.Brief,
-				FullKey: component.FullKey,
+				ValueType: component.ValueType,
+				Brief:     component.Brief,
+				FullKey:   component.FullKey,
 			}
 		}
 	}
@@ -122,6 +128,7 @@ func (m mongoFunctionRunRecord) ToAggregate() *aggregate.FunctionRunRecord {
 		ErrorMsg:                  m.ErrorMsg,
 		Opt:                       m.Opt,
 		OptBrief:                  m.OptBrief,
+		OptKeyMapValueType:        m.OptKeyMapValueType,
 		Progress:                  m.Progress,
 		ProgressMsg:               m.ProgressMsg,
 		ProcessStages:             m.ProcessStages,
@@ -132,8 +139,9 @@ func (m mongoFunctionRunRecord) ToAggregate() *aggregate.FunctionRunRecord {
 		resp.IptBriefAndObskey[i] = make([]aggregate.IptBriefAndKey, len(param))
 		for j, component := range param {
 			resp.IptBriefAndObskey[i][j] = aggregate.IptBriefAndKey{
-				Brief:   component.Brief,
-				FullKey: component.FullKey,
+				ValueType: component.ValueType,
+				Brief:     component.Brief,
+				FullKey:   component.FullKey,
 			}
 		}
 	}
@@ -267,7 +275,8 @@ func (mr *MongoRepository) PatchProgressStages(id value_object.UUID, progressSta
 }
 
 func (mr *MongoRepository) SaveIptBrief(
-	id value_object.UUID, ipts [][]interface{},
+	id value_object.UUID,
+	iptConfig ipt.IptSlice, ipts [][]interface{},
 	objectStorageImplement object_storage.ObjectStorage,
 ) error {
 	iptBAOk := make([][]mongoIptBriefAndKey, len(ipts))
@@ -283,8 +292,9 @@ func (mr *MongoRepository) SaveIptBrief(
 
 			key := fmt.Sprintf("%s_%d_%d", id, paramIndex, componentIndex)
 			iptBAOk[paramIndex] = append(iptBAOk[paramIndex], mongoIptBriefAndKey{
-				Brief:   string(byteInrune[:minLength-1]),
-				FullKey: key})
+				ValueType: iptConfig[paramIndex].Components[componentIndex].ValueType,
+				Brief:     string(byteInrune[:minLength-1]),
+				FullKey:   key})
 			err := objectStorageImplement.Set(key, uploadByte)
 			if err != nil {
 				return err
@@ -310,8 +320,8 @@ func (mr *MongoRepository) ClearProgress(id value_object.UUID) error {
 
 func (mr *MongoRepository) SaveSuc(
 	id value_object.UUID,
-	desc string, opt map[string]interface{},
-	brief map[string]string, intercepted bool,
+	desc string, keyMapValueType map[string]value_type.ValueType,
+	opt map[string]interface{}, brief map[string]string, intercepted bool,
 ) error {
 	return mr.mongoCollection.PatchByID(
 		id,
@@ -319,6 +329,7 @@ func (mr *MongoRepository) SaveSuc(
 			AddSet("end", time.Now()).
 			AddSet("suc", true).
 			AddSet("intercept_below_function_run", intercepted).
+			AddSet("optKey_map_valueType", keyMapValueType).
 			AddSet("opt", opt).
 			AddSet("opt_brief", brief).
 			AddSet("description", desc))

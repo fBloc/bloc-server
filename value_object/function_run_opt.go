@@ -1,6 +1,8 @@
 package value_object
 
-import "sync"
+import (
+	"sync"
+)
 
 type FunctionRunOpt struct {
 	Suc                       bool
