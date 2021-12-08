@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/fBloc/bloc-backend-go/event"
+	"github.com/fBloc/bloc-backend-go/interfaces/web/client"
 	"github.com/fBloc/bloc-backend-go/interfaces/web/flow"
 	"github.com/fBloc/bloc-backend-go/interfaces/web/flow_run_record"
 	"github.com/fBloc/bloc-backend-go/interfaces/web/function"
@@ -12,7 +13,6 @@ import (
 	"github.com/fBloc/bloc-backend-go/interfaces/web/log_data"
 	"github.com/fBloc/bloc-backend-go/interfaces/web/middleware"
 	"github.com/fBloc/bloc-backend-go/interfaces/web/object_storage"
-	"github.com/fBloc/bloc-backend-go/interfaces/web/register_function"
 	"github.com/fBloc/bloc-backend-go/interfaces/web/user"
 	flow_service "github.com/fBloc/bloc-backend-go/services/flow"
 	flowRunRecord_service "github.com/fBloc/bloc-backend-go/services/flow_run_record"
@@ -235,11 +235,25 @@ func (blocApp *BlocApp) RunHttpServer() {
 		}
 	}
 
-	// consumer interaction about
+	// function provider client
 	{
-		basicPath := "/api/v1/function_app"
+		basicPath := "/api/v1/client"
+		funcService, err := function_service.NewFunctionService(
+			function_service.WithLogger(httpConsumer),
+			function_service.WithFunctionRepository(
+				blocApp.GetOrCreateFunctionRepository()),
+			function_service.WithUserCacheService(uCacheService),
+		)
+		if err != nil {
+			panic(err)
+		}
+		client.InjectFunctionService(funcService)
+		client.InjectLogBackend(blocApp.GetOrCreateLogBackEnd())
 		{
-			router.POST(basicPath+"/register_functions", register_function.RegisterFunctions)
+			router.POST(basicPath+"/register_functions", client.RegisterFunctions)
+			router.POST(basicPath+"/report_log", client.ReportLog)
+			// router.POST(basicPath+"/report_progress", client.ReportProgress)
+			// router.POST(basicPath+"/function_run_finished", client.ReportFunctionRunFinished)
 		}
 	}
 

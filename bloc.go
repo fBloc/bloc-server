@@ -263,7 +263,7 @@ func (bA *BlocApp) GetOrCreateHttpLogger() *log.Logger {
 		return bA.httpServerLogger
 	}
 
-	bA.httpServerLogger = log.New(
+	bA.httpServerLogger = log.NewWithPeriodicUpload(
 		value_object.HttpServerLog.String(),
 		bA.GetOrCreateLogBackEnd())
 	return bA.httpServerLogger
@@ -277,7 +277,7 @@ func (bA *BlocApp) GetOrCreateConsumerLogger() *log.Logger {
 	}
 
 	logBackEnd := bA.GetOrCreateLogBackEnd()
-	logger := log.New(
+	logger := log.NewWithPeriodicUpload(
 		value_object.ConsumerLog.String(),
 		logBackEnd)
 	bA.consumerLogger = logger
@@ -286,7 +286,7 @@ func (bA *BlocApp) GetOrCreateConsumerLogger() *log.Logger {
 
 func (bA *BlocApp) CreateFunctionRunLogger(funcRunRecordID value_object.UUID) *log.Logger {
 	logBackEnd := bA.GetOrCreateLogBackEnd()
-	return log.New(
+	return log.NewWithPeriodicUpload(
 		value_object.FuncRunRecordLog.String()+"-"+funcRunRecordID.String(),
 		logBackEnd)
 }

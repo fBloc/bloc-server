@@ -1,4 +1,4 @@
-package register_function
+package client
 
 import (
 	"sync"
