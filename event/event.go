@@ -1,6 +1,7 @@
 package event
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/fBloc/bloc-backend-go/infrastructure/mq"
@@ -36,7 +37,7 @@ func InjectFutureEventStorageImplement(fES FuturePubEventStorage) {
 	driver.futureEventStorageImplement = fES
 }
 
-func PubEvent(event DomainEvent) error {
+func PubEvent(event DomainEvent, subTopic string) error {
 	if driver.mqIns == nil {
 		panic(needInitialMqInsAsEventChannelError)
 	}
@@ -46,7 +47,11 @@ func PubEvent(event DomainEvent) error {
 		return errors.Wrap(err, "event marshall failed")
 	}
 
-	err = driver.mqIns.Pub(event.Topic(), eventByteData)
+	topic := event.Topic()
+	if subTopic != "" {
+		topic = fmt.Sprintf("%s.%s", event.Topic(), subTopic)
+	}
+	err = driver.mqIns.Pub(topic, eventByteData)
 	if err != nil {
 		return errors.Wrap(err, "pub event failed")
 	}

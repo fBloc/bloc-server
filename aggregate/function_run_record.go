@@ -51,7 +51,9 @@ func NewFunctionRunRecordFromFlowDriven(
 		Start:           time.Now(),
 		ProcessStages:   functionIns.ProcessStages,
 	}
-	event.PubEvent(&event.FunctionToRun{FunctionRunRecordID: fRR.ID})
+	event.PubEvent(
+		&event.FunctionToRun{FunctionRunRecordID: fRR.ID},
+		functionIns.ProviderName)
 	return fRR
 }
 

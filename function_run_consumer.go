@@ -148,7 +148,7 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 			flowRunRecordRepo.Suc(flowRunRecordIns.ID)
 			event.PubEvent(&event.FlowRunFinished{
 				FlowRunRecordID: flowRunRecordIns.ID,
-			})
+			}, "")
 			continue
 		}
 		functionIns := blocApp.GetFunctionByRepoID(functionRecordIns.FunctionID)
@@ -431,7 +431,7 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 						flowRunRecordRepo.Suc(flowRunRecordIns.ID)
 						event.PubEvent(&event.FlowRunFinished{
 							FlowRunRecordID: flowRunRecordIns.ID,
-						})
+						}, "")
 						logger.Infof(
 							"|------> pub finished flow_task__id from all finished: %s",
 							flowRunRecordIns.ID)
@@ -445,7 +445,7 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 						functionIns.GroupName, functionIns.Name))
 				event.PubEvent(&event.FlowRunFinished{
 					FlowRunRecordID: flowRunRecordIns.ID,
-				})
+				}, "")
 				logger.Infof(
 					"|------> pub finished flow_run_record__id from intercepted: %s",
 					flowRunRecordIns.ID)

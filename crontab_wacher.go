@@ -41,7 +41,7 @@ func (blocApp *BlocApp) CrontabWatcher() {
 				if created { // 并发安全、避免重复发布任务
 					return
 				}
-				event.PubEvent(&event.FlowToRun{FlowRunRecordID: flowRunRecord.ID})
+				event.PubEvent(&event.FlowToRun{FlowRunRecordID: flowRunRecord.ID}, "")
 			}(flowIns, now)
 		}
 	}

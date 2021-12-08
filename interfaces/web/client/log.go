@@ -20,6 +20,6 @@ type msg struct {
 }
 
 type LogHttpReq struct {
-	FuncRunRecordID string `json:"function_run_record_id"`
-	LogData         []*msg `json:"log_data"`
+	Name    string `json:"name"`
+	LogData []*msg `json:"log_data"`
 }
