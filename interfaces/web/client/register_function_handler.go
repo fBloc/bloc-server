@@ -87,6 +87,7 @@ func RegisterFunctions(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 						return
 					}
 					f.ID = aggFunction.ID
+					aggFunc = &aggFunction
 				} else {
 					f.ID = aggFunc.ID
 				}
@@ -96,6 +97,7 @@ func RegisterFunctions(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 				reported.groupNameMapFuncNameMapFunc[groupName][f.Name] = &reportFunction{
 					ProviderName: req.Who, GroupName: groupName, Name: f.Name,
 					ID: f.ID, LastReportTime: time.Now()}
+				reported.idMapFunc[f.ID] = *aggFunc
 				reported.Unlock()
 				fService.Logger.Infof("registered func: %s - %s", groupName, f.Name)
 			}(groupName, f, &wg)

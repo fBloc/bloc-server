@@ -347,6 +347,7 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 				err = objectStorage.Set(ossKey, uploadByte)
 				if err == nil {
 					optInRune := []rune(string(uploadByte))
+					// TODO 截断长度放到默认配置里
 					minLength := 51
 					if len(optInRune) < minLength {
 						minLength = len(optInRune)

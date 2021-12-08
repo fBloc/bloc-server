@@ -310,7 +310,7 @@ func (mr *MongoRepository) ClearProgress(id value_object.UUID) error {
 
 func (mr *MongoRepository) SaveSuc(
 	id value_object.UUID,
-	desc string, opt map[string]interface{},
+	desc string, opt map[string]string,
 	brief map[string]string, intercepted bool,
 ) error {
 	return mr.mongoCollection.PatchByID(

@@ -4,6 +4,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/fBloc/bloc-backend-go/aggregate"
 	"github.com/fBloc/bloc-backend-go/pkg/ipt"
 	"github.com/fBloc/bloc-backend-go/pkg/opt"
 	"github.com/fBloc/bloc-backend-go/services/function"
@@ -26,11 +27,14 @@ type reportFunction struct {
 
 type reportedGroupNameMapFuncNameMapFunc struct {
 	groupNameMapFuncNameMapFunc map[string]map[string]*reportFunction
+	idMapFunc                   map[value_object.UUID]aggregate.Function
 	sync.Mutex
 }
 
 var reported = reportedGroupNameMapFuncNameMapFunc{
-	groupNameMapFuncNameMapFunc: make(map[string]map[string]*reportFunction)}
+	groupNameMapFuncNameMapFunc: make(map[string]map[string]*reportFunction),
+	idMapFunc:                   make(map[value_object.UUID]aggregate.Function),
+}
 
 type RegisterFuncReq struct {
 	Who                         string                     `json:"who"`

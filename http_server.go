@@ -249,11 +249,44 @@ func (blocApp *BlocApp) RunHttpServer() {
 		}
 		client.InjectFunctionService(funcService)
 		client.InjectLogBackend(blocApp.GetOrCreateLogBackEnd())
+		fRRS, err := functionRunRecord_service.NewService(
+			functionRunRecord_service.WithLogger(httpConsumer),
+			functionRunRecord_service.WithFunctionRunRecordRepository(
+				blocApp.GetOrCreateFunctionRunRecordRepository()),
+			functionRunRecord_service.WithUserCacheService(uCacheService),
+		)
+		if err != nil {
+			panic(err)
+		}
+		client.InjectFunctionRunRecordService(fRRS)
+
+		flowService, err := flow_service.NewFlowService(
+			flow_service.WithLogger(httpConsumer),
+			flow_service.WithFlowRepository(
+				blocApp.GetOrCreateFlowRepository(),
+			),
+			flow_service.WithFunctionRepository(
+				blocApp.GetOrCreateFunctionRepository(),
+			),
+			flow_service.WithFunctionRunRecordRepository(
+				blocApp.GetOrCreateFunctionRunRecordRepository(),
+			),
+			flow_service.WithFlowRunRecordRepository(
+				blocApp.GetOrCreateFlowRunRecordRepository(),
+			),
+			flow_service.WithUserCacheService(uCacheService),
+		)
+		if err != nil {
+			panic(err)
+		}
+		client.InjectFlowService(flowService)
+
+		client.InjectConsumerLogger(blocApp.GetOrCreateConsumerLogger())
 		{
 			router.POST(basicPath+"/register_functions", client.RegisterFunctions)
 			router.POST(basicPath+"/report_log", client.ReportLog)
 			// router.POST(basicPath+"/report_progress", client.ReportProgress)
-			// router.POST(basicPath+"/function_run_finished", client.ReportFunctionRunFinished)
+			router.POST(basicPath+"/function_run_finished", client.FunctionRunFinished)
 		}
 	}
 

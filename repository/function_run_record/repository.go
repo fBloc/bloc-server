@@ -41,7 +41,8 @@ type FunctionRunRecordRepository interface {
 
 	ClearProgress(id value_object.UUID) error
 	SaveSuc(
-		id value_object.UUID, desc string, opt map[string]interface{},
+		id value_object.UUID, desc string,
+		opt map[string]string,
 		brief map[string]string, intercepted bool,
 	) error
 	SaveCancel(id value_object.UUID) error
