@@ -11,6 +11,7 @@ type Function struct {
 	ID            value_object.UUID
 	Name          string
 	GroupName     string
+	ProviderName  string
 	Description   string
 	Ipts          ipt.IptSlice
 	Opts          []*opt.Opt

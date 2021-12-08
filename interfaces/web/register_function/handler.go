@@ -27,18 +27,20 @@ func RegisterFunctions(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 	for groupName, funcs := range req.GroupNameMapFuncNameMapFunc {
 		for _, f := range funcs {
 			// 检测是否汇报过
-			funcNameMapFunc, ok := groupNameMapFuncNameMapFunc[groupName]
+			funcNameMapFunc, ok := reported.groupNameMapFuncNameMapFunc[groupName]
 			if !ok {
-				groupNameMapFuncNameMapFunc[groupName] = make(map[string]*reportFunction)
+				reported.Lock()
+				reported.groupNameMapFuncNameMapFunc[groupName] = make(map[string]*reportFunction)
+				reported.Unlock()
 			} else {
 				reportedFunc, ok := funcNameMapFunc[f.Name]
 				if ok { // 汇报过，直接利用信息
-					if req.Flag != groupName { // 不允许不同的consumer来源创建group_name和name完全相同的function
+					if req.Who != reportedFunc.ProviderName { // 不允许不同来源的provider创建group_name和name完全相同的function
 						web.WriteBadRequestDataResp(
 							&w, fmt.Sprintf(
-								`another consumer source %s already created %s-%s function.
+								`another function provider %s already created %s-%s function.
 								not allowed create same group_name-name function from different consumer source`,
-								req.Flag, groupName, f.Name))
+								req.Who, groupName, f.Name))
 						return
 					}
 					f.ID = reportedFunc.ID
@@ -70,6 +72,7 @@ func RegisterFunctions(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 						ID:            value_object.NewUUID(),
 						Name:          f.Name,
 						GroupName:     groupName,
+						ProviderName:  req.Who,
 						Description:   f.Description,
 						Ipts:          f.Ipts,
 						IptDigest:     iptD,
@@ -89,8 +92,11 @@ func RegisterFunctions(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 				}
 
 				// 加入到本地汇报缓存
-				groupNameMapFuncNameMapFunc[groupName][f.Name] = &reportFunction{
-					GroupName: groupName, Name: f.Name, ID: f.ID, LastReportTime: time.Now()}
+				reported.Lock()
+				reported.groupNameMapFuncNameMapFunc[groupName][f.Name] = &reportFunction{
+					ProviderName: req.Who, GroupName: groupName, Name: f.Name,
+					ID: f.ID, LastReportTime: time.Now()}
+				reported.Unlock()
 				fService.Logger.Infof("registered func: %s - %s", groupName, f.Name)
 			}(groupName, f, &wg)
 		}

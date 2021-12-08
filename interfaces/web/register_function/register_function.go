@@ -1,6 +1,7 @@
 package register_function
 
 import (
+	"sync"
 	"time"
 
 	"github.com/fBloc/bloc-backend-go/pkg/ipt"
@@ -16,17 +17,23 @@ func InjectFunctionService(fS *function.FunctionService) {
 }
 
 type reportFunction struct {
-	ConsumerFlag   string
+	ProviderName   string
 	GroupName      string
 	Name           string
 	ID             value_object.UUID
 	LastReportTime time.Time
 }
 
-var groupNameMapFuncNameMapFunc = make(map[string]map[string]*reportFunction)
+type reportedGroupNameMapFuncNameMapFunc struct {
+	groupNameMapFuncNameMapFunc map[string]map[string]*reportFunction
+	sync.Mutex
+}
+
+var reported = reportedGroupNameMapFuncNameMapFunc{
+	groupNameMapFuncNameMapFunc: make(map[string]map[string]*reportFunction)}
 
 type RegisterFuncReq struct {
-	Flag                        string                     `json:"flag"`
+	Who                         string                     `json:"who"`
 	GroupNameMapFuncNameMapFunc map[string][]*HttpFunction `json:"groupName_map_functionName_map_function"`
 }
 type GroupNameMapFunctions map[string][]*HttpFunction
