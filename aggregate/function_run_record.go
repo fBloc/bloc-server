@@ -9,6 +9,7 @@ import (
 )
 
 type IptBriefAndKey struct {
+	IsArray   bool
 	ValueType value_type.ValueType
 	Brief     interface{}
 	FullKey   string
@@ -34,6 +35,7 @@ type FunctionRunRecord struct {
 	Opt                       map[string]interface{}
 	OptBrief                  map[string]string
 	OptKeyMapValueType        map[string]value_type.ValueType
+	OptKeyMapIsArray          map[string]bool
 	Progress                  float32
 	ProgressMsg               []string
 	ProcessStages             []string

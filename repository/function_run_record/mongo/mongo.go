@@ -42,6 +42,7 @@ func New(
 }
 
 type mongoIptBriefAndKey struct {
+	IsArray   bool                 `bson:"is_array"`
 	ValueType value_type.ValueType `bson:"value_type"`
 	Brief     interface{}          `bson:"brief"`
 	FullKey   string               `bson:"full_key"`
@@ -66,6 +67,7 @@ type mongoFunctionRunRecord struct {
 	Opt                       map[string]interface{}          `bson:"opt,omitempty"`
 	OptBrief                  map[string]string               `bson:"opt_brief,omitempty"`
 	OptKeyMapValueType        map[string]value_type.ValueType `bson:"optKey_map_valueType,omitempty"`
+	OptKeyMapIsArray          map[string]bool                 `bson:"optKey_map_isArray,omitempty"`
 	Progress                  float32                         `bson:"progress"`
 	ProgressMsg               []string                        `bson:"progress_msg"`
 	ProcessStages             []string                        `bson:"process_stages"`
@@ -91,6 +93,7 @@ func NewFromAggregate(fRR *aggregate.FunctionRunRecord) *mongoFunctionRunRecord 
 		Opt:                       fRR.Opt,
 		OptBrief:                  fRR.OptBrief,
 		OptKeyMapValueType:        fRR.OptKeyMapValueType,
+		OptKeyMapIsArray:          fRR.OptKeyMapIsArray,
 		Progress:                  fRR.Progress,
 		ProgressMsg:               fRR.ProgressMsg,
 		ProcessStages:             fRR.ProcessStages,
@@ -101,6 +104,7 @@ func NewFromAggregate(fRR *aggregate.FunctionRunRecord) *mongoFunctionRunRecord 
 		resp.IptBriefAndObskey[i] = make([]mongoIptBriefAndKey, len(param))
 		for j, component := range param {
 			resp.IptBriefAndObskey[i][j] = mongoIptBriefAndKey{
+				IsArray:   component.IsArray,
 				ValueType: component.ValueType,
 				Brief:     component.Brief,
 				FullKey:   component.FullKey,
@@ -129,6 +133,7 @@ func (m mongoFunctionRunRecord) ToAggregate() *aggregate.FunctionRunRecord {
 		Opt:                       m.Opt,
 		OptBrief:                  m.OptBrief,
 		OptKeyMapValueType:        m.OptKeyMapValueType,
+		OptKeyMapIsArray:          m.OptKeyMapIsArray,
 		Progress:                  m.Progress,
 		ProgressMsg:               m.ProgressMsg,
 		ProcessStages:             m.ProcessStages,
@@ -139,6 +144,7 @@ func (m mongoFunctionRunRecord) ToAggregate() *aggregate.FunctionRunRecord {
 		resp.IptBriefAndObskey[i] = make([]aggregate.IptBriefAndKey, len(param))
 		for j, component := range param {
 			resp.IptBriefAndObskey[i][j] = aggregate.IptBriefAndKey{
+				IsArray:   component.IsArray,
 				ValueType: component.ValueType,
 				Brief:     component.Brief,
 				FullKey:   component.FullKey,
@@ -292,6 +298,7 @@ func (mr *MongoRepository) SaveIptBrief(
 
 			key := fmt.Sprintf("%s_%d_%d", id, paramIndex, componentIndex)
 			iptBAOk[paramIndex] = append(iptBAOk[paramIndex], mongoIptBriefAndKey{
+				IsArray:   iptConfig[paramIndex].Components[componentIndex].AllowMulti,
 				ValueType: iptConfig[paramIndex].Components[componentIndex].ValueType,
 				Brief:     string(byteInrune[:minLength-1]),
 				FullKey:   key})
@@ -321,6 +328,7 @@ func (mr *MongoRepository) ClearProgress(id value_object.UUID) error {
 func (mr *MongoRepository) SaveSuc(
 	id value_object.UUID,
 	desc string, keyMapValueType map[string]value_type.ValueType,
+	keyMapValueIsArray map[string]bool,
 	opt map[string]interface{}, brief map[string]string, intercepted bool,
 ) error {
 	return mr.mongoCollection.PatchByID(
@@ -330,6 +338,7 @@ func (mr *MongoRepository) SaveSuc(
 			AddSet("suc", true).
 			AddSet("intercept_below_function_run", intercepted).
 			AddSet("optKey_map_valueType", keyMapValueType).
+			AddSet("optKey_map_isArray", keyMapValueIsArray).
 			AddSet("opt", opt).
 			AddSet("opt_brief", brief).
 			AddSet("description", desc))

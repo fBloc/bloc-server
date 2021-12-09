@@ -23,6 +23,7 @@ func InjectLogCollectBackend(l log_collect_backend.LogBackEnd) {
 }
 
 type briefAndKey struct {
+	IsArray          bool   `json:"is_array"`
 	ValueType        string `json:"value_type"`
 	Brief            string `json:"brief"`
 	ObjectStorageKey string `json:"object_storage_key"`
@@ -60,6 +61,7 @@ func fromAgg(
 	opt := make(map[string]briefAndKey, len(aggFRR.Opt))
 	for k, v := range aggFRR.Opt {
 		opt[k] = briefAndKey{
+			IsArray:          aggFRR.OptKeyMapIsArray[k],
 			ValueType:        string(aggFRR.OptKeyMapValueType[k]),
 			Brief:            aggFRR.OptBrief[k],
 			ObjectStorageKey: cast.ToString(v)}
@@ -70,6 +72,7 @@ func fromAgg(
 		ipt[iptIndex] = make([]briefAndKey, len(iptComponents))
 		for componentIndex, component := range iptComponents {
 			ipt[iptIndex][componentIndex] = briefAndKey{
+				IsArray:          component.IsArray,
 				ValueType:        string(component.ValueType),
 				Brief:            cast.ToString(component.Brief),
 				ObjectStorageKey: component.FullKey}

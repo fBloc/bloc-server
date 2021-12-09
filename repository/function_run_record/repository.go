@@ -47,7 +47,9 @@ type FunctionRunRecordRepository interface {
 	SaveSuc(
 		id value_object.UUID, desc string,
 		keyMapValueType map[string]value_type.ValueType,
-		opt map[string]interface{}, brief map[string]string, intercepted bool,
+		keyMapValueIsArray map[string]bool,
+		opt map[string]interface{}, brief map[string]string,
+		intercepted bool,
 	) error
 	SaveCancel(id value_object.UUID) error
 	SaveFail(id value_object.UUID, errMsg string) error

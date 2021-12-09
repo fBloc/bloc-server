@@ -367,14 +367,18 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 			logger.Errorf("|----> function run record id %s run failed", functionRunRecordIDStr)
 		}
 
-		optKeyMapValueType := make(map[string]value_type.ValueType)
+		optKeyMapValueType := make(map[string]value_type.ValueType, len(functionIns.Opts))
+		optKeyMapValueIsArray := make(map[string]bool, len(functionIns.Opts))
 		for _, i := range functionIns.Opts {
 			optKeyMapValueType[i.Key] = i.ValueType
+			optKeyMapValueIsArray[i.Key] = i.IsArray
 		}
 		if funcRunOpt.Suc {
 			funcRunRecordRepo.SaveSuc(
-				funcRunRecordUuid, funcRunOpt.Description, optKeyMapValueType,
-				funcRunOpt.Detail, funcRunOpt.Brief, funcRunOpt.InterceptBelowFunctionRun)
+				funcRunRecordUuid, funcRunOpt.Description,
+				optKeyMapValueType, optKeyMapValueIsArray,
+				funcRunOpt.Detail, funcRunOpt.Brief,
+				funcRunOpt.InterceptBelowFunctionRun)
 
 			if !funcRunOpt.InterceptBelowFunctionRun { // 成功运行完成且不拦截
 				if len(flowFunction.DownstreamFlowFunctionIDs) > 0 { // 若有下游待运行的function节点
