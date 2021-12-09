@@ -285,7 +285,7 @@ func (blocApp *BlocApp) RunHttpServer() {
 		{
 			router.POST(basicPath+"/register_functions", client.RegisterFunctions)
 			router.POST(basicPath+"/report_log", client.ReportLog)
-			// router.POST(basicPath+"/report_progress", client.ReportProgress)
+			router.POST(basicPath+"/report_progress", client.ReportProgress)
 			router.POST(basicPath+"/function_run_finished", client.FunctionRunFinished)
 		}
 	}
