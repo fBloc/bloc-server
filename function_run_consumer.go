@@ -1,44 +1,24 @@
 package bloc
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"time"
 
-	"github.com/fBloc/bloc-backend-go/aggregate"
-	"github.com/fBloc/bloc-backend-go/config"
 	"github.com/fBloc/bloc-backend-go/event"
 	"github.com/fBloc/bloc-backend-go/pkg/value_type"
-	function_execute_heartbeat_repository "github.com/fBloc/bloc-backend-go/repository/function_execute_heartbeat"
 	"github.com/fBloc/bloc-backend-go/value_object"
 )
 
-func reportHeartBeat(
-	heartBeatRepo function_execute_heartbeat_repository.FunctionExecuteHeartbeatRepository,
-	heartBeatRecordID value_object.UUID,
-	done chan bool) {
-	ticker := time.NewTicker(aggregate.HeartBeatReportInterval)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-done: // 任务已完成，删除心跳
-			heartBeatRepo.Delete(heartBeatRecordID)
-			return
-		case <-ticker.C: // 上报心跳
-			heartBeatRepo.AliveReport(heartBeatRecordID)
-		}
-	}
-}
-
-// FunctionRunConsumer 消费并执行具体的function节点，若有下游，发布下游待执行functions
+// FunctionRunConsumer 接收到要运行的function，主要有以下预操作：
+// 1. 装配ipt具体值
+// 2. 检测是否已超时
+// 3. 都没问题发布client能识别的的运行消息
 func (blocApp *BlocApp) FunctionRunConsumer() {
 	event.InjectMq(blocApp.GetOrCreateEventMQ())
 	event.InjectFutureEventStorageImplement(blocApp.GetOrCreateFutureEventStorage())
 	logger := blocApp.GetOrCreateConsumerLogger()
 	funcRunRecordRepo := blocApp.GetOrCreateFunctionRunRecordRepository()
-	heartBeatRepo := blocApp.GetOrCreateFuncRunHBeatRepository()
 	flowRepo := blocApp.GetOrCreateFlowRepository()
 	objectStorage := blocApp.GetOrCreateConsumerObjectStorage()
 	flowRunRecordRepo := blocApp.GetOrCreateFlowRunRecordRepository()
@@ -148,7 +128,7 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 			flowRunRecordRepo.Suc(flowRunRecordIns.ID)
 			event.PubEvent(&event.FlowRunFinished{
 				FlowRunRecordID: flowRunRecordIns.ID,
-			}, "")
+			})
 			continue
 		}
 		functionIns := blocApp.GetFunctionByRepoID(functionRecordIns.FunctionID)
@@ -243,12 +223,7 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 			continue
 		}
 
-		// > 装配IPT成功
-		// > 调用executeFunction开始实际运行代码
-		executeFunc := blocApp.GetExecuteFunctionByRepoID(functionIns.ID)
-
-		// 实际开始运行
-		timeOutChan := make(chan struct{})
+		// > 装配IPT已成功，处理flow设置的超时问题
 		if flowIns.TimeoutInSeconds > 0 { // 设置了整体运行的超时时长
 			thisFlowTaskAllFunctionTasks, err := funcRunRecordRepo.FilterByFlowRunRecordID(flowRunRecordIns.ID)
 			var thisFlowTaskUsedSeconds float64
@@ -261,12 +236,11 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 			}
 			leftSeconds := flowIns.TimeoutInSeconds - uint32(thisFlowTaskUsedSeconds)
 			if leftSeconds > 0 { // 未超时
-				timer := time.After(time.Duration(leftSeconds) * time.Second)
-				go func() {
-					for range timer {
-						timeOutChan <- struct{}{}
-					}
-				}()
+				err = funcRunRecordRepo.SetTimeout(funcRunRecordUuid,
+					time.Now().Add(time.Duration(leftSeconds)*time.Second))
+				if err != nil {
+					logger.Errorf("set timeout for function_run_record failed: %v", err)
+				}
 			} else { // 已超时
 				logger.Infof(
 					"|----> func run record id %s timeout canceled", functionRunRecordIDStr)
@@ -276,201 +250,12 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 			}
 		}
 
-		// 开启当前正在运行的function的心跳上报
-		done := make(chan bool)
-		heartBeatIns := aggregate.NewFunctionExecuteHeartBeat(funcRunRecordUuid)
-		err = heartBeatRepo.Create(heartBeatIns)
+		// 发布运行任务到具体的function provider
+		err = event.PubEvent(&event.ClientRunFunction{
+			FunctionRunRecordID: funcRunRecordUuid,
+			ClientName:          functionIns.ProviderName})
 		if err != nil {
-			logger.Errorf("create heart_beat failed: %v", err)
-		} else {
-			go reportHeartBeat(heartBeatRepo, funcRunRecordUuid, done)
-		}
-
-		cancelCheckTimer := time.NewTicker(6 * time.Second)
-		progressReportChan := make(chan value_object.FunctionRunStatus)
-		functionRunOptChan := make(chan *value_object.FunctionRunOpt)
-		var funcRunOpt *value_object.FunctionRunOpt
-		ctx := context.Background()
-		ctx, cancelFunctionExecute := context.WithCancel(ctx)
-		funcRunRecordLogger := blocApp.CreateFunctionRunLogger(funcRunRecordUuid)
-		go func() {
-			executeFunc.Run(ctx, functionIns.Ipts, progressReportChan, functionRunOptChan, funcRunRecordLogger)
-		}()
-		for {
-			select {
-			// 1. 超时
-			case <-timeOutChan:
-				logger.Infof("|----> function run record id %s timeout canceled", functionRunRecordIDStr)
-				funcRunRecordRepo.SaveCancel(funcRunRecordUuid)
-				flowRunRecordRepo.TimeoutCancel(flowRunRecordIns.ID)
-				goto FunctionNodeRunFinished
-			// 2. flow被用户在前端取消
-			case <-cancelCheckTimer.C:
-				isCanceled := flowRunRecordRepo.ReGetToCheckIsCanceled(flowRunRecordIns.ID)
-				if isCanceled {
-					logger.Infof("|----> function run record id %s user canceled", functionRunRecordIDStr)
-					funcRunRecordRepo.SaveCancel(funcRunRecordUuid)
-					goto FunctionNodeRunFinished
-				}
-			// 3. function运行进度上报
-			case runningStatus := <-progressReportChan:
-				if runningStatus.Progress > 0 {
-					funcRunRecordRepo.PatchProgress(
-						funcRunRecordUuid, runningStatus.Progress)
-				}
-				if runningStatus.Msg != "" {
-					funcRunRecordRepo.PatchProgressMsg(
-						funcRunRecordUuid, runningStatus.Msg)
-				}
-				if runningStatus.ProcessStageIndex > 0 {
-					funcRunRecordRepo.PatchStageIndex(
-						funcRunRecordUuid, runningStatus.ProcessStageIndex)
-				}
-			// 4. 运行成功完成
-			case funcRunOpt = <-functionRunOptChan:
-				logger.Infof("|----> function run record id %s run suc", functionRunRecordIDStr)
-				goto FunctionNodeRunFinished
-			}
-		}
-	FunctionNodeRunFinished:
-		cancelFunctionExecute()
-		close(progressReportChan)
-		cancelCheckTimer.Stop()
-		funcRunRecordLogger.ForceUpload()
-		done <- true
-		if funcRunOpt.Suc { // 若运行成功，需要将每个输出保存到oss中
-			logger.Infof("|----> function run record id %s suc", functionRunRecordIDStr)
-			// 将functionOpt的具体每个opt field保存到oss并且替换值value, 输出的前50个字符保存到brief中方便前端展示
-			for optKey, optVal := range funcRunOpt.Detail {
-				uploadByte, _ := json.Marshal(optVal)
-				ossKey := functionRunRecordIDStr + "_" + optKey
-				err = objectStorage.Set(ossKey, uploadByte)
-				if err == nil {
-					optInRune := []rune(string(uploadByte))
-					// TODO 截断长度放到默认配置里
-					minLength := 51
-					if len(optInRune) < minLength {
-						minLength = len(optInRune)
-					}
-					if funcRunOpt.Brief == nil {
-						funcRunOpt.Brief = make(map[string]string, len(funcRunOpt.Detail))
-					}
-					funcRunOpt.Brief[optKey] = string(optInRune[:minLength-1])
-					funcRunOpt.Detail[optKey] = ossKey
-				} else {
-					funcRunOpt.Brief[optKey] = "存储运行输出到对象存储失败"
-				}
-			}
-		} else {
-			logger.Errorf("|----> function run record id %s run failed", functionRunRecordIDStr)
-		}
-
-		if funcRunOpt.Suc {
-			funcRunRecordRepo.SaveSuc(
-				funcRunRecordUuid, funcRunOpt.Description,
-				funcRunOpt.Detail, funcRunOpt.Brief, funcRunOpt.InterceptBelowFunctionRun)
-
-			if !funcRunOpt.InterceptBelowFunctionRun { // 成功运行完成且不拦截
-				if len(flowFunction.DownstreamFlowFunctionIDs) > 0 { // 若有下游待运行的function节点
-					// 创建并发布下游节点
-					for _, downStreamFlowFunctionID := range flowFunction.DownstreamFlowFunctionIDs {
-						downStreamFlowFunction := flowIns.FlowFunctionIDMapFlowFunction[downStreamFlowFunctionID]
-						downStreamFunctionIns := blocApp.GetFunctionByRepoID(downStreamFlowFunction.FunctionID)
-
-						downStreamFunctionRunRecord := aggregate.NewFunctionRunRecordFromFlowDriven(
-							downStreamFunctionIns, *flowRunRecordIns,
-							downStreamFlowFunctionID)
-						_ = funcRunRecordRepo.Create(downStreamFunctionRunRecord)
-
-						err = flowRunRecordRepo.AddFlowFuncIDMapFuncRunRecordID(
-							flowRunRecordIns.ID,
-							downStreamFlowFunctionID,
-							downStreamFunctionRunRecord.ID)
-						if err != nil {
-							logger.Errorf(
-								`flowRunRecordRepo.AddFlowFuncIDMapFuncRunRecordID error: %v.
-								flow_run_record_id:%s`,
-								flowRunRecordIns.ID.String(), err)
-							// TODO 咋办？
-						}
-						flowRunRecordIns.FlowFuncIDMapFuncRunRecordID[downStreamFlowFunctionID] = downStreamFunctionRunRecord.ID
-					}
-				} else { // 此函数节点没有下游了。进行检查flow是否全部运行成功从而完成了，
-					/*
-						检测要点：
-							因为 FlowFunctionIDMapFlowFunction 有此flow每个function运行历史的对应记录
-							从而检查是不是都有效完成了
-					*/
-					toCheckFlowFunctionIDMapDone := make(map[string]bool, len(flowIns.FlowFunctionIDMapFlowFunction))
-					for flowFunctionID := range flowIns.FlowFunctionIDMapFlowFunction {
-						toCheckFlowFunctionIDMapDone[flowFunctionID] = false
-					}
-					delete(toCheckFlowFunctionIDMapDone, config.FlowFunctionStartID)
-					flowFinished := true
-					for toCheckFlowFunctionID := range toCheckFlowFunctionIDMapDone {
-						funcRunRecordID, ok := flowFuncIDMapFuncRunRecordID[toCheckFlowFunctionID]
-						if !ok { // 表示此flow_function还没有运行记录
-							flowFinished = false
-							break
-						}
-						functionRunRecordIns, err := funcRunRecordRepo.GetByID(funcRunRecordID)
-						if err != nil {
-							logger.Errorf(
-								"get function_run_record by function_run_record_id(%s) error: %s",
-								funcRunRecordID.String(), err.Error())
-							// 先保守处理为未完成运行
-							flowFinished = false
-							break
-						}
-						if !functionRunRecordIns.Finished() {
-							flowFinished = false
-							break
-						}
-					}
-					// 已检测到全部完成
-					if flowFinished {
-						flowRunRecordRepo.Suc(flowRunRecordIns.ID)
-						event.PubEvent(&event.FlowRunFinished{
-							FlowRunRecordID: flowRunRecordIns.ID,
-						}, "")
-						logger.Infof(
-							"|------> pub finished flow_task__id from all finished: %s",
-							flowRunRecordIns.ID)
-					}
-				}
-			} else { // 运行拦截，此function节点以下的节点不用再运行了，此步骤拦截
-				flowRunRecordRepo.Intercepted(
-					flowRunRecordIns.ID,
-					fmt.Sprintf(
-						"intercepted by function: %s-%s",
-						functionIns.GroupName, functionIns.Name))
-				event.PubEvent(&event.FlowRunFinished{
-					FlowRunRecordID: flowRunRecordIns.ID,
-				}, "")
-				logger.Infof(
-					"|------> pub finished flow_run_record__id from intercepted: %s",
-					flowRunRecordIns.ID)
-			}
-		} else { // function节点运行失败, 处理有重试的情况
-			if !flowRunRecordIns.IsFromArrangement() { // 非arrangement触发
-				// 无重试策略
-				if !flowIns.HaveRetryStrategy() || flowRunRecordIns.RetriedAmount >= flowIns.RetryAmount {
-					funcRunRecordRepo.SaveFail(funcRunRecordUuid, funcRunOpt.ErrorMsg)
-					flowRunRecordRepo.Fail(flowRunRecordIns.ID, "have function failed")
-				} else { // 有重试策略
-					flowRunRecordRepo.PatchDataForRetry(flowRunRecordIns.ID, flowRunRecordIns.RetriedAmount)
-
-					retryGapSeconds := 3
-					if flowIns.RetryIntervalInSecond > 0 {
-						retryGapSeconds = int(flowIns.RetryIntervalInSecond)
-					}
-					futureTime := time.Now().Add(time.Duration(retryGapSeconds) * time.Second)
-					event.PubEventAtCertainTime(
-						&event.FunctionToRun{FunctionRunRecordID: funcRunRecordUuid},
-						futureTime,
-					)
-				}
-			}
+			logger.Errorf("pub ClientRunFunction event failed: %v", err)
 		}
 	}
 }

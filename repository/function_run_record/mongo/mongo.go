@@ -66,6 +66,8 @@ type mongoFunctionRunRecord struct {
 	ProgressMsg               []string                `bson:"progress_msg"`
 	ProcessStages             []string                `bson:"process_stages"`
 	ProcessStageIndex         int                     `bson:"process_stage_index"`
+	FunctionProviderName      string                  `bson:"provider_name"`
+	ShouldBeCanceledAt        time.Time               `bson:"sb_canceled_at"`
 }
 
 func NewFromAggregate(fRR *aggregate.FunctionRunRecord) *mongoFunctionRunRecord {
@@ -90,6 +92,8 @@ func NewFromAggregate(fRR *aggregate.FunctionRunRecord) *mongoFunctionRunRecord 
 		ProgressMsg:               fRR.ProgressMsg,
 		ProcessStages:             fRR.ProcessStages,
 		ProcessStageIndex:         fRR.ProcessStageIndex,
+		FunctionProviderName:      fRR.FunctionProviderName,
+		ShouldBeCanceledAt:        fRR.ShouldBeCanceledAt,
 	}
 	resp.IptBriefAndObskey = make([][]mongoIptBriefAndKey, len(fRR.IptBriefAndObskey))
 	for i, param := range fRR.IptBriefAndObskey {
@@ -126,6 +130,8 @@ func (m mongoFunctionRunRecord) ToAggregate() *aggregate.FunctionRunRecord {
 		ProgressMsg:               m.ProgressMsg,
 		ProcessStages:             m.ProcessStages,
 		ProcessStageIndex:         m.ProcessStageIndex,
+		FunctionProviderName:      m.FunctionProviderName,
+		ShouldBeCanceledAt:        m.ShouldBeCanceledAt,
 	}
 	resp.IptBriefAndObskey = make([][]aggregate.IptBriefAndKey, len(m.IptBriefAndObskey))
 	for i, param := range m.IptBriefAndObskey {
@@ -264,6 +270,14 @@ func (mr *MongoRepository) PatchProgressStages(id value_object.UUID, progressSta
 	return mr.mongoCollection.PatchByID(
 		id,
 		mongodb.NewUpdater().AddSet("process_stages", progressStages))
+}
+
+func (mr *MongoRepository) SetTimeout(
+	id value_object.UUID, timeoutTime time.Time) error {
+	return mr.mongoCollection.PatchByID(
+		id,
+		mongodb.NewUpdater().
+			AddSet("sb_canceled_at", timeoutTime))
 }
 
 func (mr *MongoRepository) SaveIptBrief(

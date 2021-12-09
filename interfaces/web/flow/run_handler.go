@@ -52,7 +52,7 @@ func Run(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	}
 	fService.Logger.Infof("user %s triggered flow run. origin_id %s",
 		reqUser.Name, flowOriginID)
-	event.PubEvent(&event.FlowToRun{FlowRunRecordID: aggFlowRunRecord.ID}, "")
+	event.PubEvent(&event.FlowToRun{FlowRunRecordID: aggFlowRunRecord.ID})
 
 	web.WritePlainSucOkResp(&w)
 }

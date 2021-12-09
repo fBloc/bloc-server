@@ -20,6 +20,8 @@ type FunctionRunRecord struct {
 	FunctionID                value_object.UUID
 	FlowFunctionID            string
 	FlowRunRecordID           value_object.UUID
+	FunctionProviderName      string
+	ShouldBeCanceledAt        time.Time
 	Start                     time.Time
 	End                       time.Time
 	Suc                       bool
@@ -42,18 +44,18 @@ func NewFunctionRunRecordFromFlowDriven(
 	flowFunctionID string,
 ) *FunctionRunRecord {
 	fRR := &FunctionRunRecord{
-		ID:              value_object.NewUUID(),
-		FlowID:          flowRunRecordIns.FlowID,
-		FlowOriginID:    flowRunRecordIns.FlowOriginID,
-		FunctionID:      functionIns.ID,
-		FlowFunctionID:  flowFunctionID,
-		FlowRunRecordID: flowRunRecordIns.ID,
-		Start:           time.Now(),
-		ProcessStages:   functionIns.ProcessStages,
+		ID:                   value_object.NewUUID(),
+		FlowID:               flowRunRecordIns.FlowID,
+		FlowOriginID:         flowRunRecordIns.FlowOriginID,
+		FunctionID:           functionIns.ID,
+		FlowFunctionID:       flowFunctionID,
+		FlowRunRecordID:      flowRunRecordIns.ID,
+		Start:                time.Now(),
+		ProcessStages:        functionIns.ProcessStages,
+		FunctionProviderName: functionIns.ProviderName,
 	}
 	event.PubEvent(
-		&event.FunctionToRun{FunctionRunRecordID: fRR.ID},
-		functionIns.ProviderName)
+		&event.FunctionToRun{FunctionRunRecordID: fRR.ID})
 	return fRR
 }
 

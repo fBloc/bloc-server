@@ -1,6 +1,8 @@
 package function_run_record
 
 import (
+	"time"
+
 	"github.com/fBloc/bloc-backend-go/aggregate"
 	"github.com/fBloc/bloc-backend-go/infrastructure/object_storage"
 	"github.com/fBloc/bloc-backend-go/internal/filter_options"
@@ -34,6 +36,7 @@ type FunctionRunRecordRepository interface {
 	PatchProgressStages(
 		id value_object.UUID, progressStages []string,
 	) error
+	SetTimeout(id value_object.UUID, timeoutTime time.Time) error
 	SaveIptBrief(
 		id value_object.UUID, ipts [][]interface{},
 		objectStorageImplement object_storage.ObjectStorage,

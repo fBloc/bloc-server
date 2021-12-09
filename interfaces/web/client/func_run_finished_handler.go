@@ -129,7 +129,7 @@ func FunctionRunFinished(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 					flowRunRecordService.FlowRunRecord.Suc(flowRunRecordIns.ID)
 					event.PubEvent(&event.FlowRunFinished{
 						FlowRunRecordID: flowRunRecordIns.ID,
-					}, "")
+					})
 					consumerLogger.Infof(
 						"|------> pub finished flow_task__id from all finished: %s",
 						flowRunRecordIns.ID)
@@ -143,7 +143,7 @@ func FunctionRunFinished(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 					functionIns.GroupName, functionIns.Name))
 			event.PubEvent(&event.FlowRunFinished{
 				FlowRunRecordID: flowRunRecordIns.ID,
-			}, "")
+			})
 			consumerLogger.Infof(
 				"|------> pub finished flow_run_record__id from intercepted: %s",
 				flowRunRecordIns.ID)
@@ -163,7 +163,6 @@ func FunctionRunFinished(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 					retryGapSeconds = int(flowIns.RetryIntervalInSecond)
 				}
 				futureTime := time.Now().Add(time.Duration(retryGapSeconds) * time.Second)
-				// BUG 这里不对，应该加subTopic
 				event.PubEventAtCertainTime(
 					&event.FunctionToRun{
 						FunctionRunRecordID: funcRunRecordUUID},
