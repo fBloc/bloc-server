@@ -287,6 +287,7 @@ func (blocApp *BlocApp) RunHttpServer() {
 			router.POST(basicPath+"/report_log", client.ReportLog)
 			router.POST(basicPath+"/report_progress", client.ReportProgress)
 			router.POST(basicPath+"/function_run_finished", client.FunctionRunFinished)
+			router.GET(basicPath+"/check_flowRun_is_canceled_by_flowRunID/:id", client.FlowRunRecordIsCanceled)
 		}
 	}
 
