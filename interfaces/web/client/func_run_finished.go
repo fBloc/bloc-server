@@ -41,9 +41,10 @@ func InjectConsumerLogger(
 }
 
 type FuncRunFinishedHttpReq struct {
-	FunctionID                string            `json:"function_id"`
+	FunctionRunRecordID       string            `json:"function_run_record_id"`
 	Suc                       bool              `json:"suc"`
 	Canceled                  bool              `json:"canceled"`
+	TimeoutCanceled           bool              `json:"timeout_canceled"`
 	InterceptBelowFunctionRun bool              `json:"intercept_below_function_run"`
 	ErrorMsg                  string            `json:"error_msg"`
 	Description               string            `json:"description"`

@@ -22,7 +22,7 @@ func FunctionRunFinished(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 		return
 	}
 
-	funcRunRecordUUID, err := value_object.ParseToUUID(req.FunctionID)
+	funcRunRecordUUID, err := value_object.ParseToUUID(req.FunctionRunRecordID)
 	if err != nil {
 		web.WriteBadRequestDataResp(&w, "parse function_id to uuid failed:", err.Error())
 		return
