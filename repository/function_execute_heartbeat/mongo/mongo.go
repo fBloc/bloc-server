@@ -77,6 +77,19 @@ func (mr *MongoRepository) GetByID(
 	return m.ToAggregate(), nil
 }
 
+func (mr *MongoRepository) GetByFunctionRunRecordID(
+	funcRunRecordID value_object.UUID,
+) (*aggregate.FunctionExecuteHeartBeat, error) {
+	var m mongoFunctionExecuteHeartBeat
+	err := mr.mongoCollection.Get(
+		mongodb.NewFilter().AddEqual("function_run_record_id", funcRunRecordID),
+		nil, &m)
+	if err != nil {
+		return nil, err
+	}
+	return m.ToAggregate(), nil
+}
+
 func (mr *MongoRepository) AllDeads() ([]*aggregate.FunctionExecuteHeartBeat, error) {
 	var mSlice []mongoFunctionExecuteHeartBeat
 	err := mr.mongoCollection.Filter(

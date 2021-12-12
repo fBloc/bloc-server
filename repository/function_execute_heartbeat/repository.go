@@ -11,6 +11,7 @@ type FunctionExecuteHeartbeatRepository interface {
 
 	// read
 	GetByID(id value_object.UUID) (*aggregate.FunctionExecuteHeartBeat, error)
+	GetByFunctionRunRecordID(funcRunRecordID value_object.UUID) (*aggregate.FunctionExecuteHeartBeat, error)
 	AllDeads() ([]*aggregate.FunctionExecuteHeartBeat, error)
 
 	// update
