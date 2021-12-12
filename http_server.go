@@ -289,11 +289,16 @@ func (blocApp *BlocApp) RunHttpServer() {
 		}
 		client.InjectFlowRunRecordService(flowRunRecordService)
 
+		client.InjectObjectStorageImplement(
+			blocApp.GetOrCreateConsumerObjectStorage(),
+		)
+
 		basicPath := "/api/v1/client"
 		{
 			router.POST(basicPath+"/register_functions", client.RegisterFunctions)
 			router.POST(basicPath+"/report_log", client.ReportLog)
 			router.POST(basicPath+"/report_progress", client.ReportProgress)
+			router.POST(basicPath+"/persist_certain_function_run_opt_field", client.PersistFuncRunOptField)
 			router.POST(basicPath+"/function_run_finished", client.FunctionRunFinished)
 			router.GET(basicPath+"/get_function_run_record_by_id/:id", function_run_record.Get)
 			router.GET(basicPath+"/check_flowRun_is_canceled_by_flowRunID/:id", client.FlowRunRecordIsCanceled)
