@@ -81,11 +81,6 @@ func (blocApp *BlocApp) RunHttpServer() {
 		}
 		function.InjectFunctionService(funcService)
 
-		// 确保用户实现的函数已经持久化到存储层了
-		function.MakeSureAllUserImplementFunctionsInRepository(
-			blocApp.AllFunctions(),
-		)
-
 		// router
 		{
 			// function本身

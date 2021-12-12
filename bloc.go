@@ -16,7 +16,6 @@ import (
 	"github.com/fBloc/bloc-backend-go/internal/conns/minio"
 	"github.com/fBloc/bloc-backend-go/internal/conns/mongodb"
 	"github.com/fBloc/bloc-backend-go/internal/util"
-	"github.com/fBloc/bloc-backend-go/pkg/function_developer_implement"
 	flow_repository "github.com/fBloc/bloc-backend-go/repository/flow"
 	mongo_flow "github.com/fBloc/bloc-backend-go/repository/flow/mongo"
 	flowRunRecord_repository "github.com/fBloc/bloc-backend-go/repository/flow_run_record"
@@ -172,23 +171,21 @@ func (congbder *ConfigBuilder) BuildUp() {
 }
 
 type BlocApp struct {
-	Name                             string // 构建的项目名称
-	FunctionGroups                   []FunctionGroup
-	functionRepoIDMapFunction        map[value_object.UUID]*aggregate.Function
-	functionRepoIDMapExecuteFunction map[value_object.UUID]function_developer_implement.FunctionDeveloperImplementInterface
-	configBuilder                    *ConfigBuilder
-	httpServerLogger                 *log.Logger
-	consumerLogger                   *log.Logger
-	logBackEnd                       log_collect_backend.LogBackEnd
-	userRepository                   user_repository.UserRepository
-	flowRepository                   flow_repository.FlowRepository
-	functionRepository               function_repository.FunctionRepository
-	functionExecuteHBeatRepository   function_execute_heartbeat_repository.FunctionExecuteHeartbeatRepository
-	functionRunRecordRepository      funcRunRec_repository.FunctionRunRecordRepository
-	flowRunRecordRepository          flowRunRecord_repository.FlowRunRecordRepository
-	eventMQ                          mq.MsgQueue
-	futureEventStorage               event.FuturePubEventStorage
-	consumerObjectStorage            object_storage.ObjectStorage
+	Name                           string // 构建的项目名称
+	functionRepoIDMapFunction      map[value_object.UUID]*aggregate.Function
+	configBuilder                  *ConfigBuilder
+	httpServerLogger               *log.Logger
+	consumerLogger                 *log.Logger
+	logBackEnd                     log_collect_backend.LogBackEnd
+	userRepository                 user_repository.UserRepository
+	flowRepository                 flow_repository.FlowRepository
+	functionRepository             function_repository.FunctionRepository
+	functionExecuteHBeatRepository function_execute_heartbeat_repository.FunctionExecuteHeartbeatRepository
+	functionRunRecordRepository    funcRunRec_repository.FunctionRunRecordRepository
+	flowRunRecordRepository        flowRunRecord_repository.FlowRunRecordRepository
+	eventMQ                        mq.MsgQueue
+	futureEventStorage             event.FuturePubEventStorage
+	consumerObjectStorage          object_storage.ObjectStorage
 	sync.Mutex
 }
 
@@ -210,14 +207,6 @@ func (bA *BlocApp) InitialUserInfo() (name, rawPassword string) {
 	return bA.configBuilder.DefaultUserConf.Name, bA.configBuilder.DefaultUserConf.Password
 }
 
-func (bA *BlocApp) AllFunctions() []*aggregate.Function {
-	var ret []*aggregate.Function
-	for _, funcGroup := range bA.FunctionGroups {
-		ret = append(ret, funcGroup.Functions...)
-	}
-	return ret
-}
-
 func (bA *BlocApp) HttpListener() net.Listener {
 	if bA.configBuilder.HttpServerConf == nil {
 		ip, port, listener := util.NewAutoAddressNetListener()
@@ -228,19 +217,6 @@ func (bA *BlocApp) HttpListener() net.Listener {
 	return util.NewNetListener(
 		bA.configBuilder.HttpServerConf.IP,
 		bA.configBuilder.HttpServerConf.Port)
-}
-
-func (bA *BlocApp) RegisterFunctionGroup(name string) *FunctionGroup {
-	for _, i := range bA.FunctionGroups {
-		if i.Name == name {
-			panic("should not register same name group")
-		}
-	}
-	functionGroup := FunctionGroup{
-		Name:    name,
-		blocApp: bA}
-	bA.FunctionGroups = append(bA.FunctionGroups, functionGroup)
-	return &functionGroup
 }
 
 func (bA *BlocApp) GetOrCreateLogBackEnd() log_collect_backend.LogBackEnd {
@@ -513,10 +489,4 @@ func (bA *BlocApp) GetFunctionByRepoID(functionRepoID value_object.UUID) *aggreg
 	bA.functionRepoIDMapFunction = tmp
 
 	return bA.functionRepoIDMapFunction[functionRepoID]
-}
-
-func (bA *BlocApp) GetExecuteFunctionByRepoID(
-	functionRepoID value_object.UUID,
-) function_developer_implement.FunctionDeveloperImplementInterface {
-	return bA.functionRepoIDMapExecuteFunction[functionRepoID]
 }
