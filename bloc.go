@@ -174,7 +174,7 @@ func (congbder *ConfigBuilder) BuildUp() {
 type BlocApp struct {
 	Name                             string // 构建的项目名称
 	FunctionGroups                   []FunctionGroup
-	functionRepoIDMapFunction        map[value_object.UUID]aggregate.Function
+	functionRepoIDMapFunction        map[value_object.UUID]*aggregate.Function
 	functionRepoIDMapExecuteFunction map[value_object.UUID]function_developer_implement.FunctionDeveloperImplementInterface
 	configBuilder                    *ConfigBuilder
 	httpServerLogger                 *log.Logger
@@ -490,9 +490,9 @@ func (bA *BlocApp) GetOrCreateConsumerObjectStorage() object_storage.ObjectStora
 	return bA.consumerObjectStorage
 }
 
-func (bA *BlocApp) GetFunctionByRepoID(functionRepoID value_object.UUID) aggregate.Function {
+func (bA *BlocApp) GetFunctionByRepoID(functionRepoID value_object.UUID) *aggregate.Function {
 	if bA.functionRepoIDMapFunction == nil {
-		bA.functionRepoIDMapFunction = make(map[value_object.UUID]aggregate.Function)
+		bA.functionRepoIDMapFunction = make(map[value_object.UUID]*aggregate.Function)
 	}
 	if ins, ok := bA.functionRepoIDMapFunction[functionRepoID]; ok {
 		return ins
@@ -503,9 +503,9 @@ func (bA *BlocApp) GetFunctionByRepoID(functionRepoID value_object.UUID) aggrega
 		panic(err)
 	}
 
-	tmp := make(map[value_object.UUID]aggregate.Function, len(allFunctions))
+	tmp := make(map[value_object.UUID]*aggregate.Function, len(allFunctions))
 	for _, i := range allFunctions {
-		tmp[i.ID] = *i
+		tmp[i.ID] = i
 	}
 
 	bA.Lock()

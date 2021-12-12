@@ -84,7 +84,7 @@ func (blocApp *BlocApp) FlowTaskStartConsumer() {
 			}
 
 			aggFunctionRunRecord := aggregate.NewFunctionRunRecordFromFlowDriven(
-				functionIns, *flowRunIns,
+				*functionIns, *flowRunIns,
 				flowFunctionID)
 			err := functionRunRecordRepo.Create(aggFunctionRunRecord)
 			if err != nil {

@@ -131,6 +131,7 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 			})
 			continue
 		}
+
 		functionIns := blocApp.GetFunctionByRepoID(functionRecordIns.FunctionID)
 		logger.Infof("|----> function id %s", functionIns.ID)
 		if functionIns.IsZero() {
@@ -249,7 +250,6 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 				continue
 			}
 		}
-
 		// 发布运行任务到具体的function provider
 		err = event.PubEvent(&event.ClientRunFunction{
 			FunctionRunRecordID: funcRunRecordUuid,

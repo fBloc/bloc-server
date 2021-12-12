@@ -50,56 +50,62 @@ func RegisterFunctions(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 			}
 
 			wg.Add(1)
-			go func(string, *HttpFunction, *sync.WaitGroup) {
+			go func(group string, httpFunc *HttpFunction, wg *sync.WaitGroup) {
 				defer wg.Done()
 				// 没有汇报过
-				iptD, optD := ipt.GenIptDigest(f.Ipts), opt.GenOptDigest(f.Opts)
+				iptD := ipt.GenIptDigest(httpFunc.Ipts)
+				optD := opt.GenOptDigest(httpFunc.Opts)
 				aggFunc, err := fService.Function.GetSameIptOptFunction(
 					iptD, optD)
 				if err != nil {
 					errMsgPrefix := fmt.Sprintf(
 						`get function by same core failed. 
 					group_name: %s, function_name: %s, ipt_digest: %s, opt_digest: %s`,
-						groupName, f.Name, iptD, optD)
+						group, httpFunc.Name, iptD, optD)
 					fService.Logger.Errorf("%s:%s", errMsgPrefix, err.Error())
 					web.WriteInternalServerErrorResp(
 						&w, err, errMsgPrefix)
 				}
 
-				// 没汇报过 + 没查询到记录.表示是第一次汇报。需要持久化存储
-				if aggFunc.IsZero() {
+				if aggFunc.IsZero() { // 没汇报过 + 没查询到记录.表示是第一次汇报。需要持久化存储
 					aggFunction := aggregate.Function{
 						ID:            value_object.NewUUID(),
-						Name:          f.Name,
-						GroupName:     groupName,
+						Name:          httpFunc.Name,
+						GroupName:     group,
 						ProviderName:  req.Who,
-						Description:   f.Description,
-						Ipts:          f.Ipts,
+						Description:   httpFunc.Description,
+						Ipts:          httpFunc.Ipts,
 						IptDigest:     iptD,
-						Opts:          f.Opts,
+						Opts:          httpFunc.Opts,
 						OptDigest:     optD,
-						ProcessStages: f.ProcessStages}
+						ProcessStages: httpFunc.ProcessStages}
 					err = fService.Function.Create(&aggFunction)
 					if err != nil {
 						msg := fmt.Sprintf("create function to persistence layer failed: %s", err.Error())
 						fService.Logger.Errorf(msg)
-						f.ErrorMsg = msg
+						httpFunc.ErrorMsg = msg
 						return
 					}
-					f.ID = aggFunction.ID
+					httpFunc.ID = aggFunction.ID
 					aggFunc = &aggFunction
-				} else {
-					f.ID = aggFunc.ID
+				} else { // 没汇报过 + 查到了记录
+					httpFunc.ID = aggFunc.ID
+					if aggFunc.ProviderName == "" || aggFunc.ProviderName != req.Who {
+						err := fService.Function.PatchProviderName(httpFunc.ID, req.Who)
+						if err != nil {
+							panic(err)
+						}
+					}
 				}
 
 				// 加入到本地汇报缓存
 				reported.Lock()
-				reported.groupNameMapFuncNameMapFunc[groupName][f.Name] = &reportFunction{
-					ProviderName: req.Who, GroupName: groupName, Name: f.Name,
-					ID: f.ID, LastReportTime: time.Now()}
-				reported.idMapFunc[f.ID] = *aggFunc
+				reported.groupNameMapFuncNameMapFunc[group][httpFunc.Name] = &reportFunction{
+					ProviderName: req.Who, GroupName: group, Name: httpFunc.Name,
+					ID: httpFunc.ID, LastReportTime: time.Now()}
+				reported.idMapFunc[httpFunc.ID] = *aggFunc
 				reported.Unlock()
-				fService.Logger.Infof("registered func: %s - %s", groupName, f.Name)
+				fService.Logger.Infof("registered func: %s - %s", group, httpFunc.Name)
 			}(groupName, f, &wg)
 		}
 	}

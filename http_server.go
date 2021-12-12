@@ -237,7 +237,7 @@ func (blocApp *BlocApp) RunHttpServer() {
 
 	// function provider client
 	{
-		basicPath := "/api/v1/client"
+
 		funcService, err := function_service.NewFunctionService(
 			function_service.WithLogger(httpConsumer),
 			function_service.WithFunctionRepository(
@@ -282,6 +282,19 @@ func (blocApp *BlocApp) RunHttpServer() {
 		client.InjectFlowService(flowService)
 
 		client.InjectConsumerLogger(blocApp.GetOrCreateConsumerLogger())
+
+		flowRunRecordService, err := flowRunRecord_service.NewService(
+			flowRunRecord_service.WithLogger(httpConsumer),
+			flowRunRecord_service.WithFlowRunRecordRepository(
+				blocApp.GetOrCreateFlowRunRecordRepository()),
+			flowRunRecord_service.WithUserCacheService(uCacheService),
+		)
+		if err != nil {
+			panic(err)
+		}
+		client.InjectFlowRunRecordService(flowRunRecordService)
+
+		basicPath := "/api/v1/client"
 		{
 			router.POST(basicPath+"/register_functions", client.RegisterFunctions)
 			router.POST(basicPath+"/report_log", client.ReportLog)

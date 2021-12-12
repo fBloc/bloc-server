@@ -1,6 +1,8 @@
 package function_run_record
 
 import (
+	"time"
+
 	"github.com/fBloc/bloc-backend-go/aggregate"
 	"github.com/fBloc/bloc-backend-go/infrastructure/log_collect_backend"
 	"github.com/fBloc/bloc-backend-go/internal/json_date"
@@ -49,7 +51,7 @@ type FunctionRunRecord struct {
 	ProcessStages               []string               `json:"process_stages"`
 	ProcessStageIndex           int                    `json:"process_stage_index,omitempty"`
 	FunctionProviderName        string                 `json:"function_provider_name"`
-	ShouldBeCanceledAt          json_date.JsonDate     `json:"should_be_canceled_at"`
+	ShouldBeCanceledAt          time.Time              `json:"should_be_canceled_at,omitempty"`
 }
 
 func fromAgg(
@@ -97,7 +99,7 @@ func fromAgg(
 		ProcessStages:               aggFRR.ProcessStages,
 		ProcessStageIndex:           aggFRR.ProcessStageIndex,
 		FunctionProviderName:        aggFRR.FunctionProviderName,
-		ShouldBeCanceledAt:          json_date.New(aggFRR.ShouldBeCanceledAt),
+		ShouldBeCanceledAt:          aggFRR.ShouldBeCanceledAt,
 	}
 	return retFlow
 }

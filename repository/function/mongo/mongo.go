@@ -164,6 +164,13 @@ func (mr *MongoRepository) PatchGroupName(id value_object.UUID, groupName string
 	return mr.mongoCollection.PatchByID(id, updater)
 }
 
+func (mr *MongoRepository) PatchProviderName(
+	id value_object.UUID, providerName string,
+) error {
+	updater := mongodb.NewUpdater().AddSet("provider_name", providerName)
+	return mr.mongoCollection.PatchByID(id, updater)
+}
+
 func (mr *MongoRepository) userOperation(
 	id, userID value_object.UUID, permType value_object.PermissionType, aod add_or_del.AddOrDel,
 ) error {
