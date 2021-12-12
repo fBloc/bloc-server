@@ -34,9 +34,9 @@ func PullLog(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 
 	var logger *log.Logger
 	if req.LogType == value_object.HttpServerLog {
-		logger = log.New(value_object.HttpServerLog.String(), logBackend)
+		logger = log.NewWithPeriodicUpload(value_object.HttpServerLog.String(), logBackend)
 	} else if req.LogType == value_object.ConsumerLog {
-		logger = log.New(value_object.ConsumerLog.String(), logBackend)
+		logger = log.NewWithPeriodicUpload(value_object.ConsumerLog.String(), logBackend)
 	} else if req.LogType == value_object.FuncRunRecordLog {
 		web.WriteBadRequestDataResp(&w, "this api not provide function_run_record log search")
 		return

@@ -12,7 +12,7 @@ import (
 type FunctionConfiguration func(fs *FunctionService) error
 
 type FunctionService struct {
-	logger           *log.Logger
+	Logger           *log.Logger
 	Function         function.FunctionRepository
 	UserCacheService *user_cache.UserCacheService
 }
@@ -32,7 +32,7 @@ func NewFunctionService(
 
 func WithLogger(logger *log.Logger) FunctionConfiguration {
 	return func(us *FunctionService) error {
-		us.logger = logger
+		us.Logger = logger
 		return nil
 	}
 }

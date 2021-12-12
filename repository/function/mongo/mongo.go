@@ -41,6 +41,7 @@ type mongoFunction struct {
 	ID                      value_object.UUID   `bson:"id"`
 	Name                    string              `bson:"name"`
 	GroupName               string              `bson:"group_name"`
+	ProviderName            string              `bson:"provider_name"`
 	Description             string              `bson:"description"`
 	Ipts                    ipt.IptSlice        `bson:"ipts"`
 	Opts                    []*opt.Opt          `bson:"opts"`
@@ -57,6 +58,7 @@ func (m *mongoFunction) ToAggregate() *aggregate.Function {
 		ID:                      m.ID,
 		Name:                    m.Name,
 		GroupName:               m.GroupName,
+		ProviderName:            m.ProviderName,
 		Description:             m.Description,
 		Ipts:                    m.Ipts,
 		Opts:                    m.Opts,
@@ -74,6 +76,7 @@ func NewFromFunction(f *aggregate.Function) *mongoFunction {
 		ID:                      f.ID,
 		Name:                    f.Name,
 		GroupName:               f.GroupName,
+		ProviderName:            f.ProviderName,
 		Description:             f.Description,
 		Ipts:                    f.Ipts,
 		Opts:                    f.Opts,
@@ -158,6 +161,13 @@ func (mr *MongoRepository) PatchDescription(id value_object.UUID, desc string) e
 
 func (mr *MongoRepository) PatchGroupName(id value_object.UUID, groupName string) error {
 	updater := mongodb.NewUpdater().AddSet("group_name", groupName)
+	return mr.mongoCollection.PatchByID(id, updater)
+}
+
+func (mr *MongoRepository) PatchProviderName(
+	id value_object.UUID, providerName string,
+) error {
+	updater := mongodb.NewUpdater().AddSet("provider_name", providerName)
 	return mr.mongoCollection.PatchByID(id, updater)
 }
 

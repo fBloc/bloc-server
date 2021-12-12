@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/fBloc/bloc-backend-go/event"
+	"github.com/fBloc/bloc-backend-go/interfaces/web/client"
 	"github.com/fBloc/bloc-backend-go/interfaces/web/flow"
 	"github.com/fBloc/bloc-backend-go/interfaces/web/flow_run_record"
 	"github.com/fBloc/bloc-backend-go/interfaces/web/function"
@@ -231,6 +232,76 @@ func (blocApp *BlocApp) RunHttpServer() {
 		{
 			basicPath := "/api/v1/log"
 			router.POST(basicPath+"/pull_log_between_time", log_data.PullLog)
+		}
+	}
+
+	// function provider client
+	{
+
+		funcService, err := function_service.NewFunctionService(
+			function_service.WithLogger(httpConsumer),
+			function_service.WithFunctionRepository(
+				blocApp.GetOrCreateFunctionRepository()),
+			function_service.WithUserCacheService(uCacheService),
+		)
+		if err != nil {
+			panic(err)
+		}
+		client.InjectFunctionService(funcService)
+		client.InjectLogBackend(blocApp.GetOrCreateLogBackEnd())
+		fRRS, err := functionRunRecord_service.NewService(
+			functionRunRecord_service.WithLogger(httpConsumer),
+			functionRunRecord_service.WithFunctionRunRecordRepository(
+				blocApp.GetOrCreateFunctionRunRecordRepository()),
+			functionRunRecord_service.WithUserCacheService(uCacheService),
+		)
+		if err != nil {
+			panic(err)
+		}
+		client.InjectFunctionRunRecordService(fRRS)
+
+		flowService, err := flow_service.NewFlowService(
+			flow_service.WithLogger(httpConsumer),
+			flow_service.WithFlowRepository(
+				blocApp.GetOrCreateFlowRepository(),
+			),
+			flow_service.WithFunctionRepository(
+				blocApp.GetOrCreateFunctionRepository(),
+			),
+			flow_service.WithFunctionRunRecordRepository(
+				blocApp.GetOrCreateFunctionRunRecordRepository(),
+			),
+			flow_service.WithFlowRunRecordRepository(
+				blocApp.GetOrCreateFlowRunRecordRepository(),
+			),
+			flow_service.WithUserCacheService(uCacheService),
+		)
+		if err != nil {
+			panic(err)
+		}
+		client.InjectFlowService(flowService)
+
+		client.InjectConsumerLogger(blocApp.GetOrCreateConsumerLogger())
+
+		flowRunRecordService, err := flowRunRecord_service.NewService(
+			flowRunRecord_service.WithLogger(httpConsumer),
+			flowRunRecord_service.WithFlowRunRecordRepository(
+				blocApp.GetOrCreateFlowRunRecordRepository()),
+			flowRunRecord_service.WithUserCacheService(uCacheService),
+		)
+		if err != nil {
+			panic(err)
+		}
+		client.InjectFlowRunRecordService(flowRunRecordService)
+
+		basicPath := "/api/v1/client"
+		{
+			router.POST(basicPath+"/register_functions", client.RegisterFunctions)
+			router.POST(basicPath+"/report_log", client.ReportLog)
+			router.POST(basicPath+"/report_progress", client.ReportProgress)
+			router.POST(basicPath+"/function_run_finished", client.FunctionRunFinished)
+			router.GET(basicPath+"/get_function_run_record_by_id/:id", function_run_record.Get)
+			router.GET(basicPath+"/check_flowRun_is_canceled_by_flowRunID/:id", client.FlowRunRecordIsCanceled)
 		}
 	}
 

@@ -4,6 +4,7 @@ import (
 	"github.com/fBloc/bloc-backend-go/pkg/function_developer_implement"
 	"github.com/fBloc/bloc-backend-go/pkg/ipt"
 	"github.com/fBloc/bloc-backend-go/pkg/opt"
+	"github.com/fBloc/bloc-backend-go/pkg/value_type"
 	"github.com/fBloc/bloc-backend-go/value_object"
 )
 
@@ -11,6 +12,7 @@ type Function struct {
 	ID            value_object.UUID
 	Name          string
 	GroupName     string
+	ProviderName  string
 	Description   string
 	Ipts          ipt.IptSlice
 	Opts          []*opt.Opt
@@ -76,4 +78,20 @@ func (f *Function) UserCanAssignPermission(user *User) bool {
 		}
 	}
 	return false
+}
+
+func (f *Function) OptKeyMapValueType() map[string]value_type.ValueType {
+	keyMapValueType := make(map[string]value_type.ValueType, len(f.Opts))
+	for _, i := range f.Opts {
+		keyMapValueType[i.Key] = i.ValueType
+	}
+	return keyMapValueType
+}
+
+func (f *Function) OptKeyMapIsArray() map[string]bool {
+	keyMapIsArray := make(map[string]bool, len(f.Opts))
+	for _, i := range f.Opts {
+		keyMapIsArray[i.Key] = i.IsArray
+	}
+	return keyMapIsArray
 }

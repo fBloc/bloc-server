@@ -19,6 +19,7 @@ type FunctionRepository interface {
 	PatchName(id value_object.UUID, name string) error
 	PatchDescription(id value_object.UUID, desc string) error
 	PatchGroupName(id value_object.UUID, groupName string) error
+	PatchProviderName(id value_object.UUID, provider string) error
 
 	// update user permission
 	AddReader(id, userID value_object.UUID) error

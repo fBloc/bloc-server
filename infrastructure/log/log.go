@@ -38,6 +38,14 @@ func New(
 		name:       name,
 		logBackend: collectBackend,
 	}
+	return l
+}
+
+func NewWithPeriodicUpload(
+	name string,
+	collectBackend log_collect_backend.LogBackEnd,
+) *Logger {
+	l := New(name, collectBackend)
 	go l.upload()
 	return l
 }
@@ -88,6 +96,7 @@ func (logger *Logger) ForceUpload() {
 
 	logger.Lock()
 	data, err := json.Marshal(logger.data)
+	theLatestData := logger.data[len(logger.data)-1]
 	logger.data = logger.data[:0]
 	logger.Unlock()
 	if err != nil {
@@ -97,7 +106,7 @@ func (logger *Logger) ForceUpload() {
 
 	// TODO 要不要panic？
 	err = logger.logBackend.PersistData(
-		fmt.Sprintf("%s-%d", logger.name, time.Now().Unix()),
+		fmt.Sprintf("%s-%d", logger.name, theLatestData.Time.Unix()),
 		data)
 	if err != nil {
 		panic(err)
