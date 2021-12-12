@@ -78,7 +78,6 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 		upstreamAllSucFinished := true
 		upstreamFunctionIntercepted := false
 		if len(flowFunction.UpstreamFlowFunctionIDs) > 1 { // 在只有一个上游节点的情况下，不需要检测
-
 			for _, i := range flowFunction.UpstreamFlowFunctionIDs {
 				upstreamFunctionRunRecordID, ok := flowRunRecordIns.FlowFuncIDMapFuncRunRecordID[i]
 				if !ok { // 不存在表示没有运行完

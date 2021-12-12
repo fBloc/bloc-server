@@ -1,6 +1,8 @@
 package aggregate
 
 import (
+	"time"
+
 	"github.com/fBloc/bloc-backend-go/pkg/function_developer_implement"
 	"github.com/fBloc/bloc-backend-go/pkg/ipt"
 	"github.com/fBloc/bloc-backend-go/pkg/opt"
@@ -20,6 +22,8 @@ type Function struct {
 	OptDigest     string
 	ProcessStages []string
 	ExeFunc       function_developer_implement.FunctionDeveloperImplementInterface
+	// heartbeat
+	LastAliveTime time.Time
 	// 用于权限
 	ReadUserIDs             []value_object.UUID
 	ExecuteUserIDs          []value_object.UUID

@@ -20,6 +20,7 @@ type FunctionRepository interface {
 	PatchDescription(id value_object.UUID, desc string) error
 	PatchGroupName(id value_object.UUID, groupName string) error
 	PatchProviderName(id value_object.UUID, provider string) error
+	AliveReport(id value_object.UUID) error
 
 	// update user permission
 	AddReader(id, userID value_object.UUID) error

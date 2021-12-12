@@ -1,6 +1,8 @@
 package function
 
 import (
+	"time"
+
 	"github.com/fBloc/bloc-backend-go/aggregate"
 	"github.com/fBloc/bloc-backend-go/pkg/ipt"
 	"github.com/fBloc/bloc-backend-go/pkg/opt"
@@ -45,13 +47,14 @@ func MakeSureAllUserImplementFunctionsInRepository(
 }
 
 type Function struct {
-	ID           value_object.UUID `json:"id"`
-	Name         string            `json:"name"`
-	GroupName    string            `json:"group_name"`
-	ProviderName string            `json:"provider_name"`
-	Description  string            `json:"description"`
-	Ipt          ipt.IptSlice      `json:"ipt"`
-	Opt          []*opt.Opt        `json:"opt"`
+	ID            value_object.UUID `json:"id"`
+	Name          string            `json:"name"`
+	GroupName     string            `json:"group_name"`
+	ProviderName  string            `json:"provider_name"`
+	LastAliveTime time.Time         `json:"last_alive_time"`
+	Description   string            `json:"description"`
+	Ipt           ipt.IptSlice      `json:"ipt"`
+	Opt           []*opt.Opt        `json:"opt"`
 }
 
 func newFunctionFromAgg(aggF *aggregate.Function) *Function {
@@ -59,13 +62,14 @@ func newFunctionFromAgg(aggF *aggregate.Function) *Function {
 		return nil
 	}
 	return &Function{
-		ID:           aggF.ID,
-		Name:         aggF.Name,
-		GroupName:    aggF.GroupName,
-		ProviderName: aggF.ProviderName,
-		Description:  aggF.Description,
-		Ipt:          aggF.Ipts,
-		Opt:          aggF.Opts}
+		ID:            aggF.ID,
+		Name:          aggF.Name,
+		GroupName:     aggF.GroupName,
+		ProviderName:  aggF.ProviderName,
+		LastAliveTime: aggF.LastAliveTime,
+		Description:   aggF.Description,
+		Ipt:           aggF.Ipts,
+		Opt:           aggF.Opts}
 }
 
 type GroupFunctions struct {

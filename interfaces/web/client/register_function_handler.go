@@ -24,6 +24,7 @@ func RegisterFunctions(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 	}
 
 	var wg sync.WaitGroup
+	toReportAliveFuncIDs := make(chan value_object.UUID, 40) // 控制下并发在40（别太高）
 	for groupName, funcs := range req.GroupNameMapFuncNameMapFunc {
 		for _, f := range funcs {
 			// 检测是否汇报过
@@ -45,6 +46,7 @@ func RegisterFunctions(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 					}
 					f.ID = reportedFunc.ID
 					reportedFunc.LastReportTime = time.Now()
+					toReportAliveFuncIDs <- f.ID
 					continue
 				}
 			}
@@ -98,6 +100,8 @@ func RegisterFunctions(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 					}
 				}
 
+				toReportAliveFuncIDs <- httpFunc.ID
+
 				// 加入到本地汇报缓存
 				reported.Lock()
 				reported.groupNameMapFuncNameMapFunc[group][httpFunc.Name] = &reportFunction{
@@ -110,7 +114,19 @@ func RegisterFunctions(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 		}
 	}
 
+	go func() {
+		for functionUUID := range toReportAliveFuncIDs {
+			err := fService.Function.AliveReport(functionUUID)
+			if err != nil {
+				fService.Logger.Errorf(
+					"function(id: %s) alive report failed: %s",
+					functionUUID.String(), err.Error())
+			}
+		}
+	}()
+
 	wg.Wait()
+	close(toReportAliveFuncIDs)
 
 	for _, funcs := range req.GroupNameMapFuncNameMapFunc {
 		for _, f := range funcs {

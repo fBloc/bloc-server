@@ -3,6 +3,7 @@ package mongo
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/fBloc/bloc-backend-go/internal/conns/mongodb"
 	"github.com/fBloc/bloc-backend-go/pkg/add_or_del"
@@ -42,6 +43,7 @@ type mongoFunction struct {
 	Name                    string              `bson:"name"`
 	GroupName               string              `bson:"group_name"`
 	ProviderName            string              `bson:"provider_name"`
+	LastAliveTime           time.Time           `bson:"last_alive_time"`
 	Description             string              `bson:"description"`
 	Ipts                    ipt.IptSlice        `bson:"ipts"`
 	Opts                    []*opt.Opt          `bson:"opts"`
@@ -59,6 +61,7 @@ func (m *mongoFunction) ToAggregate() *aggregate.Function {
 		Name:                    m.Name,
 		GroupName:               m.GroupName,
 		ProviderName:            m.ProviderName,
+		LastAliveTime:           m.LastAliveTime,
 		Description:             m.Description,
 		Ipts:                    m.Ipts,
 		Opts:                    m.Opts,
@@ -77,6 +80,7 @@ func NewFromFunction(f *aggregate.Function) *mongoFunction {
 		Name:                    f.Name,
 		GroupName:               f.GroupName,
 		ProviderName:            f.ProviderName,
+		LastAliveTime:           f.LastAliveTime,
 		Description:             f.Description,
 		Ipts:                    f.Ipts,
 		Opts:                    f.Opts,
@@ -168,6 +172,13 @@ func (mr *MongoRepository) PatchProviderName(
 	id value_object.UUID, providerName string,
 ) error {
 	updater := mongodb.NewUpdater().AddSet("provider_name", providerName)
+	return mr.mongoCollection.PatchByID(id, updater)
+}
+
+func (mr *MongoRepository) AliveReport(
+	id value_object.UUID,
+) error {
+	updater := mongodb.NewUpdater().AddSet("last_alive_time", time.Now())
 	return mr.mongoCollection.PatchByID(id, updater)
 }
 
