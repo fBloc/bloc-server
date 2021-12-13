@@ -302,6 +302,7 @@ func (blocApp *BlocApp) RunHttpServer() {
 			router.POST(basicPath+"/function_run_finished", client.FunctionRunFinished)
 			router.GET(basicPath+"/get_function_run_record_by_id/:id", function_run_record.Get)
 			router.GET(basicPath+"/check_flowRun_is_canceled_by_flowRunID/:id", client.FlowRunRecordIsCanceled)
+			router.GET(basicPath+"/get_byte_value_by_key/:key", object_storage.GetValueByKeyReturnByte)
 		}
 	}
 
