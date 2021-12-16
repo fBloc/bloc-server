@@ -25,7 +25,7 @@ func RegisterFunctions(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 
 	var wg sync.WaitGroup
 	toReportAliveFuncIDs := make(chan value_object.UUID, 40) // 控制下并发在40（别太高）
-	for groupName, funcs := range req.GroupNameMapFuncNameMapFunc {
+	for groupName, funcs := range req.GroupNameMapFunctions {
 		for _, f := range funcs {
 			// 检测是否汇报过
 			funcNameMapFunc, ok := reported.groupNameMapFuncNameMapFunc[groupName]
@@ -128,7 +128,7 @@ func RegisterFunctions(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 	wg.Wait()
 	close(toReportAliveFuncIDs)
 
-	for _, funcs := range req.GroupNameMapFuncNameMapFunc {
+	for _, funcs := range req.GroupNameMapFunctions {
 		for _, f := range funcs {
 			if f.ErrorMsg != "" {
 				web.WriteInternalServerErrorResp(&w, nil, f.ErrorMsg)

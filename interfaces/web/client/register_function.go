@@ -37,8 +37,8 @@ var reported = reportedGroupNameMapFuncNameMapFunc{
 }
 
 type RegisterFuncReq struct {
-	Who                         string                     `json:"who"`
-	GroupNameMapFuncNameMapFunc map[string][]*HttpFunction `json:"groupName_map_functionName_map_function"`
+	Who                   string                     `json:"who"`
+	GroupNameMapFunctions map[string][]*HttpFunction `json:"groupName_map_functions"`
 }
 type GroupNameMapFunctions map[string][]*HttpFunction
 
