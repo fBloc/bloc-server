@@ -26,8 +26,9 @@ type FlowRunRecordRepository interface {
 		filter value_object.RepositoryFilter,
 		filterOption value_object.RepositoryFilterOption,
 	) ([]*aggregate.FlowRunRecord, error)
-	FilterRunningRecordsOfCertainFlow(
-		flowID value_object.UUID) ([]*aggregate.FlowRunRecord, error)
+	IsHaveRunningTask(
+		flowID, thisFlowRunRecordID value_object.UUID,
+	) (bool, error)
 	AllRunRecordOfFlowTriggeredByFlowID(
 		flowID value_object.UUID,
 	) ([]*aggregate.FlowRunRecord, error)

@@ -200,24 +200,31 @@ func (mr *MongoRepository) GetLatestByArrangementFlowID(
 	return mr.get(mongodb.NewFilter().AddEqual("arrangement_flow_id", arrangementFlowID))
 }
 
-func (mr *MongoRepository) FilterRunningRecordsOfCertainFlow(
-	flowID value_object.UUID) ([]*aggregate.FlowRunRecord, error) {
+func (mr *MongoRepository) IsHaveRunningTask(
+	flowID, thisFlowRunRecordID value_object.UUID,
+) (bool, error) {
 	filter := value_object.NewRepositoryFilter()
-	filter.AddEqual("flow_id", flowID).AddNotExist("end_time")
+	filter.AddEqual("flow_id", flowID).AddNotEqual("id", thisFlowRunRecordID)
+
+	filterOption := value_object.NewRepositoryFilterOption()
+	filterOption.SetDesc()
+	filterOption.SetLimit(1)
 
 	var mFRRs []mongoFlowRunRecord
 	err := mr.mongoCollection.CommonFilter(
-		*filter, *value_object.NewRepositoryFilterOption(), &mFRRs)
+		*filter, *filterOption, &mFRRs)
 	if err != nil {
-		return nil, err
+		return false, err
 	}
 
-	resp := make([]*aggregate.FlowRunRecord, 0, len(mFRRs))
-	for _, i := range mFRRs {
-		resp = append(resp, i.ToAggregate())
+	if len(mFRRs) < 1 {
+		return false, nil
+	}
+	if mFRRs[0].EndTime.IsZero() {
+		return true, nil
 	}
 
-	return resp, nil
+	return false, nil
 }
 
 func (mr *MongoRepository) Filter(
