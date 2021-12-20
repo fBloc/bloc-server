@@ -3,8 +3,8 @@ package bloc
 import (
 	"time"
 
-	"github.com/fBloc/bloc-backend-go/aggregate"
-	"github.com/fBloc/bloc-backend-go/event"
+	"github.com/fBloc/bloc-server/aggregate"
+	"github.com/fBloc/bloc-server/event"
 )
 
 // CrontabWatcher 分钟接别的观测配置了crontab的flow并进行发起

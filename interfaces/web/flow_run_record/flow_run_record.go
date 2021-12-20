@@ -1,9 +1,9 @@
 package flow_run_record
 
 import (
-	"github.com/fBloc/bloc-backend-go/aggregate"
-	"github.com/fBloc/bloc-backend-go/services/flow_run_record"
-	"github.com/fBloc/bloc-backend-go/value_object"
+	"github.com/fBloc/bloc-server/aggregate"
+	"github.com/fBloc/bloc-server/services/flow_run_record"
+	"github.com/fBloc/bloc-server/value_object"
 )
 
 var fFRService *flow_run_record.FlowRunRecordService

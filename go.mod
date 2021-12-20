@@ -1,4 +1,4 @@
-module github.com/fBloc/bloc-backend-go
+module github.com/fBloc/bloc-server
 
 go 1.17
 

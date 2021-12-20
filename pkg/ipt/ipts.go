@@ -1,7 +1,7 @@
 package ipt
 
 import (
-	"github.com/fBloc/bloc-backend-go/internal/util"
+	"github.com/fBloc/bloc-server/internal/util"
 )
 
 func IptString(ipts []*Ipt) string {

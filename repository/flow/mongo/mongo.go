@@ -4,14 +4,14 @@ import (
 	"context"
 	"time"
 
-	"github.com/fBloc/bloc-backend-go/aggregate"
-	"github.com/fBloc/bloc-backend-go/internal/conns/mongodb"
-	"github.com/fBloc/bloc-backend-go/internal/crontab"
-	"github.com/fBloc/bloc-backend-go/internal/filter_options"
-	"github.com/fBloc/bloc-backend-go/pkg/add_or_del"
-	"github.com/fBloc/bloc-backend-go/pkg/value_type"
-	"github.com/fBloc/bloc-backend-go/repository/flow"
-	"github.com/fBloc/bloc-backend-go/value_object"
+	"github.com/fBloc/bloc-server/aggregate"
+	"github.com/fBloc/bloc-server/internal/conns/mongodb"
+	"github.com/fBloc/bloc-server/internal/crontab"
+	"github.com/fBloc/bloc-server/internal/filter_options"
+	"github.com/fBloc/bloc-server/pkg/add_or_del"
+	"github.com/fBloc/bloc-server/pkg/value_type"
+	"github.com/fBloc/bloc-server/repository/flow"
+	"github.com/fBloc/bloc-server/value_object"
 
 	"github.com/pkg/errors"
 )

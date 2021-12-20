@@ -1,7 +1,7 @@
 package opt
 
 import (
-	"github.com/fBloc/bloc-backend-go/internal/util"
+	"github.com/fBloc/bloc-server/internal/util"
 )
 
 func OptString(opts []*Opt) string {

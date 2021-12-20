@@ -3,10 +3,10 @@ package flow_run_record
 import (
 	"context"
 
-	"github.com/fBloc/bloc-backend-go/infrastructure/log"
-	"github.com/fBloc/bloc-backend-go/repository/flow_run_record"
-	mongoFRRC "github.com/fBloc/bloc-backend-go/repository/flow_run_record/mongo"
-	user_cache "github.com/fBloc/bloc-backend-go/services/userid_cache"
+	"github.com/fBloc/bloc-server/infrastructure/log"
+	"github.com/fBloc/bloc-server/repository/flow_run_record"
+	mongoFRRC "github.com/fBloc/bloc-server/repository/flow_run_record/mongo"
+	user_cache "github.com/fBloc/bloc-server/services/userid_cache"
 )
 
 type FlowRunRecordConfiguration func(fRRS *FlowRunRecordService) error

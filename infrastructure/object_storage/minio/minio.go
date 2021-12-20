@@ -5,9 +5,9 @@ import (
 	"context"
 	"sync"
 
-	"github.com/fBloc/bloc-backend-go/infrastructure/object_storage"
-	minioConn "github.com/fBloc/bloc-backend-go/internal/conns/minio"
-	"github.com/fBloc/bloc-backend-go/value_object"
+	"github.com/fBloc/bloc-server/infrastructure/object_storage"
+	minioConn "github.com/fBloc/bloc-server/internal/conns/minio"
+	"github.com/fBloc/bloc-server/value_object"
 
 	"github.com/minio/minio-go/v7"
 )

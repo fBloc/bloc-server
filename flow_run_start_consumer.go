@@ -1,10 +1,10 @@
 package bloc
 
 import (
-	"github.com/fBloc/bloc-backend-go/aggregate"
-	"github.com/fBloc/bloc-backend-go/config"
-	"github.com/fBloc/bloc-backend-go/event"
-	"github.com/fBloc/bloc-backend-go/value_object"
+	"github.com/fBloc/bloc-server/aggregate"
+	"github.com/fBloc/bloc-server/config"
+	"github.com/fBloc/bloc-server/event"
+	"github.com/fBloc/bloc-server/value_object"
 )
 
 func (blocApp *BlocApp) FlowTaskStartConsumer() {

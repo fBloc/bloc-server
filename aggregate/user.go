@@ -3,8 +3,8 @@ package aggregate
 import (
 	"time"
 
-	"github.com/fBloc/bloc-backend-go/internal/util"
-	"github.com/fBloc/bloc-backend-go/value_object"
+	"github.com/fBloc/bloc-server/internal/util"
+	"github.com/fBloc/bloc-server/value_object"
 )
 
 var salt = "may the force be with you"

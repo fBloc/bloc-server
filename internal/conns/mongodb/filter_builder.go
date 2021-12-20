@@ -1,7 +1,7 @@
 package mongodb
 
 import (
-	"github.com/fBloc/bloc-backend-go/value_object"
+	"github.com/fBloc/bloc-server/value_object"
 
 	"go.mongodb.org/mongo-driver/bson"
 )

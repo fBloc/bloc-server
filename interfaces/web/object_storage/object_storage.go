@@ -1,7 +1,7 @@
 package object_storage
 
 import (
-	"github.com/fBloc/bloc-backend-go/infrastructure/object_storage"
+	"github.com/fBloc/bloc-server/infrastructure/object_storage"
 )
 
 var objectStorage object_storage.ObjectStorage

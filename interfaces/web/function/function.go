@@ -3,11 +3,11 @@ package function
 import (
 	"time"
 
-	"github.com/fBloc/bloc-backend-go/aggregate"
-	"github.com/fBloc/bloc-backend-go/pkg/ipt"
-	"github.com/fBloc/bloc-backend-go/pkg/opt"
-	"github.com/fBloc/bloc-backend-go/services/function"
-	"github.com/fBloc/bloc-backend-go/value_object"
+	"github.com/fBloc/bloc-server/aggregate"
+	"github.com/fBloc/bloc-server/pkg/ipt"
+	"github.com/fBloc/bloc-server/pkg/opt"
+	"github.com/fBloc/bloc-server/services/function"
+	"github.com/fBloc/bloc-server/value_object"
 
 	"github.com/pkg/errors"
 )

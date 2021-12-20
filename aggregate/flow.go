@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/fBloc/bloc-backend-go/internal/crontab"
-	"github.com/fBloc/bloc-backend-go/pkg/value_type"
-	"github.com/fBloc/bloc-backend-go/value_object"
+	"github.com/fBloc/bloc-server/internal/crontab"
+	"github.com/fBloc/bloc-server/pkg/value_type"
+	"github.com/fBloc/bloc-server/value_object"
 )
 
 type IptComponentConfig struct {

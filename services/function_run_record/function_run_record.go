@@ -3,10 +3,10 @@ package function_run_record
 import (
 	"context"
 
-	"github.com/fBloc/bloc-backend-go/infrastructure/log"
-	"github.com/fBloc/bloc-backend-go/repository/function_run_record"
-	mongoFRRC "github.com/fBloc/bloc-backend-go/repository/function_run_record/mongo"
-	user_cache "github.com/fBloc/bloc-backend-go/services/userid_cache"
+	"github.com/fBloc/bloc-server/infrastructure/log"
+	"github.com/fBloc/bloc-server/repository/function_run_record"
+	mongoFRRC "github.com/fBloc/bloc-server/repository/function_run_record/mongo"
+	user_cache "github.com/fBloc/bloc-server/services/userid_cache"
 )
 
 type FunctionRunRecordConfiguration func(

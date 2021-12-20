@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/fBloc/bloc-backend-go/config"
-	"github.com/fBloc/bloc-backend-go/interfaces/web"
-	"github.com/fBloc/bloc-backend-go/interfaces/web/req_context"
-	"github.com/fBloc/bloc-backend-go/value_object"
+	"github.com/fBloc/bloc-server/config"
+	"github.com/fBloc/bloc-server/interfaces/web"
+	"github.com/fBloc/bloc-server/interfaces/web/req_context"
+	"github.com/fBloc/bloc-server/value_object"
 
 	"github.com/julienschmidt/httprouter"
 )

@@ -1,7 +1,7 @@
 package client
 
 import (
-	function_execute_heartbeat_repository "github.com/fBloc/bloc-backend-go/repository/function_execute_heartbeat"
+	function_execute_heartbeat_repository "github.com/fBloc/bloc-server/repository/function_execute_heartbeat"
 )
 
 var heartbeatRepo function_execute_heartbeat_repository.FunctionExecuteHeartbeatRepository

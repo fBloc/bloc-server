@@ -1,8 +1,8 @@
 package client
 
 import (
-	"github.com/fBloc/bloc-backend-go/infrastructure/object_storage"
-	"github.com/fBloc/bloc-backend-go/value_object"
+	"github.com/fBloc/bloc-server/infrastructure/object_storage"
+	"github.com/fBloc/bloc-server/value_object"
 )
 
 var objectStorage object_storage.ObjectStorage

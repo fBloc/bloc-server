@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/fBloc/bloc-backend-go/event"
-	"github.com/fBloc/bloc-backend-go/internal/conns/mongodb"
-	"github.com/fBloc/bloc-backend-go/internal/filter_options"
+	"github.com/fBloc/bloc-server/event"
+	"github.com/fBloc/bloc-server/internal/conns/mongodb"
+	"github.com/fBloc/bloc-server/internal/filter_options"
 )
 
 func init() {

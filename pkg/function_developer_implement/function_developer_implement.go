@@ -3,10 +3,10 @@ package function_developer_implement
 import (
 	"context"
 
-	"github.com/fBloc/bloc-backend-go/infrastructure/log"
-	"github.com/fBloc/bloc-backend-go/pkg/ipt"
-	"github.com/fBloc/bloc-backend-go/pkg/opt"
-	"github.com/fBloc/bloc-backend-go/value_object"
+	"github.com/fBloc/bloc-server/infrastructure/log"
+	"github.com/fBloc/bloc-server/pkg/ipt"
+	"github.com/fBloc/bloc-server/pkg/opt"
+	"github.com/fBloc/bloc-server/value_object"
 )
 
 type FunctionDeveloperImplementInterface interface {

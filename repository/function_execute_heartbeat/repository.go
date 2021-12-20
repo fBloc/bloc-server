@@ -1,8 +1,8 @@
 package function_execute_heartbeat
 
 import (
-	"github.com/fBloc/bloc-backend-go/aggregate"
-	"github.com/fBloc/bloc-backend-go/value_object"
+	"github.com/fBloc/bloc-server/aggregate"
+	"github.com/fBloc/bloc-server/value_object"
 )
 
 type FunctionExecuteHeartbeatRepository interface {

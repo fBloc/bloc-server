@@ -5,14 +5,14 @@ import (
 	"errors"
 	"time"
 
-	"github.com/fBloc/bloc-backend-go/internal/conns/mongodb"
-	"github.com/fBloc/bloc-backend-go/pkg/add_or_del"
-	"github.com/fBloc/bloc-backend-go/pkg/ipt"
-	"github.com/fBloc/bloc-backend-go/pkg/opt"
-	"github.com/fBloc/bloc-backend-go/repository/function"
-	"github.com/fBloc/bloc-backend-go/value_object"
+	"github.com/fBloc/bloc-server/internal/conns/mongodb"
+	"github.com/fBloc/bloc-server/pkg/add_or_del"
+	"github.com/fBloc/bloc-server/pkg/ipt"
+	"github.com/fBloc/bloc-server/pkg/opt"
+	"github.com/fBloc/bloc-server/repository/function"
+	"github.com/fBloc/bloc-server/value_object"
 
-	"github.com/fBloc/bloc-backend-go/aggregate"
+	"github.com/fBloc/bloc-server/aggregate"
 )
 
 const (

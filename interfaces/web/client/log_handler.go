@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/fBloc/bloc-backend-go/infrastructure/log"
-	"github.com/fBloc/bloc-backend-go/interfaces/web"
+	"github.com/fBloc/bloc-server/infrastructure/log"
+	"github.com/fBloc/bloc-server/interfaces/web"
 	"github.com/julienschmidt/httprouter"
 )
 

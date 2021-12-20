@@ -3,10 +3,10 @@ package flow
 import (
 	"net/http"
 
-	"github.com/fBloc/bloc-backend-go/aggregate"
-	"github.com/fBloc/bloc-backend-go/event"
-	"github.com/fBloc/bloc-backend-go/interfaces/web"
-	"github.com/fBloc/bloc-backend-go/interfaces/web/req_context"
+	"github.com/fBloc/bloc-server/aggregate"
+	"github.com/fBloc/bloc-server/event"
+	"github.com/fBloc/bloc-server/interfaces/web"
+	"github.com/fBloc/bloc-server/interfaces/web/req_context"
 
 	"github.com/julienschmidt/httprouter"
 )

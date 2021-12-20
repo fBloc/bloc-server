@@ -3,8 +3,8 @@ package flow_run_record
 import (
 	"time"
 
-	"github.com/fBloc/bloc-backend-go/aggregate"
-	"github.com/fBloc/bloc-backend-go/value_object"
+	"github.com/fBloc/bloc-server/aggregate"
+	"github.com/fBloc/bloc-server/value_object"
 )
 
 type FlowRunRecordRepository interface {

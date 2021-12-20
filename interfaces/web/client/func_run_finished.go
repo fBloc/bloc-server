@@ -1,11 +1,11 @@
 package client
 
 import (
-	"github.com/fBloc/bloc-backend-go/infrastructure/log"
+	"github.com/fBloc/bloc-server/infrastructure/log"
 
-	"github.com/fBloc/bloc-backend-go/services/flow"
-	"github.com/fBloc/bloc-backend-go/services/flow_run_record"
-	"github.com/fBloc/bloc-backend-go/services/function_run_record"
+	"github.com/fBloc/bloc-server/services/flow"
+	"github.com/fBloc/bloc-server/services/flow_run_record"
+	"github.com/fBloc/bloc-server/services/function_run_record"
 )
 
 var fRRService *function_run_record.FunctionRunRecordService

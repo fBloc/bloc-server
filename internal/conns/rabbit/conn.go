@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/fBloc/bloc-backend-go/internal/mq_msg"
+	"github.com/fBloc/bloc-server/internal/mq_msg"
 
 	"github.com/streadway/amqp"
 )

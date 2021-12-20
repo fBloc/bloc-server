@@ -3,11 +3,11 @@ package flow_task
 import (
 	"context"
 
-	"github.com/fBloc/bloc-backend-go/infrastructure/log"
-	"github.com/fBloc/bloc-backend-go/repository/flow"
-	mongoFlow "github.com/fBloc/bloc-backend-go/repository/flow/mongo"
-	"github.com/fBloc/bloc-backend-go/repository/flow_run_record"
-	mongoFRR "github.com/fBloc/bloc-backend-go/repository/flow_run_record/mongo"
+	"github.com/fBloc/bloc-server/infrastructure/log"
+	"github.com/fBloc/bloc-server/repository/flow"
+	mongoFlow "github.com/fBloc/bloc-server/repository/flow/mongo"
+	"github.com/fBloc/bloc-server/repository/flow_run_record"
+	mongoFRR "github.com/fBloc/bloc-server/repository/flow_run_record/mongo"
 )
 
 type FlowTaskConfiguration func(fs *FlowTaskService) error

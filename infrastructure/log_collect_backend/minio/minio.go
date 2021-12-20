@@ -9,10 +9,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fBloc/bloc-backend-go/infrastructure/log_collect_backend"
-	"github.com/fBloc/bloc-backend-go/infrastructure/object_storage"
-	minioInf "github.com/fBloc/bloc-backend-go/infrastructure/object_storage/minio"
-	"github.com/fBloc/bloc-backend-go/value_object"
+	"github.com/fBloc/bloc-server/infrastructure/log_collect_backend"
+	"github.com/fBloc/bloc-server/infrastructure/object_storage"
+	minioInf "github.com/fBloc/bloc-server/infrastructure/object_storage/minio"
+	"github.com/fBloc/bloc-server/value_object"
 )
 
 func init() {

@@ -3,7 +3,7 @@ package object_storage
 import (
 	"net/http"
 
-	"github.com/fBloc/bloc-backend-go/interfaces/web"
+	"github.com/fBloc/bloc-server/interfaces/web"
 	"github.com/julienschmidt/httprouter"
 )
 

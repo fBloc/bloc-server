@@ -3,11 +3,11 @@ package aggregate
 import (
 	"time"
 
-	"github.com/fBloc/bloc-backend-go/pkg/function_developer_implement"
-	"github.com/fBloc/bloc-backend-go/pkg/ipt"
-	"github.com/fBloc/bloc-backend-go/pkg/opt"
-	"github.com/fBloc/bloc-backend-go/pkg/value_type"
-	"github.com/fBloc/bloc-backend-go/value_object"
+	"github.com/fBloc/bloc-server/pkg/function_developer_implement"
+	"github.com/fBloc/bloc-server/pkg/ipt"
+	"github.com/fBloc/bloc-server/pkg/opt"
+	"github.com/fBloc/bloc-server/pkg/value_type"
+	"github.com/fBloc/bloc-server/value_object"
 )
 
 type Function struct {

@@ -1,9 +1,9 @@
 package flow
 
 import (
-	"github.com/fBloc/bloc-backend-go/aggregate"
-	"github.com/fBloc/bloc-backend-go/internal/crontab"
-	"github.com/fBloc/bloc-backend-go/value_object"
+	"github.com/fBloc/bloc-server/aggregate"
+	"github.com/fBloc/bloc-server/internal/crontab"
+	"github.com/fBloc/bloc-server/value_object"
 )
 
 type FlowRepository interface {

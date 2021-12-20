@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fBloc/bloc-backend-go/infrastructure/log_collect_backend"
-	"github.com/fBloc/bloc-backend-go/value_object"
+	"github.com/fBloc/bloc-server/infrastructure/log_collect_backend"
+	"github.com/fBloc/bloc-server/value_object"
 )
 
 type msg struct {

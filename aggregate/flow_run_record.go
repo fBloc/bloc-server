@@ -3,7 +3,7 @@ package aggregate
 import (
 	"time"
 
-	"github.com/fBloc/bloc-backend-go/value_object"
+	"github.com/fBloc/bloc-server/value_object"
 )
 
 type FlowRunRecord struct {

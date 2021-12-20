@@ -3,10 +3,10 @@ package function
 import (
 	"context"
 
-	"github.com/fBloc/bloc-backend-go/infrastructure/log"
-	"github.com/fBloc/bloc-backend-go/repository/function"
-	mongoFunc "github.com/fBloc/bloc-backend-go/repository/function/mongo"
-	user_cache "github.com/fBloc/bloc-backend-go/services/userid_cache"
+	"github.com/fBloc/bloc-server/infrastructure/log"
+	"github.com/fBloc/bloc-server/repository/function"
+	mongoFunc "github.com/fBloc/bloc-server/repository/function/mongo"
+	user_cache "github.com/fBloc/bloc-server/services/userid_cache"
 )
 
 type FunctionConfiguration func(fs *FunctionService) error

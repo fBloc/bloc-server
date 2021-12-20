@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/fBloc/bloc-backend-go/infrastructure/log"
-	"github.com/fBloc/bloc-backend-go/interfaces/web"
-	"github.com/fBloc/bloc-backend-go/internal/json_date"
-	"github.com/fBloc/bloc-backend-go/value_object"
+	"github.com/fBloc/bloc-server/infrastructure/log"
+	"github.com/fBloc/bloc-server/interfaces/web"
+	"github.com/fBloc/bloc-server/internal/json_date"
+	"github.com/fBloc/bloc-server/value_object"
 	"github.com/julienschmidt/httprouter"
 	"github.com/pkg/errors"
 )

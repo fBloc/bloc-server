@@ -7,11 +7,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fBloc/bloc-backend-go/aggregate"
-	"github.com/fBloc/bloc-backend-go/interfaces/web"
-	"github.com/fBloc/bloc-backend-go/pkg/ipt"
-	"github.com/fBloc/bloc-backend-go/pkg/opt"
-	"github.com/fBloc/bloc-backend-go/value_object"
+	"github.com/fBloc/bloc-server/aggregate"
+	"github.com/fBloc/bloc-server/interfaces/web"
+	"github.com/fBloc/bloc-server/pkg/ipt"
+	"github.com/fBloc/bloc-server/pkg/opt"
+	"github.com/fBloc/bloc-server/value_object"
 	"github.com/julienschmidt/httprouter"
 )
 

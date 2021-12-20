@@ -5,11 +5,11 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/fBloc/bloc-backend-go/aggregate"
-	"github.com/fBloc/bloc-backend-go/infrastructure/log"
-	"github.com/fBloc/bloc-backend-go/repository/user"
-	mongoUser "github.com/fBloc/bloc-backend-go/repository/user/mongo"
-	"github.com/fBloc/bloc-backend-go/value_object"
+	"github.com/fBloc/bloc-server/aggregate"
+	"github.com/fBloc/bloc-server/infrastructure/log"
+	"github.com/fBloc/bloc-server/repository/user"
+	mongoUser "github.com/fBloc/bloc-server/repository/user/mongo"
+	"github.com/fBloc/bloc-server/value_object"
 )
 
 type UserConfiguration func(us *UserCacheService) error

@@ -3,12 +3,12 @@ package function_run_record
 import (
 	"time"
 
-	"github.com/fBloc/bloc-backend-go/aggregate"
-	"github.com/fBloc/bloc-backend-go/infrastructure/object_storage"
-	"github.com/fBloc/bloc-backend-go/internal/filter_options"
-	"github.com/fBloc/bloc-backend-go/pkg/ipt"
-	"github.com/fBloc/bloc-backend-go/pkg/value_type"
-	"github.com/fBloc/bloc-backend-go/value_object"
+	"github.com/fBloc/bloc-server/aggregate"
+	"github.com/fBloc/bloc-server/infrastructure/object_storage"
+	"github.com/fBloc/bloc-server/internal/filter_options"
+	"github.com/fBloc/bloc-server/pkg/ipt"
+	"github.com/fBloc/bloc-server/pkg/value_type"
+	"github.com/fBloc/bloc-server/value_object"
 )
 
 type FunctionRunRecordRepository interface {

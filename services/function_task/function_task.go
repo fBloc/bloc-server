@@ -3,11 +3,11 @@ package function_task
 import (
 	"context"
 
-	"github.com/fBloc/bloc-backend-go/infrastructure/log"
-	"github.com/fBloc/bloc-backend-go/repository/function"
-	mongoFunc "github.com/fBloc/bloc-backend-go/repository/function/mongo"
-	"github.com/fBloc/bloc-backend-go/repository/function_run_record"
-	mongoFRR "github.com/fBloc/bloc-backend-go/repository/function_run_record/mongo"
+	"github.com/fBloc/bloc-server/infrastructure/log"
+	"github.com/fBloc/bloc-server/repository/function"
+	mongoFunc "github.com/fBloc/bloc-server/repository/function/mongo"
+	"github.com/fBloc/bloc-server/repository/function_run_record"
+	mongoFRR "github.com/fBloc/bloc-server/repository/function_run_record/mongo"
 )
 
 type FunctionTaskConfiguration func(fs *FunctionTaskService) error

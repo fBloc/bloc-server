@@ -5,9 +5,9 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/fBloc/bloc-backend-go/aggregate"
-	"github.com/fBloc/bloc-backend-go/interfaces/web"
-	user_cache "github.com/fBloc/bloc-backend-go/services/userid_cache"
+	"github.com/fBloc/bloc-server/aggregate"
+	"github.com/fBloc/bloc-server/interfaces/web"
+	user_cache "github.com/fBloc/bloc-server/services/userid_cache"
 
 	"github.com/julienschmidt/httprouter"
 )

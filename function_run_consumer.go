@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/fBloc/bloc-backend-go/event"
-	"github.com/fBloc/bloc-backend-go/pkg/value_type"
-	"github.com/fBloc/bloc-backend-go/value_object"
+	"github.com/fBloc/bloc-server/event"
+	"github.com/fBloc/bloc-server/pkg/value_type"
+	"github.com/fBloc/bloc-server/value_object"
 )
 
 // FunctionRunConsumer 接收到要运行的function，主要有以下预操作：

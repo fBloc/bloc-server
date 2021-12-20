@@ -3,8 +3,8 @@ package client
 import (
 	"net/http"
 
-	"github.com/fBloc/bloc-backend-go/interfaces/web"
-	"github.com/fBloc/bloc-backend-go/value_object"
+	"github.com/fBloc/bloc-server/interfaces/web"
+	"github.com/fBloc/bloc-server/value_object"
 	"github.com/julienschmidt/httprouter"
 )
 

@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/fBloc/bloc-backend-go/value_object"
+	"github.com/fBloc/bloc-server/value_object"
 )
 
 // FilterInGetPath

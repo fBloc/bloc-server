@@ -3,8 +3,8 @@ package bloc
 import (
 	"time"
 
-	"github.com/fBloc/bloc-backend-go/aggregate"
-	"github.com/fBloc/bloc-backend-go/event"
+	"github.com/fBloc/bloc-server/aggregate"
+	"github.com/fBloc/bloc-server/event"
 )
 
 // RePubDeadRuns 重发运行中断的任务

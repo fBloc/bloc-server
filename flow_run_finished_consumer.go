@@ -1,8 +1,8 @@
 package bloc
 
 import (
-	"github.com/fBloc/bloc-backend-go/event"
-	"github.com/fBloc/bloc-backend-go/value_object"
+	"github.com/fBloc/bloc-server/event"
+	"github.com/fBloc/bloc-server/value_object"
 )
 
 // FlowTaskConsumer 接收到flow完成的任务，若是arr_flow，继续发布下一层的arr_flow的任务

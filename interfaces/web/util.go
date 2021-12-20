@@ -3,7 +3,7 @@ package web
 import (
 	"errors"
 
-	"github.com/fBloc/bloc-backend-go/value_object"
+	"github.com/fBloc/bloc-server/value_object"
 )
 
 func ParseStrValueToUUID(key, value string) (value_object.UUID, error) {

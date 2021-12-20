@@ -7,12 +7,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fBloc/bloc-backend-go/internal/filter_options"
-	"github.com/fBloc/bloc-backend-go/value_object"
+	"github.com/fBloc/bloc-server/internal/filter_options"
+	"github.com/fBloc/bloc-server/value_object"
 
 	"go.mongodb.org/mongo-driver/bson"
 
-	"github.com/fBloc/bloc-backend-go/internal/util"
+	"github.com/fBloc/bloc-server/internal/util"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"

@@ -3,7 +3,7 @@ package event
 import (
 	"encoding/json"
 
-	"github.com/fBloc/bloc-backend-go/value_object"
+	"github.com/fBloc/bloc-server/value_object"
 )
 
 func init() {

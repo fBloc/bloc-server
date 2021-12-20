@@ -3,7 +3,7 @@ package ipt
 import (
 	"strconv"
 
-	"github.com/fBloc/bloc-backend-go/pkg/value_type"
+	"github.com/fBloc/bloc-server/pkg/value_type"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cast"
