@@ -208,6 +208,13 @@ func (c *Collection) CommonFilter(
 	return cursor.All(context.TODO(), resultSlicePointer)
 }
 
+func (c *Collection) CommonCount(
+	filter value_object.RepositoryFilter,
+) (int64, error) {
+	mongoFilter := newMongoFilterFromCommonFilter(filter)
+	return c.collection.CountDocuments(context.TODO(), mongoFilter.filter)
+}
+
 // Filter all
 func (c *Collection) Filter(
 	mFilter *MongoFilter,

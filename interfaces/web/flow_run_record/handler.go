@@ -21,5 +21,11 @@ func Filter(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		return
 	}
 
-	web.WriteSucResp(&w, fromAggSlice(flowRunRecord))
+	count, err := fFRService.FlowRunRecord.Count(*filter)
+	if err != nil {
+		web.WriteInternalServerErrorResp(&w, err, "visit total failed")
+		return
+	}
+
+	web.WriteSucRespAndTotal(&w, fromAggSlice(flowRunRecord), count)
 }

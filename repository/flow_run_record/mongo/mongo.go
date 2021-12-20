@@ -245,6 +245,12 @@ func (mr *MongoRepository) Filter(
 	return resp, nil
 }
 
+func (mr *MongoRepository) Count(
+	filter value_object.RepositoryFilter,
+) (int64, error) {
+	return mr.mongoCollection.CommonCount(filter)
+}
+
 // 返回某个flow作为运行源的其全部`运行中`记录
 func (mr *MongoRepository) AllRunRecordOfFlowTriggeredByFlowID(
 	flowID value_object.UUID,

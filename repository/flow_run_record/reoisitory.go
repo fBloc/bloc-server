@@ -26,6 +26,9 @@ type FlowRunRecordRepository interface {
 		filter value_object.RepositoryFilter,
 		filterOption value_object.RepositoryFilterOption,
 	) ([]*aggregate.FlowRunRecord, error)
+	Count(
+		filter value_object.RepositoryFilter,
+	) (int64, error)
 	IsHaveRunningTask(
 		flowID, thisFlowRunRecordID value_object.UUID,
 	) (bool, error)

@@ -8,15 +8,26 @@ import (
 )
 
 type RespMsg struct {
-	Code int         `json:"status_code"`
-	Msg  string      `json:"status_msg"`
-	Data interface{} `json:"data"`
+	Code  int         `json:"status_code"`
+	Msg   string      `json:"status_msg"`
+	Data  interface{} `json:"data"`
+	Total int64       `json:"total,omitempty"`
 }
 
 func WriteSucResp(w *http.ResponseWriter, data interface{}) {
 	resp := RespMsg{
 		Code: http.StatusOK,
 		Data: data}
+	(*w).Write(resp.JSONBytes())
+}
+
+func WriteSucRespAndTotal(
+	w *http.ResponseWriter, data interface{}, amount int64,
+) {
+	resp := RespMsg{
+		Code:  http.StatusOK,
+		Data:  data,
+		Total: amount}
 	(*w).Write(resp.JSONBytes())
 }
 
