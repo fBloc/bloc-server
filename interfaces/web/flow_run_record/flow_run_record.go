@@ -93,3 +93,8 @@ func fromAggSlice(
 	}
 	return ret
 }
+
+type FlowRunRecordFilterResp struct {
+	Total int64                 `json:"total"`
+	Items []*FlowFunctionRecord `json:"items"`
+}

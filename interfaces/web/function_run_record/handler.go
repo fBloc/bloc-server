@@ -36,11 +36,22 @@ func Filter(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		return
 	}
 
-	FunctionRunRecordFilter, err := fRRService.FunctionRunRecords.Filter(*filter, *filterOption)
+	aggFunctionRunRecords, err := fRRService.FunctionRunRecords.Filter(*filter, *filterOption)
 	if err != nil {
 		web.WriteInternalServerErrorResp(&w, err, "visit repository failed")
 		return
 	}
 
-	web.WriteSucResp(&w, fromAggSlice(FunctionRunRecordFilter))
+	count, err := fRRService.FunctionRunRecords.Count(*filter)
+	if err != nil {
+		web.WriteInternalServerErrorResp(&w, err, "visit total failed")
+		return
+	}
+
+	resp := FunctionRunRecordFilterResp{
+		Total: count,
+		Items: fromAggSlice(aggFunctionRunRecords),
+	}
+
+	web.WriteSucResp(&w, resp)
 }

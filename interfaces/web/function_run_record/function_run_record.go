@@ -122,3 +122,8 @@ func fromAggSlice(
 	}
 	return ret
 }
+
+type FunctionRunRecordFilterResp struct {
+	Total int64                `json:"total"`
+	Items []*FunctionRunRecord `json:"items"`
+}

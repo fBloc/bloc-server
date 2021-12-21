@@ -27,5 +27,9 @@ func Filter(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		return
 	}
 
-	web.WriteSucRespAndTotal(&w, fromAggSlice(flowRunRecord), count)
+	resp := FlowRunRecordFilterResp{
+		Total: count,
+		Items: fromAggSlice(flowRunRecord),
+	}
+	web.WriteSucResp(&w, resp)
 }

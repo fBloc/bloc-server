@@ -21,6 +21,7 @@ type FunctionRunRecordRepository interface {
 		filter value_object.RepositoryFilter,
 		filterOption value_object.RepositoryFilterOption,
 	) ([]*aggregate.FunctionRunRecord, error)
+	Count(filter value_object.RepositoryFilter) (int64, error)
 	FilterByFilterOption(
 		kv map[string]interface{},
 		filterOptions *filter_options.FilterOption,

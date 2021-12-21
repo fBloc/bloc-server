@@ -224,6 +224,12 @@ func (mr *MongoRepository) FilterByFilterOption(
 	return ret, nil
 }
 
+func (mr *MongoRepository) Count(
+	filter value_object.RepositoryFilter,
+) (int64, error) {
+	return mr.mongoCollection.CommonCount(filter)
+}
+
 func (mr *MongoRepository) Filter(
 	filter value_object.RepositoryFilter,
 	filterOption value_object.RepositoryFilterOption,
