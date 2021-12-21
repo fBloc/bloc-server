@@ -20,21 +20,66 @@ func InjectFlowService(
 }
 
 type LatestRun struct {
-	StartTime value_object.JsonDate `json:"start_time"`
-	EndTime   value_object.JsonDate `json:"end_time"`
-	Status    value_object.RunState `json:"status"`
-	ErrorMsg  string                `json:"error_msg"`
+	ID                           value_object.UUID                    `json:"id"`
+	ArrangementID                value_object.UUID                    `json:"arrangement_id,omitempty"`
+	ArrangementFlowID            string                               `json:"arrangement_flow_id,omitempty"`
+	ArrangementRunRecordID       string                               `json:"arrangement_run_record_id,omitempty"`
+	FlowID                       value_object.UUID                    `json:"flow_id"`
+	FlowOriginID                 value_object.UUID                    `json:"flow_origin_id"`
+	FlowFuncIDMapFuncRunRecordID map[string]value_object.UUID         `json:"flowFunctionID_map_functionRunRecordID"`
+	TriggerType                  value_object.TriggerType             `json:"trigger_type"`
+	TriggerKey                   string                               `json:"trigger_key"`
+	TriggerSource                value_object.FlowTriggeredSourceType `json:"trigger_source"`
+	TriggerUserName              string                               `json:"trigger_user_name"`
+	TriggerTime                  value_object.JsonDate                `json:"trigger_time"`
+	StartTime                    value_object.JsonDate                `json:"start_time"`
+	EndTime                      value_object.JsonDate                `json:"end_time"`
+	Status                       value_object.RunState                `json:"status"`
+	ErrorMsg                     string                               `json:"error_msg"`
+	RetriedAmount                uint16                               `json:"retried_amount"`
+	TimeoutCanceled              bool                                 `json:"timeout_canceled"`
+	Canceled                     bool                                 `json:"canceled"`
+	CancelUserName               string                               `json:"cancel_user_name"`
 }
 
 func newLatestRunFromAgg(flowRunRecord *aggregate.FlowRunRecord) *LatestRun {
 	if flowRunRecord.IsZero() {
 		return nil
 	}
-	return &LatestRun{
-		StartTime: value_object.NewJsonDate(flowRunRecord.StartTime),
-		EndTime:   value_object.NewJsonDate(flowRunRecord.EndTime),
-		Status:    flowRunRecord.Status,
+	resp := &LatestRun{
+		ID:                           flowRunRecord.ID,
+		FlowID:                       flowRunRecord.FlowID,
+		FlowOriginID:                 flowRunRecord.FlowOriginID,
+		FlowFuncIDMapFuncRunRecordID: flowRunRecord.FlowFuncIDMapFuncRunRecordID,
+		TriggerType:                  flowRunRecord.TriggerType,
+		TriggerKey:                   flowRunRecord.TriggerKey,
+		TriggerSource:                flowRunRecord.TriggerSource,
+		TriggerTime:                  value_object.NewJsonDate(flowRunRecord.TriggerTime),
+		StartTime:                    value_object.NewJsonDate(flowRunRecord.StartTime),
+		EndTime:                      value_object.NewJsonDate(flowRunRecord.EndTime),
+		Status:                       flowRunRecord.Status,
+		ErrorMsg:                     flowRunRecord.ErrorMsg,
+		RetriedAmount:                flowRunRecord.RetriedAmount,
+		TimeoutCanceled:              flowRunRecord.TimeoutCanceled,
+		Canceled:                     flowRunRecord.Canceled,
 	}
+	if flowRunRecord.CancelUserID.IsNil() && flowRunRecord.TriggerUserID.IsNil() {
+		return resp
+	}
+	if !flowRunRecord.CancelUserID.IsNil() {
+		user, _ := fService.UserCacheService.GetUserByID(flowRunRecord.CancelUserID)
+		if !user.IsZero() {
+			resp.CancelUserName = user.Name
+		}
+	}
+	if !flowRunRecord.TriggerUserID.IsNil() {
+		user, _ := fService.UserCacheService.GetUserByID(flowRunRecord.TriggerUserID)
+		if !user.IsZero() {
+			resp.TriggerUserName = user.Name
+		}
+	}
+
+	return resp
 }
 
 type IptComponentConfig struct {
@@ -82,6 +127,11 @@ func (flowFunc FlowFunction) formatToAggFlowFunction() *aggregate.FlowFunction {
 	}
 }
 
+type FunctionRunInfo struct {
+	Status              value_object.RunState `json:"status"`
+	FunctionRunRecordID value_object.UUID     `json:"function_run_record_id"`
+}
+
 type Flow struct {
 	ID                            value_object.UUID        `json:"id"`
 	Name                          string                   `json:"name"`
@@ -108,8 +158,8 @@ type Flow struct {
 	Delete           bool `json:"delete"`
 	AssignPermission bool `json:"assign_permission"`
 	// latest run status
-	LatestRun                  *LatestRun                       `json:"latest_run,omitempty"`
-	FlowFunctionIDMapRunStatus map[string]value_object.RunState `json:"flowFunctionID_map_status"`
+	LatestRun                                 *LatestRun                 `json:"latest_run,omitempty"`
+	LatestRunFlowFunctionIDMapFunctionRunInfo map[string]FunctionRunInfo `json:"latestRun_flowFunctionID_map_functionRunInfo"`
 }
 
 func (f *Flow) getAggregateFlowFunctionIDMapFlowFunction() map[string]*aggregate.FlowFunction {
@@ -210,9 +260,98 @@ func fromAggWithLatestRunFlowView(aggF *aggregate.Flow, reqUser *aggregate.User)
 	return retFlow
 }
 
+// fromAggWithCertainRunFunctionView 附带此flow及其特定运行记录下的「各个function node的运行状态」
+// 当前使用场景是点击了单个flow的时候，此时会进行渲染其下的functions，需要渲染其最近那次运行下的各个function状态
+func fromAggWithCertainRunFunctionView(
+	aggF *aggregate.Flow,
+	theFlowRunRecord *aggregate.FlowRunRecord,
+	reqUser *aggregate.User,
+) *Flow {
+	retFlow := fromAgg(aggF, reqUser)
+	if retFlow.IsZero() {
+		return nil
+	}
+
+	wg := sync.WaitGroup{}
+	wg.Add(len(theFlowRunRecord.FlowFuncIDMapFuncRunRecordID))
+
+	type funcRunState struct {
+		flowfunctionID      string
+		functionRunRecordID value_object.UUID
+		functionRunState    value_object.RunState
+	}
+	resp := make(chan funcRunState, len(theFlowRunRecord.FlowFuncIDMapFuncRunRecordID))
+
+	for flowFuncID, functionRunRecordID := range theFlowRunRecord.FlowFuncIDMapFuncRunRecordID {
+		go func(
+			flowFuncID string, functionRunRecordID value_object.UUID,
+			retChan chan funcRunState, wg *sync.WaitGroup,
+		) {
+			defer wg.Done()
+			funcRecord, err := fService.FunctionRunRecord.GetByID(functionRunRecordID)
+			if err != nil {
+				resp <- funcRunState{
+					flowfunctionID:      flowFuncID,
+					functionRunRecordID: functionRunRecordID,
+					functionRunState:    value_object.UnknownRunState,
+				}
+				return
+			}
+			var thisFuncRunState value_object.RunState
+			if funcRecord.Finished() {
+				if funcRecord.Suc {
+					thisFuncRunState = value_object.Suc
+					goto RET
+				}
+				if funcRecord.Canceled {
+					if theFlowRunRecord.TimeoutCanceled {
+						thisFuncRunState = value_object.TimeoutCanceled
+						goto RET
+					}
+					if theFlowRunRecord.Canceled {
+						thisFuncRunState = value_object.UserCanceled
+						goto RET
+					}
+				}
+				thisFuncRunState = value_object.Fail
+			} else {
+				thisFuncRunState = value_object.Running
+			}
+		RET:
+			resp <- funcRunState{
+				flowfunctionID:      flowFuncID,
+				functionRunRecordID: functionRunRecordID,
+				functionRunState:    thisFuncRunState,
+			}
+		}(flowFuncID, functionRunRecordID, resp, &wg)
+	}
+
+	wg.Wait()
+	close(resp)
+
+	if retFlow.LatestRunFlowFunctionIDMapFunctionRunInfo == nil {
+		retFlow.LatestRunFlowFunctionIDMapFunctionRunInfo = make(
+			map[string]FunctionRunInfo,
+			len(theFlowRunRecord.FlowFuncIDMapFuncRunRecordID),
+		)
+	}
+	for i := range resp {
+		retFlow.LatestRunFlowFunctionIDMapFunctionRunInfo[i.flowfunctionID] = FunctionRunInfo{
+			Status:              i.functionRunState,
+			FunctionRunRecordID: i.functionRunRecordID,
+		}
+	}
+
+	retFlow.LatestRun = newLatestRunFromAgg(theFlowRunRecord)
+	return retFlow
+}
+
 // fromAggWithLatestRunFunctionView 附带此flow最近一次的运行记录下的「各个function node的运行状态」
 // 当前使用场景是点击了单个flow的时候，此时会进行渲染其下的functions，需要渲染其最近那次运行下的各个function状态
-func fromAggWithLatestRunFunctionView(aggF *aggregate.Flow, reqUser *aggregate.User) *Flow {
+func fromAggWithLatestRunFunctionView(
+	aggF *aggregate.Flow,
+	reqUser *aggregate.User,
+) *Flow {
 	retFlow := fromAgg(aggF, reqUser)
 	if retFlow.IsZero() {
 		return nil
@@ -226,8 +365,9 @@ func fromAggWithLatestRunFunctionView(aggF *aggregate.Flow, reqUser *aggregate.U
 		wg.Add(len(latestFlowRunRecord.FlowFuncIDMapFuncRunRecordID))
 
 		type funcRunState struct {
-			flowfunctionID   string
-			functionRunState value_object.RunState
+			flowfunctionID      string
+			functionRunRecordID value_object.UUID
+			functionRunState    value_object.RunState
 		}
 		resp := make(chan funcRunState, len(latestFlowRunRecord.FlowFuncIDMapFuncRunRecordID))
 
@@ -240,8 +380,9 @@ func fromAggWithLatestRunFunctionView(aggF *aggregate.Flow, reqUser *aggregate.U
 				funcRecord, err := fService.FunctionRunRecord.GetByID(functionRunRecordID)
 				if err != nil {
 					resp <- funcRunState{
-						flowfunctionID:   flowFuncID,
-						functionRunState: value_object.UnknownRunState,
+						flowfunctionID:      flowFuncID,
+						functionRunRecordID: functionRunRecordID,
+						functionRunState:    value_object.UnknownRunState,
 					}
 					return
 				}
@@ -267,8 +408,9 @@ func fromAggWithLatestRunFunctionView(aggF *aggregate.Flow, reqUser *aggregate.U
 				}
 			RET:
 				resp <- funcRunState{
-					flowfunctionID:   flowFuncID,
-					functionRunState: thisFuncRunState,
+					flowfunctionID:      flowFuncID,
+					functionRunRecordID: functionRunRecordID,
+					functionRunState:    thisFuncRunState,
 				}
 			}(flowFuncID, functionRunRecordID, resp, &wg)
 		}
@@ -276,13 +418,19 @@ func fromAggWithLatestRunFunctionView(aggF *aggregate.Flow, reqUser *aggregate.U
 		wg.Wait()
 		close(resp)
 
-		if retFlow.FlowFunctionIDMapRunStatus == nil {
-			retFlow.FlowFunctionIDMapRunStatus = make(
-				map[string]value_object.RunState, len(latestFlowRunRecord.FlowFuncIDMapFuncRunRecordID))
+		if retFlow.LatestRunFlowFunctionIDMapFunctionRunInfo == nil {
+			retFlow.LatestRunFlowFunctionIDMapFunctionRunInfo = make(
+				map[string]FunctionRunInfo,
+				len(latestFlowRunRecord.FlowFuncIDMapFuncRunRecordID),
+			)
 		}
 		for i := range resp {
-			retFlow.FlowFunctionIDMapRunStatus[i.flowfunctionID] = i.functionRunState
+			retFlow.LatestRunFlowFunctionIDMapFunctionRunInfo[i.flowfunctionID] = FunctionRunInfo{
+				Status:              i.functionRunState,
+				FunctionRunRecordID: i.functionRunRecordID,
+			}
 		}
+
 		retFlow.LatestRun = newLatestRunFromAgg(latestFlowRunRecord)
 	}
 	return retFlow

@@ -50,6 +50,57 @@ func GetFlowByID(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	web.WriteSucResp(&w, retFlow)
 }
 
+func GetFlowByCertainFlowRunRecord(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	flowRunRecordIDStr := ps.ByName("flow_run_record_id")
+	if flowRunRecordIDStr == "" {
+		web.WriteBadRequestDataResp(&w, "flow_run_record_id cannot be nil")
+		return
+	}
+
+	flowRunRecordUUID, err := value_object.ParseToUUID(flowRunRecordIDStr)
+	if err != nil {
+		web.WriteBadRequestDataResp(
+			&w,
+			"parse flowRunRecordIDStr(%s) to uuid failed",
+			flowRunRecordIDStr)
+		return
+	}
+
+	aggFlowRunRecord, err := fService.FlowRunRecord.GetByID(flowRunRecordUUID)
+	if err != nil {
+		web.WriteInternalServerErrorResp(&w, err, "fetch FlowRunRecord ins failed")
+		return
+	}
+
+	flowIns, err := fService.Flow.GetByID(aggFlowRunRecord.FlowID)
+	if err != nil {
+		web.WriteInternalServerErrorResp(&w, err, "get flow by id failed")
+		return
+	}
+	if flowIns.IsZero() {
+		web.WriteInternalServerErrorResp(
+			&w, err,
+			"get no flow by this flow_id(%s)", aggFlowRunRecord.FlowID.String())
+		return
+	}
+
+	reqUser, suc := req_context.GetReqUserFromContext(r.Context())
+	if !suc {
+		web.WriteInternalServerErrorResp(&w, nil,
+			"get requser from context failed")
+		return
+	}
+	retFlow := fromAggWithCertainRunFunctionView(flowIns, aggFlowRunRecord, reqUser)
+	if !flowIns.Newest { // 老版本的话，只返回read权限(别的操作都不该有了)
+		retFlow = fromAggWithoutUserPermission(flowIns)
+		retFlow.Write = false
+		retFlow.Execute = false
+		retFlow.Delete = false
+		retFlow.AssignPermission = false
+	}
+	web.WriteSucResp(&w, retFlow)
+}
+
 // GetFlowByOriginID 通过origin_id精确查询
 func GetFlowByOriginID(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	originID := ps.ByName("origin_id")

@@ -38,11 +38,15 @@ func WriteBadRequestDataResp(w *http.ResponseWriter, msg string, v ...interface{
 	(*w).Write(resp.JSONBytes())
 }
 
-func WriteInternalServerErrorResp(w *http.ResponseWriter, err error, msg string) {
+func WriteInternalServerErrorResp(
+	w *http.ResponseWriter, err error, msg string, v ...interface{},
+) {
 	if err != nil {
 		msg += ":" + err.Error()
 	}
-	resp := RespMsg{Code: http.StatusInternalServerError, Msg: msg}
+	resp := RespMsg{
+		Code: http.StatusInternalServerError,
+		Msg:  fmt.Sprintf(msg, v...)}
 	(*w).Write(resp.JSONBytes())
 }
 

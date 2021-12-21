@@ -168,6 +168,7 @@ func (blocApp *BlocApp) RunHttpServer() {
 			basicPath := "/api/v1/flow"
 			router.GET(basicPath, middleware.LoginAuth(flow.FilterFlow))
 			router.GET(basicPath+"/get_by_id/:id", middleware.LoginAuth(flow.GetFlowByID))
+			router.GET(basicPath+"/get_by_flow_run_record_id/:flow_run_record_id", middleware.LoginAuth(flow.GetFlowByCertainFlowRunRecord))
 			router.GET(basicPath+"/get_latestonline_by_origin_id/:origin_id", middleware.LoginAuth(flow.GetFlowByOriginID))
 			router.PATCH(basicPath+"/set_execute_control_attributes", middleware.LoginAuth(flow.SetExecuteControlAttributes))
 			router.DELETE(basicPath+"delete_by_origin_id/:origin_id", middleware.LoginAuth(flow.DeleteFlowByOriginID))
