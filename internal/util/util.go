@@ -14,10 +14,8 @@ func EncodeString(str string) string {
 }
 
 func Md5Digest(str string) string {
-	w := md5.New()
-	io.WriteString(w, str)
-	md5str2 := fmt.Sprintf("%x", w.Sum(nil))
-	return md5str2
+	hash := md5.Sum([]byte(str))
+	return hex.EncodeToString(hash[:])
 }
 
 func Sha1(data []byte) string {
