@@ -28,12 +28,12 @@ import (
 func (blocApp *BlocApp) RunHttpServer() {
 	router := httprouter.New()
 
-	httpConsumer := blocApp.GetOrCreateHttpLogger()
+	httpLogger := blocApp.GetOrCreateHttpLogger()
 	// TODO 放这里合适吗？
 	event.InjectMq(blocApp.GetOrCreateEventMQ())
 
 	uCacheService, err := user_cache.NewUserCacheService(
-		user_cache.WithLogger(httpConsumer),
+		user_cache.WithLogger(httpLogger),
 		user_cache.WithUser(blocApp.GetOrCreateUserRepository()),
 	)
 	if err != nil {
@@ -47,7 +47,7 @@ func (blocApp *BlocApp) RunHttpServer() {
 	{
 		// initial relied services
 		userService, err := user_service.NewUserService(
-			user_service.WithLogger(httpConsumer),
+			user_service.WithLogger(httpLogger),
 			user_service.WithUserRepository(blocApp.GetOrCreateUserRepository()))
 		if err != nil {
 			panic(err)
@@ -71,7 +71,7 @@ func (blocApp *BlocApp) RunHttpServer() {
 	{
 		// initial relied services
 		funcService, err := function_service.NewFunctionService(
-			function_service.WithLogger(httpConsumer),
+			function_service.WithLogger(httpLogger),
 			function_service.WithFunctionRepository(
 				blocApp.GetOrCreateFunctionRepository()),
 			function_service.WithUserCacheService(uCacheService),
@@ -99,7 +99,7 @@ func (blocApp *BlocApp) RunHttpServer() {
 	// function_run_record
 	{
 		fRRS, err := functionRunRecord_service.NewService(
-			functionRunRecord_service.WithLogger(httpConsumer),
+			functionRunRecord_service.WithLogger(httpLogger),
 			functionRunRecord_service.WithFunctionRunRecordRepository(
 				blocApp.GetOrCreateFunctionRunRecordRepository()),
 			functionRunRecord_service.WithUserCacheService(uCacheService),
@@ -122,7 +122,7 @@ func (blocApp *BlocApp) RunHttpServer() {
 	{
 		// initial relied services
 		flowService, err := flow_service.NewFlowService(
-			flow_service.WithLogger(httpConsumer),
+			flow_service.WithLogger(httpLogger),
 			flow_service.WithFlowRepository(
 				blocApp.GetOrCreateFlowRepository(),
 			),
@@ -194,7 +194,7 @@ func (blocApp *BlocApp) RunHttpServer() {
 	{
 		// initial relied services
 		flowRunRecordService, err := flowRunRecord_service.NewService(
-			flowRunRecord_service.WithLogger(httpConsumer),
+			flowRunRecord_service.WithLogger(httpLogger),
 			flowRunRecord_service.WithFlowRunRecordRepository(
 				blocApp.GetOrCreateFlowRunRecordRepository()),
 			flowRunRecord_service.WithUserCacheService(uCacheService),
@@ -235,7 +235,7 @@ func (blocApp *BlocApp) RunHttpServer() {
 	{
 
 		funcService, err := function_service.NewFunctionService(
-			function_service.WithLogger(httpConsumer),
+			function_service.WithLogger(httpLogger),
 			function_service.WithFunctionRepository(
 				blocApp.GetOrCreateFunctionRepository()),
 			function_service.WithUserCacheService(uCacheService),
@@ -246,7 +246,7 @@ func (blocApp *BlocApp) RunHttpServer() {
 		client.InjectFunctionService(funcService)
 		client.InjectLogBackend(blocApp.GetOrCreateLogBackEnd())
 		fRRS, err := functionRunRecord_service.NewService(
-			functionRunRecord_service.WithLogger(httpConsumer),
+			functionRunRecord_service.WithLogger(httpLogger),
 			functionRunRecord_service.WithFunctionRunRecordRepository(
 				blocApp.GetOrCreateFunctionRunRecordRepository()),
 			functionRunRecord_service.WithUserCacheService(uCacheService),
@@ -257,7 +257,7 @@ func (blocApp *BlocApp) RunHttpServer() {
 		client.InjectFunctionRunRecordService(fRRS)
 
 		flowService, err := flow_service.NewFlowService(
-			flow_service.WithLogger(httpConsumer),
+			flow_service.WithLogger(httpLogger),
 			flow_service.WithFlowRepository(
 				blocApp.GetOrCreateFlowRepository(),
 			),
@@ -280,7 +280,7 @@ func (blocApp *BlocApp) RunHttpServer() {
 		client.InjectConsumerLogger(blocApp.GetOrCreateConsumerLogger())
 
 		flowRunRecordService, err := flowRunRecord_service.NewService(
-			flowRunRecord_service.WithLogger(httpConsumer),
+			flowRunRecord_service.WithLogger(httpLogger),
 			flowRunRecord_service.WithFlowRunRecordRepository(
 				blocApp.GetOrCreateFlowRunRecordRepository()),
 			flowRunRecord_service.WithUserCacheService(uCacheService),

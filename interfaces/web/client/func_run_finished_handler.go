@@ -22,6 +22,9 @@ func FunctionRunFinished(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 		return
 	}
 
+	fRRService.Logger.Infof(
+		`received function_run_finished report.function_run_record id: %s, suc: %d`,
+		req.FunctionRunRecordID, req.Suc)
 	funcRunRecordUUID, err := value_object.ParseToUUID(req.FunctionRunRecordID)
 	if err != nil {
 		web.WriteBadRequestDataResp(&w, "parse function_id to uuid failed:", err.Error())
@@ -173,4 +176,7 @@ func FunctionRunFinished(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 			}
 		}
 	}
+	fRRService.Logger.Infof(
+		`function_run_finished report finshed.function_run_record id: %s`,
+		req.FunctionRunRecordID)
 }

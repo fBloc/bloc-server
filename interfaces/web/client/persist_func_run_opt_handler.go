@@ -15,6 +15,9 @@ func PersistFuncRunOptField(w http.ResponseWriter, r *http.Request, _ httprouter
 		web.WriteBadRequestDataResp(&w, err.Error())
 		return
 	}
+	fRRService.Logger.Infof(
+		"received persist function run opt filed.function_run_record_id: %s",
+		req.FunctionRunRecordID)
 
 	// TODO 检测req.FunctionRunRecordID是否有效
 	uploadByte, _ := json.Marshal(req.Data)
@@ -37,6 +40,10 @@ func PersistFuncRunOptField(w http.ResponseWriter, r *http.Request, _ httprouter
 		minLength = len(optInRune)
 	}
 	resp.Brief = string(optInRune[:minLength-1])
+	fRRService.Logger.Infof(
+		`persist function run opt filed.function_run_record_id: %s, key: %s, brief_opt: %s, objectStorage_key:%s`,
+		req.FunctionRunRecordID, req.OptKey,
+		resp.Brief, resp.ObjectStorageKey)
 
 	web.WriteSucResp(&w, resp)
 }

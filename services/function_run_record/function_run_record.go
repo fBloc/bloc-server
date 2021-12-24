@@ -14,7 +14,7 @@ type FunctionRunRecordConfiguration func(
 ) error
 
 type FunctionRunRecordService struct {
-	logger             *log.Logger
+	Logger             *log.Logger
 	UserCacheService   *user_cache.UserCacheService
 	FunctionRunRecords function_run_record.FunctionRunRecordRepository
 }
@@ -43,7 +43,7 @@ func WithUserCacheService(
 
 func WithLogger(logger *log.Logger) FunctionRunRecordConfiguration {
 	return func(us *FunctionRunRecordService) error {
-		us.logger = logger
+		us.Logger = logger
 		return nil
 	}
 }
