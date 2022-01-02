@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
@@ -43,7 +44,7 @@ func Init(conf *MinioConfig) *minio.Client {
 		if errBucketExists == nil && exists {
 			// already has this bucket
 		} else {
-			panic("minio initial bucket failed")
+			panic(fmt.Sprintf("minio initial bucket failed: %s", err.Error()))
 		}
 	}
 	return client

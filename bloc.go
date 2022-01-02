@@ -490,3 +490,11 @@ func (bA *BlocApp) GetFunctionByRepoID(functionRepoID value_object.UUID) *aggreg
 
 	return bA.functionRepoIDMapFunction[functionRepoID]
 }
+
+func (bA *BlocApp) Run() {
+	go bA.RunConsumer()
+	go bA.RunHttpServer()
+
+	forever := make(chan struct{})
+	<-forever
+}

@@ -32,9 +32,7 @@ func (mC *MongoConfig) IsNil() bool {
 	if mC == nil {
 		return true
 	}
-	return len(mC.Hosts) == 0 || mC.Port == 0 ||
-		mC.Db == "" || mC.User == "" ||
-		mC.Password == ""
+	return len(mC.Hosts) == 0 || mC.Port == 0
 }
 
 func (mC MongoConfig) Equal(anotherMC MongoConfig) bool {
@@ -74,14 +72,23 @@ func InitClient(conf *MongoConfig) *mongo.Client {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
-	client, _ = mongo.Connect(ctx, options.Client().ApplyURI(
-		strings.Join([]string{
+	var url string
+	if conf.User != "" && conf.Password != "" {
+		url = strings.Join([]string{
 			"mongodb://",
 			util.EncodeString(conf.User), ":",
 			util.EncodeString(conf.Password), "@",
 			conf.Hosts[0], ":",
 			strconv.Itoa(conf.Port)},
-			"")))
+			"")
+	} else {
+		url = strings.Join([]string{
+			"mongodb://",
+			conf.Hosts[0], ":",
+			strconv.Itoa(conf.Port)},
+			"")
+	}
+	client, _ = mongo.Connect(ctx, options.Client().ApplyURI(url))
 
 	pingCtx, pingCancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer pingCancel()
