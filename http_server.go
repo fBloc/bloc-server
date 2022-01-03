@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/fBloc/bloc-server/event"
+	"github.com/fBloc/bloc-server/interfaces/web/bloc_root"
 	"github.com/fBloc/bloc-server/interfaces/web/client"
 	"github.com/fBloc/bloc-server/interfaces/web/flow"
 	"github.com/fBloc/bloc-server/interfaces/web/flow_run_record"
@@ -42,6 +43,11 @@ func (blocApp *BlocApp) RunHttpServer() {
 
 	// middleware 依赖资源注入
 	middleware.InjectUserIDCacheService(uCacheService)
+
+	// root, 4 live detection ...
+	{
+		router.GET("/api/v1/bloc", bloc_root.HelloBloc)
+	}
 
 	// user
 	{
