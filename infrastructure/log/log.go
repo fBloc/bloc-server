@@ -1,7 +1,6 @@
 package log
 
 import (
-	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
@@ -41,111 +40,49 @@ func New(
 	return l
 }
 
-func NewWithPeriodicUpload(
-	name string,
-	collectBackend log_collect_backend.LogBackEnd,
-) *Logger {
-	l := New(name, collectBackend)
-	go l.upload()
-	return l
+func (
+	logger *Logger,
+) Infof(
+	tagMap map[string]string,
+	format string, a ...interface{},
+) {
+	tagMap["log_level"] = string(value_object.Info)
+	logger.logBackend.Write(
+		logger.name, tagMap,
+		fmt.Sprintf(format, a...), time.Now())
 }
 
 func (
 	logger *Logger,
-) Infof(format string, a ...interface{}) {
-	logger.Lock()
-	defer logger.Unlock()
-
-	logger.data = append(logger.data, &msg{
-		Time:  time.Now(),
-		Level: value_object.Info,
-		Data:  fmt.Sprintf(format, a...),
-	})
+) Warningf(
+	tagMap map[string]string,
+	format string, a ...interface{},
+) {
+	tagMap["log_level"] = string(value_object.Warning)
+	logger.logBackend.Write(
+		logger.name, tagMap,
+		fmt.Sprintf(format, a...), time.Now())
 }
 
 func (
 	logger *Logger,
-) Warningf(format string, a ...interface{}) {
-	logger.Lock()
-	defer logger.Unlock()
-
-	logger.data = append(logger.data, &msg{
-		Time:  time.Now(),
-		Level: value_object.Warning,
-		Data:  fmt.Sprintf(format, a...),
-	})
-}
-
-func (
-	logger *Logger,
-) Errorf(format string, a ...interface{}) {
-	logger.Lock()
-	defer logger.Unlock()
-
-	logger.data = append(logger.data, &msg{
-		Time:  time.Now(),
-		Level: value_object.Error,
-		Data:  fmt.Sprintf(format, a...),
-	})
+) Errorf(
+	tagMap map[string]string,
+	format string, a ...interface{},
+) {
+	tagMap["log_level"] = string(value_object.Error)
+	logger.logBackend.Write(
+		logger.name, tagMap,
+		fmt.Sprintf(format, a...), time.Now())
 }
 
 func (logger *Logger) ForceUpload() {
-	if len(logger.data) <= 0 {
-		return
-	}
-
-	logger.Lock()
-	data, err := json.Marshal(logger.data)
-	theLatestData := logger.data[len(logger.data)-1]
-	logger.data = logger.data[:0]
-	logger.Unlock()
-	if err != nil {
-		panic(err)
-		// return
-	}
-
-	// TODO 要不要panic？
-	err = logger.logBackend.PersistData(
-		fmt.Sprintf("%s-%d", logger.name, theLatestData.Time.Unix()),
-		data)
-	if err != nil {
-		panic(err)
-	}
-}
-
-func (logger *Logger) upload() {
-	ticker := time.NewTicker(30 * time.Second)
-	defer ticker.Stop()
-
-	for range ticker.C {
-		if len(logger.data) <= 0 {
-			continue
-		}
-
-		logger.Lock()
-
-		// 上传日志
-		data, err := json.Marshal(logger.data)
-		logger.data = logger.data[:0]
-		logger.Unlock()
-
-		if err != nil {
-			panic(err)
-			// return
-		}
-		// TODO 要不要panic？
-		timeFlag := time.Now().Add(-30 * time.Second)
-		err = logger.logBackend.PersistData(
-			fmt.Sprintf("%s-%d", logger.name, timeFlag.Unix()),
-			data)
-		if err != nil {
-			panic(err)
-		}
-	}
+	logger.logBackend.ForceFlush()
 }
 
 func (logger *Logger) PullLogBetweenTime(
+	tagFilter map[string]string,
 	timeStart, timeEnd time.Time,
 ) ([]interface{}, error) {
-	return logger.logBackend.PullDataBetween(logger.name, timeStart, timeEnd)
+	return logger.logBackend.Fetch(logger.name, tagFilter, timeStart, timeEnd)
 }

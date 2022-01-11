@@ -61,10 +61,13 @@ func RegisterFunctions(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 					iptD, optD)
 				if err != nil {
 					errMsgPrefix := fmt.Sprintf(
-						`get function by same core failed. 
-					group_name: %s, function_name: %s, ipt_digest: %s, opt_digest: %s`,
+						`get function by same core failed. group_name: %s, function_name: %s, ipt_digest: %s, opt_digest: %s`,
 						group, httpFunc.Name, iptD, optD)
-					fService.Logger.Errorf("%s:%s", errMsgPrefix, err.Error())
+					fService.Logger.Errorf(
+						map[string]string{
+							"group_name":    group,
+							"function_name": httpFunc.Name},
+						"%s:%s", errMsgPrefix, err.Error())
 					web.WriteInternalServerErrorResp(
 						&w, err, errMsgPrefix)
 				}
@@ -84,7 +87,11 @@ func RegisterFunctions(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 					err = fService.Function.Create(&aggFunction)
 					if err != nil {
 						msg := fmt.Sprintf("create function to persistence layer failed: %s", err.Error())
-						fService.Logger.Errorf(msg)
+						fService.Logger.Errorf(
+							map[string]string{
+								"group_name":    group,
+								"function_name": httpFunc.Name},
+							msg)
 						httpFunc.ErrorMsg = msg
 						return
 					}
@@ -109,7 +116,11 @@ func RegisterFunctions(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 					ID: httpFunc.ID, LastReportTime: time.Now()}
 				reported.idMapFunc[httpFunc.ID] = *aggFunc
 				reported.Unlock()
-				fService.Logger.Infof("registered func: %s - %s", group, httpFunc.Name)
+				fService.Logger.Infof(
+					map[string]string{
+						"group_name":    group,
+						"function_name": httpFunc.Name},
+					"registered func: %s - %s", group, httpFunc.Name)
 			}(groupName, f, &wg)
 		}
 	}
@@ -119,6 +130,7 @@ func RegisterFunctions(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 			err := fService.Function.AliveReport(functionUUID)
 			if err != nil {
 				fService.Logger.Errorf(
+					map[string]string{"function_id": functionUUID.String()},
 					"function(id: %s) alive report failed: %s",
 					functionUUID.String(), err.Error())
 			}

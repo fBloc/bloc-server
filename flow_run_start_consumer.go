@@ -24,16 +24,20 @@ func (blocApp *BlocApp) FlowTaskStartConsumer() {
 
 	for flowToRunEvent := range flowToRunEventChan {
 		flowRunRecordStr := flowToRunEvent.Identity()
-		logger.Infof("|--> get flow run start record id %s", flowRunRecordStr)
+		logger.Infof(
+			map[string]string{"flow_run_record_id": flowRunRecordStr},
+			"get flow run start record id %s", flowRunRecordStr)
 		flowRunRecordUuid, err := value_object.ParseToUUID(flowRunRecordStr)
 		if err != nil {
 			logger.Errorf(
+				map[string]string{"flow_run_record_id": flowRunRecordStr},
 				"parse flow_run_record_id to uuid failed: %s", flowRunRecordStr)
 			continue
 		}
 		flowRunIns, err := flowRunRepo.GetByID(flowRunRecordUuid)
 		if err != nil {
 			logger.Errorf(
+				map[string]string{"flow_run_record_id": flowRunRecordStr},
 				"get flow_run_record by id. flow_run_record_id: %s", flowRunRecordStr)
 			continue
 		}
@@ -44,6 +48,9 @@ func (blocApp *BlocApp) FlowTaskStartConsumer() {
 		flowIns, err := flowRepo.GetByID(flowRunIns.FlowID)
 		if err != nil {
 			logger.Errorf(
+				map[string]string{
+					"flow_run_record_id": flowRunRecordStr,
+					"flow_id":            flowRunIns.FlowID.String()},
 				"get flow from flow_run_record.flow_id error: %v", err)
 			continue
 		}
@@ -53,15 +60,22 @@ func (blocApp *BlocApp) FlowTaskStartConsumer() {
 				flowIns.ID, flowRunRecordUuid)
 			if err != nil {
 				logger.Errorf(
+					map[string]string{"flow_run_record_id": flowRunRecordStr},
 					"filter running flow records error: %v", err)
 				continue
 			}
 			if isRunning {
 				logger.Infof(
+					map[string]string{
+						"flow_run_record_id": flowRunRecordStr,
+						"flow_id":            flowRunIns.FlowID.String()},
 					"this flow won't run because had been set not allowed parallel run")
 				err = flowRunRepo.NotAllowedParallelRun(flowRunIns.ID)
 				if err != nil {
 					logger.Errorf(
+						map[string]string{
+							"flow_run_record_id": flowRunRecordStr,
+							"flow_id":            flowRunIns.FlowID.String()},
 						"save NotAllowedParallelRun of flow_id(%s) failed",
 						flowRunIns.ID.String())
 				}
@@ -79,6 +93,11 @@ func (blocApp *BlocApp) FlowTaskStartConsumer() {
 			functionIns := blocApp.GetFunctionByRepoID(flowFunction.FunctionID)
 			if functionIns.IsZero() {
 				logger.Errorf(
+					map[string]string{
+						"flow_run_record_id": flowRunRecordStr,
+						"flow_id":            flowRunIns.FlowID.String(),
+						"function_id":        flowFunction.FunctionID.String(),
+					},
 					"find flow's first layer function failed. function_id: %s",
 					flowFunction.FunctionID.String())
 				goto PubFailed
@@ -89,6 +108,11 @@ func (blocApp *BlocApp) FlowTaskStartConsumer() {
 			err := functionRunRecordRepo.Create(aggFunctionRunRecord)
 			if err != nil {
 				logger.Errorf(
+					map[string]string{
+						"flow_run_record_id": flowRunRecordStr,
+						"flow_id":            flowRunIns.FlowID.String(),
+						"function_id":        flowFunction.FunctionID.String(),
+					},
 					"create flow's first layer function_run_record failed. function_id: %s, err: %v",
 					flowFunction.FunctionID.String(), err)
 				goto PubFailed
@@ -100,6 +124,7 @@ func (blocApp *BlocApp) FlowTaskStartConsumer() {
 			flowRunIns.ID, flowRunIns.FlowFuncIDMapFuncRunRecordID)
 		if err != nil {
 			logger.Errorf(
+				map[string]string{"flow_run_record_id": flowRunRecordStr},
 				"update flow_run_record's flowFuncID_map_funcRunRecordID field failed: %s",
 				err.Error())
 			goto PubFailed

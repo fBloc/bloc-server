@@ -18,7 +18,9 @@ func (blocApp *BlocApp) RePubDeadRuns() {
 	for range ticker.C {
 		deads, err := heartBeatRepo.AllDeads()
 		if err != nil {
-			logger.Errorf("heartbeat watcher error: %s", err.Error())
+			logger.Errorf(
+				map[string]string{},
+				"heartbeat watcher error: %s", err.Error())
 			continue
 		}
 		if len(deads) <= 0 {
@@ -29,7 +31,9 @@ func (blocApp *BlocApp) RePubDeadRuns() {
 			// 立即进行删除此条信息（利用mongo通过ID删除的原子性保障来确保不会「重复重发」）
 			deleteAmount, err := heartBeatRepo.Delete(d.ID)
 			if err != nil {
-				logger.Errorf("heartBeatRepo.Delete failed, error: %s", err.Error())
+				logger.Errorf(
+					map[string]string{},
+					"heartBeatRepo.Delete failed, error: %s", err.Error())
 				continue
 			}
 			if deleteAmount != 1 { // 避免并发watch重复发布
@@ -39,7 +43,9 @@ func (blocApp *BlocApp) RePubDeadRuns() {
 			// 查询对应的function run record是否存在
 			funcRunRecord, err := funcRunRecordRepo.GetByID(d.FunctionRunRecordID)
 			if err != nil {
-				logger.Errorf("funcRunRecordRepo.GetByID failed. error:: %s", err.Error())
+				logger.Errorf(
+					map[string]string{"function_run_record_id": d.FunctionRunRecordID.String()},
+					"funcRunRecordRepo.GetByID failed. error:: %s", err.Error())
 				continue
 			}
 			if funcRunRecord.IsZero() {
@@ -47,7 +53,9 @@ func (blocApp *BlocApp) RePubDeadRuns() {
 			}
 			err = funcRunRecordRepo.ClearProgress(funcRunRecord.ID)
 			if err != nil {
-				logger.Errorf("funcRunRecordRepo.ClearProgress: %s", err.Error())
+				logger.Errorf(
+					map[string]string{"function_run_record_id": d.FunctionRunRecordID.String()},
+					"funcRunRecordRepo.ClearProgress: %s", err.Error())
 			}
 
 			// 再次进行发布
@@ -55,9 +63,13 @@ func (blocApp *BlocApp) RePubDeadRuns() {
 				FunctionRunRecordID: funcRunRecord.ID,
 			})
 			if err != nil {
-				logger.Errorf("pub func event failed. error: %s", err.Error())
+				logger.Errorf(
+					map[string]string{"function_run_record_id": d.FunctionRunRecordID.String()},
+					"pub func event failed. error: %s", err.Error())
 			} else {
-				logger.Infof("re-pub function run record: %s", funcRunRecord.ID)
+				logger.Infof(
+					map[string]string{"function_run_record_id": d.FunctionRunRecordID.String()},
+					"re-pub function run record: %s", funcRunRecord.ID)
 			}
 		}
 	}

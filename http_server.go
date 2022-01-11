@@ -114,13 +114,17 @@ func (blocApp *BlocApp) RunHttpServer() {
 			panic(err)
 		}
 		function_run_record.InjectFunctionRunRecordService(fRRS)
-		function_run_record.InjectLogCollectBackend(blocApp.GetOrCreateLogBackEnd())
+
+		logBackEnd, err := blocApp.GetOrCreateLogBackEnd()
+		if err != nil {
+			panic(err)
+		}
+		function_run_record.InjectLogCollectBackend(logBackEnd)
 
 		// router
 		basicPath := "/api/v1/function_run_record"
 		router.GET(basicPath, middleware.LoginAuth(function_run_record.Filter))
 		router.GET(basicPath+"/get_by_id/:id", middleware.LoginAuth(function_run_record.Get))
-		router.GET(basicPath+"/list_logkeys_by_id/:id", middleware.LoginAuth(function_run_record.ListLogKeys))
 		router.GET(basicPath+"/get_log_by_logkey/:log_key", middleware.LoginAuth(function_run_record.GetLogByKey))
 	}
 
@@ -228,9 +232,11 @@ func (blocApp *BlocApp) RunHttpServer() {
 
 	// log
 	{
-		log_data.InjectLogCollectBackend(
-			blocApp.GetOrCreateLogBackEnd(),
-		)
+		logBackEnd, err := blocApp.GetOrCreateLogBackEnd()
+		if err != nil {
+			panic(err)
+		}
+		log_data.InjectLogCollectBackend(logBackEnd)
 		{
 			basicPath := "/api/v1/log"
 			router.POST(basicPath+"/pull_log_between_time", log_data.PullLog)
@@ -250,7 +256,11 @@ func (blocApp *BlocApp) RunHttpServer() {
 			panic(err)
 		}
 		client.InjectFunctionService(funcService)
-		client.InjectLogBackend(blocApp.GetOrCreateLogBackEnd())
+		logBackEnd, err := blocApp.GetOrCreateLogBackEnd()
+		if err != nil {
+			panic(err)
+		}
+		client.InjectLogBackend(logBackEnd)
 		fRRS, err := functionRunRecord_service.NewService(
 			functionRunRecord_service.WithLogger(httpLogger),
 			functionRunRecord_service.WithFunctionRunRecordRepository(

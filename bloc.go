@@ -2,6 +2,7 @@ package bloc
 
 import (
 	"context"
+	"time"
 
 	"github.com/fBloc/bloc-server/aggregate"
 	"github.com/fBloc/bloc-server/config"
@@ -9,10 +10,11 @@ import (
 	mongo_futureEventStorage "github.com/fBloc/bloc-server/event/mongo_event_storage"
 	"github.com/fBloc/bloc-server/infrastructure/log"
 	"github.com/fBloc/bloc-server/infrastructure/log_collect_backend"
-	minio_logBackend "github.com/fBloc/bloc-server/infrastructure/log_collect_backend/minio"
+	influx_logBackend "github.com/fBloc/bloc-server/infrastructure/log_collect_backend/influxdb"
 	"github.com/fBloc/bloc-server/infrastructure/mq"
 	"github.com/fBloc/bloc-server/infrastructure/object_storage"
 	minioInf "github.com/fBloc/bloc-server/infrastructure/object_storage/minio"
+	"github.com/fBloc/bloc-server/internal/conns/influxdb"
 	"github.com/fBloc/bloc-server/internal/conns/minio"
 	"github.com/fBloc/bloc-server/internal/conns/mongodb"
 	"github.com/fBloc/bloc-server/internal/util"
@@ -76,6 +78,7 @@ type ConfigBuilder struct {
 	RabbitConf      *rabbit.RabbitConfig
 	mongoConf       *mongodb.MongoConfig
 	minioConf       *minio.MinioConfig
+	InfluxDBConf    *influxdb.InfluxDBConfig
 	LogConf         *LogConfig
 }
 
@@ -87,6 +90,18 @@ func (confbder *ConfigBuilder) SetDefaultUser(name, password string) *ConfigBuil
 
 func (confbder *ConfigBuilder) SetHttpServer(ip string, port int) *ConfigBuilder {
 	confbder.HttpServerConf = &HttpServerConfig{IP: ip, Port: port}
+	return confbder
+}
+
+func (confbder *ConfigBuilder) SetInfluxDBConfig(
+	user, password, address, organization, token string,
+) *ConfigBuilder {
+	confbder.InfluxDBConf = &influxdb.InfluxDBConfig{
+		UserName:     user,
+		Password:     password,
+		Address:      address,
+		Token:        token,
+		Organization: organization}
 	return confbder
 }
 
@@ -162,6 +177,9 @@ func (congbder *ConfigBuilder) BuildUp() {
 	}
 	minio.Init(congbder.minioConf)
 
+	// influxdb 查看influxdb是否有效工作
+	influxdb.NewConnection(congbder.InfluxDBConf)
+
 	// LogConf
 	if congbder.LogConf.IsNil() {
 		congbder.LogConf = &LogConfig{
@@ -219,17 +237,11 @@ func (bA *BlocApp) HttpListener() net.Listener {
 		bA.configBuilder.HttpServerConf.Port)
 }
 
-func (bA *BlocApp) GetOrCreateLogBackEnd() log_collect_backend.LogBackEnd {
-	if bA.logBackEnd != nil {
-		return bA.logBackEnd
-	}
-
-	bA.logBackEnd = minio_logBackend.New(
-		bA.configBuilder.minioConf.BucketName,
-		bA.configBuilder.minioConf.Addresses,
-		bA.configBuilder.minioConf.AccessKey,
-		bA.configBuilder.minioConf.AccessPassword)
-	return bA.logBackEnd
+func (bA *BlocApp) GetOrCreateLogBackEnd() (log_collect_backend.LogBackEnd, error) {
+	influxConn := influxdb.NewConnection(bA.configBuilder.InfluxDBConf)
+	return influx_logBackend.New(
+		value_object.HttpServerLog.String(), influxConn,
+		24*time.Duration(bA.configBuilder.LogConf.MaxKeepDays)*time.Hour)
 }
 
 func (bA *BlocApp) GetOrCreateHttpLogger() *log.Logger {
@@ -239,9 +251,13 @@ func (bA *BlocApp) GetOrCreateHttpLogger() *log.Logger {
 		return bA.httpServerLogger
 	}
 
-	bA.httpServerLogger = log.NewWithPeriodicUpload(
+	influxBucketClient, err := bA.GetOrCreateLogBackEnd()
+	if err != nil {
+		panic("GetOrCreateHttpLogger error: " + err.Error())
+	}
+	bA.httpServerLogger = log.New(
 		value_object.HttpServerLog.String(),
-		bA.GetOrCreateLogBackEnd())
+		influxBucketClient)
 	return bA.httpServerLogger
 }
 
@@ -252,19 +268,24 @@ func (bA *BlocApp) GetOrCreateConsumerLogger() *log.Logger {
 		return bA.consumerLogger
 	}
 
-	logBackEnd := bA.GetOrCreateLogBackEnd()
-	logger := log.NewWithPeriodicUpload(
+	influxBucketClient, err := bA.GetOrCreateLogBackEnd()
+	if err != nil {
+		panic("GetOrCreateConsumerLogger error: " + err.Error())
+	}
+	bA.consumerLogger = log.New(
 		value_object.ConsumerLog.String(),
-		logBackEnd)
-	bA.consumerLogger = logger
+		influxBucketClient)
 	return bA.consumerLogger
 }
 
 func (bA *BlocApp) CreateFunctionRunLogger(funcRunRecordID value_object.UUID) *log.Logger {
-	logBackEnd := bA.GetOrCreateLogBackEnd()
-	return log.NewWithPeriodicUpload(
-		value_object.FuncRunRecordLog.String()+"-"+funcRunRecordID.String(),
-		logBackEnd)
+	influxBucketClient, err := bA.GetOrCreateLogBackEnd()
+	if err != nil {
+		panic("CreateFunctionRunLogger error: " + err.Error())
+	}
+	return log.New(
+		value_object.FuncRunRecordLog.String(),
+		influxBucketClient)
 }
 
 func (bA *BlocApp) GetOrCreateUserRepository() user_repository.UserRepository {

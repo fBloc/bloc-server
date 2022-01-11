@@ -21,7 +21,9 @@ func (blocApp *BlocApp) FlowTaskFinishedConsumer() {
 
 	for flowRunFinishedEvent := range flowRunFinishedEventChan {
 		flowRunRecordStr := flowRunFinishedEvent.Identity()
-		logger.Infof("> FlowRunFinishedConsumer flow_run_record__id %s finished", flowRunRecordStr)
+		logger.Infof(
+			map[string]string{"flow_run_record_id": flowRunRecordStr},
+			"FlowRunFinishedConsumer flow_run_record__id %s finished", flowRunRecordStr)
 		flowRunRecordUuid, err := value_object.ParseToUUID(flowRunRecordStr)
 		if err != nil {
 			// TODO 不应该panic

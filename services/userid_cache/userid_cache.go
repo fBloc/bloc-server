@@ -90,7 +90,9 @@ func (us *UserCacheService) visitRepositoryByID(id value_object.UUID) (aggregate
 		return aggregate.User{}, err
 	}
 	if resp.IsZero() {
-		us.logger.Warningf("get user by ID missed:%s", id.String())
+		us.logger.Warningf(
+			map[string]string{},
+			"get user by ID missed:%s", id.String())
 		return aggregate.User{}, nil
 	}
 	cache.Lock()

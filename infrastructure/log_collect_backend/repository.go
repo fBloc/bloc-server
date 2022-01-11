@@ -3,8 +3,8 @@ package log_collect_backend
 import "time"
 
 type LogBackEnd interface {
-	PersistData(key string, data []byte) error
-	ListKeysBetween(prefixKey string, start, end time.Time) ([]string, error)
-	PullDataBetween(prefixKey string, start, end time.Time) ([]interface{}, error)
-	PullDataByKey(key string) ([]interface{}, error)
+	Write(key string, tagMap map[string]string, data string, logTime time.Time) error
+	Fetch(key string, tagFilterMap map[string]string, start, end time.Time) ([]interface{}, error)
+	FetchAll(key string, tagFilterMap map[string]string) ([]interface{}, error)
+	ForceFlush() error
 }

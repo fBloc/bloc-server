@@ -16,9 +16,12 @@ require (
 )
 
 require (
+	github.com/deepmap/oapi-codegen v1.8.2 // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/go-stack/stack v1.8.1 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
+	github.com/influxdata/influxdb-client-go/v2 v2.6.0 // indirect
+	github.com/influxdata/line-protocol v0.0.0-20200327222509-2487e7298839 // indirect
 	github.com/jessevdk/go-flags v1.5.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.13.6 // indirect
@@ -41,4 +44,5 @@ require (
 	golang.org/x/sys v0.0.0-20211116061358-0a5406a5449c // indirect
 	golang.org/x/text v0.3.7 // indirect
 	gopkg.in/ini.v1 v1.64.0 // indirect
+	gopkg.in/yaml.v2 v2.3.0 // indirect
 )

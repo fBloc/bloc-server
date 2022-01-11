@@ -16,6 +16,7 @@ func PersistFuncRunOptField(w http.ResponseWriter, r *http.Request, _ httprouter
 		return
 	}
 	fRRService.Logger.Infof(
+		map[string]string{"function_run_record_id": req.FunctionRunRecordID.String()},
 		"received persist function run opt filed.function_run_record_id: %s",
 		req.FunctionRunRecordID)
 
@@ -41,6 +42,7 @@ func PersistFuncRunOptField(w http.ResponseWriter, r *http.Request, _ httprouter
 	}
 	resp.Brief = string(optInRune[:minLength-1])
 	fRRService.Logger.Infof(
+		map[string]string{"function_run_record_id": req.FunctionRunRecordID.String()},
 		`persist function run opt filed.function_run_record_id: %s, key: %s, brief_opt: %s, objectStorage_key:%s`,
 		req.FunctionRunRecordID, req.OptKey,
 		resp.Brief, resp.ObjectStorageKey)

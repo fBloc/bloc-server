@@ -18,7 +18,9 @@ func (blocApp *BlocApp) CrontabWatcher() {
 	for range ticker.C {
 		crontabFlows, err := flowRepo.FilterCrontabFlows()
 		if err != nil {
-			logger.Errorf("Error on filter crontab flows: %s", err.Error())
+			logger.Errorf(
+				map[string]string{},
+				"Error on filter crontab flows: %s", err.Error())
 			continue
 		}
 
@@ -35,7 +37,9 @@ func (blocApp *BlocApp) CrontabWatcher() {
 				flowRunRecord := aggregate.NewCrontabTriggeredRunRecord(flowIns)
 				created, err := flowRunRecordRepo.CrontabFindOrCreate(flowRunRecord, crontabTrigTime)
 				if err != nil {
-					logger.Errorf("error create flow run record: %s", err.Error())
+					logger.Errorf(
+						map[string]string{"flow_id": flowIns.ID.String()},
+						"error create flow run record: %s", err.Error())
 					return
 				}
 				if created { // 并发安全、避免重复发布任务

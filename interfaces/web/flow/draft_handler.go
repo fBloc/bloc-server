@@ -121,11 +121,20 @@ func CreateDraft(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		reqFlow.Name, reqFlow.CreateUserID,
 		reqFlow.Position, reqFlow.getAggregateFlowFunctionIDMapFlowFunction())
 	if err != nil {
-		fService.Logger.Errorf("create flow error: %s", err.Error())
+		fService.Logger.Errorf(
+			map[string]string{
+				"flow_name":      reqFlow.Name,
+				"create_user_id": reqFlow.CreateUserID.String()},
+			"create flow error: %s", err.Error())
 		web.WriteInternalServerErrorResp(&w, err, "create flow error")
 		return
 	}
-	fService.Logger.Infof("user %s created draft flow %s", reqUser.Name, flowIns.ID.String())
+	fService.Logger.Infof(
+		map[string]string{
+			"flow_id":          flowIns.ID.String(),
+			"create_user_id":   reqFlow.CreateUserID.String(),
+			"create_user_name": reqUser.Name},
+		"user %s created draft flow %s", reqUser.Name, flowIns.ID.String())
 	web.WriteSucResp(&w, fromAggWithoutUserPermission(flowIns))
 }
 
@@ -215,10 +224,16 @@ func PubDraft(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	// 通过有效性测试，开始创建
 	aggF, err := fService.Flow.CreateOnlineFromDraft(draftFlowIns)
 	if err != nil {
-		fService.Logger.Errorf("publish flow error: %s", err.Error())
+		fService.Logger.Errorf(
+			map[string]string{"draft_flow_id": draftFlowID},
+			"publish flow error: %s", err.Error())
 		web.WriteInternalServerErrorResp(&w, err, "")
 	}
-	fService.Logger.Infof("user %s published draft flow %s", reqUser.Name, aggF.ID.String())
+	fService.Logger.Infof(
+		map[string]string{
+			"user_name":     reqUser.Name,
+			"draft_flow_id": draftFlowID},
+		"user %s published draft flow %s", reqUser.Name, aggF.ID.String())
 	fService.Flow.DeleteDraftByOriginID(draftFlowIns.OriginID)
 
 	web.WriteSucResp(&w, fromAggWithoutUserPermission(aggF))
@@ -289,7 +304,11 @@ func UpdateDraft(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		web.WriteInternalServerErrorResp(&w, err, "update failed")
 		return
 	}
-	fService.Logger.Infof("user %s updated draft flow %s", reqUser.Name, reqFlow.ID.String())
+	fService.Logger.Infof(
+		map[string]string{
+			"user_name":     reqUser.Name,
+			"draft_flow_id": reqFlow.ID.String()},
+		"user %s updated draft flow %s", reqUser.Name, reqFlow.ID.String())
 
 	web.WritePlainSucOkResp(&w)
 }
@@ -338,6 +357,9 @@ func DeleteDraftByOriginID(w http.ResponseWriter, r *http.Request, ps httprouter
 		return
 	}
 	fService.Logger.Infof(
+		map[string]string{
+			"user_name":            reqUser.Name,
+			"draft_flow_origin_id": originID},
 		"user %s deleted draft flow %s; delete amount: %d",
 		reqUser.Name, originID, deleteCount)
 	web.WriteDeleteSucResp(&w, deleteCount)

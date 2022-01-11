@@ -23,6 +23,7 @@ func FunctionRunFinished(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 	}
 
 	fRRService.Logger.Infof(
+		map[string]string{"function_run_record_id": req.FunctionRunRecordID},
 		`received function_run_finished report.function_run_record id: %s, suc: %d`,
 		req.FunctionRunRecordID, req.Suc)
 	funcRunRecordUUID, err := value_object.ParseToUUID(req.FunctionRunRecordID)
@@ -91,6 +92,7 @@ func FunctionRunFinished(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 						downStreamFunctionRunRecord.ID)
 					if err != nil {
 						consumerLogger.Errorf(
+							map[string]string{"flow_run_record_id": flowRunRecordIns.ID.String()},
 							`flowRunRecordRepo.AddFlowFuncIDMapFuncRunRecordID error: %v.
 							flow_run_record_id:%s`,
 							flowRunRecordIns.ID.String(), err)
@@ -119,6 +121,7 @@ func FunctionRunFinished(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 					functionRunRecordIns, err := fRRService.FunctionRunRecords.GetByID(funcRunRecordID)
 					if err != nil {
 						consumerLogger.Errorf(
+							map[string]string{"function_run_record_id": funcRunRecordID.String()},
 							"get function_run_record by function_run_record_id(%s) error: %s",
 							funcRunRecordID.String(), err.Error())
 						// 先保守处理为未完成运行
@@ -137,7 +140,8 @@ func FunctionRunFinished(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 						FlowRunRecordID: flowRunRecordIns.ID,
 					})
 					consumerLogger.Infof(
-						"|------> pub finished flow_task__id from all finished: %s",
+						map[string]string{"flow_run_record_id": flowRunRecordIns.ID.String()},
+						"pub finished flow_task__id from all finished: %s",
 						flowRunRecordIns.ID)
 				}
 			}
@@ -151,7 +155,8 @@ func FunctionRunFinished(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 				FlowRunRecordID: flowRunRecordIns.ID,
 			})
 			consumerLogger.Infof(
-				"|------> pub finished flow_run_record__id from intercepted: %s",
+				map[string]string{"flow_run_record_id": flowRunRecordIns.ID.String()},
+				"pub finished flow_run_record__id from intercepted: %s",
 				flowRunRecordIns.ID)
 		}
 	} else { // function节点运行失败, 处理有重试的情况
@@ -177,6 +182,7 @@ func FunctionRunFinished(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 		}
 	}
 	fRRService.Logger.Infof(
+		map[string]string{"function_run_record_id": req.FunctionRunRecordID},
 		`function_run_finished report finshed.function_run_record id: %s`,
 		req.FunctionRunRecordID)
 }

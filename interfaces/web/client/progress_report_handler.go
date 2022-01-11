@@ -46,9 +46,10 @@ func ReportProgress(w http.ResponseWriter, r *http.Request, _ httprouter.Params)
 			funcRunRecordUUID, req.FuncRunProgress.ProcessStageIndex)
 	}
 	fRRService.Logger.Infof(
+		map[string]string{"function_run_record_id": req.FunctionRunRecordID},
 		`received function run high readable progress report.function_run_record_id: %s. progress: %d, msg: %s, index: %d`,
-		req.FunctionRunRecordID,
-		req.FuncRunProgress.Progress, req.FuncRunProgress.Msg, req.FuncRunProgress.ProcessStageIndex)
+		req.FunctionRunRecordID, req.FuncRunProgress.Progress,
+		req.FuncRunProgress.Msg, req.FuncRunProgress.ProcessStageIndex)
 
 	web.WritePlainSucOkResp(&w)
 }

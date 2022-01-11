@@ -34,9 +34,9 @@ func PullLog(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 
 	var logger *log.Logger
 	if req.LogType == value_object.HttpServerLog {
-		logger = log.NewWithPeriodicUpload(value_object.HttpServerLog.String(), logBackend)
+		logger = log.New(value_object.HttpServerLog.String(), logBackend)
 	} else if req.LogType == value_object.ConsumerLog {
-		logger = log.NewWithPeriodicUpload(value_object.ConsumerLog.String(), logBackend)
+		logger = log.New(value_object.ConsumerLog.String(), logBackend)
 	} else if req.LogType == value_object.FuncRunRecordLog {
 		web.WriteBadRequestDataResp(&w, "this api not provide function_run_record log search")
 		return
@@ -46,7 +46,8 @@ func PullLog(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		return
 	}
 
-	logStrSlice, err := logger.PullLogBetweenTime(req.StartTime.Time, req.EndTime.Time)
+	logStrSlice, err := logger.PullLogBetweenTime(
+		map[string]string{}, req.StartTime.Time, req.EndTime.Time)
 	if err != nil {
 		web.WriteInternalServerErrorResp(&w, err, "PullLogBetweenTime failed")
 		return
