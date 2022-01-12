@@ -45,8 +45,16 @@ type setupPost struct {
 	Bucket   string `json:"bucket"`
 }
 
+func (conf *InfluxDBConfig) Valid() bool {
+	return conf.Address != "" && conf.UserName != "" &&
+		conf.Password != "" && conf.Token != "" && conf.Organization != ""
+}
+
 func (conf *InfluxDBConfig) canSetup() (bool, error) {
 	u, err := url.Parse(conf.Address)
+	if err != nil {
+		return false, err
+	}
 	u.Path = path.Join(u.Path, setupPath)
 
 	var resp canSetupResp
@@ -74,6 +82,10 @@ func (conf *InfluxDBConfig) setup() (bool, error) {
 
 	var resp interface{}
 	u, err := url.Parse(conf.Address)
+	if err != nil {
+		return false, err
+	}
+
 	u.Path = path.Join(u.Path, setupPath)
 	statusCode, err := http_util.Post(
 		u.String(), http_util.BlankHeader, reqBody, &resp)
@@ -91,6 +103,10 @@ type Connection struct {
 }
 
 func NewConnection(conf *InfluxDBConfig) *Connection {
+	if !conf.Valid() {
+		panic("influxDB connection str not valid!")
+	}
+
 	if !strings.HasPrefix(conf.Address, "http") {
 		conf.Address = "http://" + conf.Address
 	}
