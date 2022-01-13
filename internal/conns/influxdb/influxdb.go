@@ -214,9 +214,9 @@ func (bC *BucketClient) Write(
 	bC.writeApi.WritePoint(p)
 }
 
-func (bC *BucketClient) Query(
+func buildFilterString(
 	key string, tagFilterMap map[string]string, start, end time.Time,
-) {
+) string {
 	var filters []string
 	for tagK, tagV := range tagFilterMap {
 		filters = append(
@@ -224,29 +224,42 @@ func (bC *BucketClient) Query(
 			fmt.Sprintf(`r.%s == "%s"`, tagK, tagV))
 	}
 
-	fromStr := fmt.Sprintf(`from(bucket:"%s")`, bC.bucketName)
-	rangeStr := fmt.Sprintf(
-		`range(start: %s, end: %s)`,
-		start.Format(`2006-01-02T15:04:05Z`), end.Format(`2006-01-02T15:04:05Z`))
-	filterStr := fmt.Sprintf(
-		`filter(fn: (r) => %s`,
-		strings.Join(filters, " and "))
+	fromStr := fmt.Sprintf(`from(bucket:"%s")`, "http-server")
+	totalSQL := []string{fromStr}
 
-	totalSQL := strings.Join([]string{fromStr, rangeStr, filterStr}, " |> ")
-
-	result, err := bC.client.queryAPI.Query(context.Background(), totalSQL)
-	if err == nil {
-		// Iterate over query response
-		fmt.Println("++")
-		for result.Next() {
-			// Notice when group key has changed
-			if result.TableChanged() {
-				fmt.Printf("table: %s\n", result.TableMetadata().String())
-			}
-			// Access data
-			fmt.Printf("value: %+v\n", result.Record().Time())
+	if !start.IsZero() {
+		var rangeStr string
+		if !end.IsZero() {
+			rangeStr = fmt.Sprintf(
+				`range(start: %s, stop: %s)`,
+				start.Format(`2006-01-02T15:04:05Z`), end.Format(`2006-01-02T15:04:05Z`))
+		} else {
+			rangeStr = fmt.Sprintf(`range(start: %s)`, start.Format(`2006-01-02T15:04:05Z`))
 		}
-		// Check for an error
+		totalSQL = append(totalSQL, rangeStr)
+	}
+
+	if len(filters) > 0 {
+		filterStr := fmt.Sprintf(
+			`filter(fn: (r) => %s)`,
+			strings.Join(filters, " and "))
+		totalSQL = append(totalSQL, filterStr)
+	}
+
+	totalSQLStr := strings.Join(totalSQL, " |> ")
+	return totalSQLStr
+}
+
+func (bC *BucketClient) Query(
+	key string, tagFilterMap map[string]string, start, end time.Time,
+) {
+	filterStr := buildFilterString(key, tagFilterMap, start, end)
+
+	result, err := bC.client.queryAPI.Query(context.Background(), filterStr)
+	if err == nil {
+		for result.Next() {
+			fmt.Printf("===> :%+v\t%+v\n\n", result.Record().Time().Add(8*time.Hour), result.Record().Measurement())
+		}
 		if result.Err() != nil {
 			fmt.Printf("query parsing error: %s\n", result.Err().Error())
 		}
@@ -258,33 +271,13 @@ func (bC *BucketClient) Query(
 func (bC *BucketClient) QueryAll(
 	key string, tagFilterMap map[string]string,
 ) {
-	var filters []string
-	for tagK, tagV := range tagFilterMap {
-		filters = append(
-			filters,
-			fmt.Sprintf(`r.%s == "%s"`, tagK, tagV))
-	}
+	filterStr := buildFilterString(key, tagFilterMap, time.Time{}, time.Time{})
 
-	fromStr := fmt.Sprintf(`from(bucket:"%s")`, bC.bucketName)
-	filterStr := fmt.Sprintf(
-		`filter(fn: (r) => %s`,
-		strings.Join(filters, " and "))
-
-	totalSQL := strings.Join([]string{fromStr, filterStr}, " |> ")
-
-	result, err := bC.client.queryAPI.Query(context.Background(), totalSQL)
+	result, err := bC.client.queryAPI.Query(context.Background(), filterStr)
 	if err == nil {
-		// Iterate over query response
-		fmt.Println("++")
 		for result.Next() {
-			// Notice when group key has changed
-			if result.TableChanged() {
-				fmt.Printf("table: %s\n", result.TableMetadata().String())
-			}
-			// Access data
-			fmt.Printf("value: %+v\n", result.Record().Time())
+			fmt.Printf("===> :%+v - %s\n", result.Record().Time(), result.Record().Value())
 		}
-		// Check for an error
 		if result.Err() != nil {
 			fmt.Printf("query parsing error: %s\n", result.Err().Error())
 		}
