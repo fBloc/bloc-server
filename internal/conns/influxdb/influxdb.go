@@ -215,7 +215,7 @@ func (bC *BucketClient) Write(
 }
 
 func buildFilterString(
-	key string, tagFilterMap map[string]string, start, end time.Time,
+	bucket string, tagFilterMap map[string]string, start, end time.Time,
 ) string {
 	var filters []string
 	for tagK, tagV := range tagFilterMap {
@@ -224,7 +224,7 @@ func buildFilterString(
 			fmt.Sprintf(`r.%s == "%s"`, tagK, tagV))
 	}
 
-	fromStr := fmt.Sprintf(`from(bucket:"%s")`, "http-server")
+	fromStr := fmt.Sprintf(`from(bucket:"%s")`, bucket)
 	totalSQL := []string{fromStr}
 
 	if !start.IsZero() {
@@ -251,14 +251,14 @@ func buildFilterString(
 }
 
 func (bC *BucketClient) Query(
-	key string, tagFilterMap map[string]string, start, end time.Time,
+	bucket string, tagFilterMap map[string]string, start, end time.Time,
 ) {
-	filterStr := buildFilterString(key, tagFilterMap, start, end)
+	filterStr := buildFilterString(bucket, tagFilterMap, start, end)
 
 	result, err := bC.client.queryAPI.Query(context.Background(), filterStr)
 	if err == nil {
 		for result.Next() {
-			fmt.Printf("===> :%+v\t%+v\n\n", result.Record().Time().Add(8*time.Hour), result.Record().Measurement())
+			fmt.Printf("===> :%+v\t%+v\t%+v\n\n", result.Record().Time().Add(8*time.Hour), result.Record().Measurement(), result.Record().Value())
 		}
 		if result.Err() != nil {
 			fmt.Printf("query parsing error: %s\n", result.Err().Error())

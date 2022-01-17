@@ -19,11 +19,10 @@ type InfluxDBLogBackendRepository struct {
 }
 
 func New(
-	bucketName string,
 	influxDBClient *influxdb_conn.Connection,
 	expireDuration time.Duration,
 ) (*InfluxDBLogBackendRepository, error) {
-	writeApi, err := influxDBClient.NewBucketClient(bucketName, expireDuration)
+	writeApi, err := influxDBClient.NewBucketClient("log", expireDuration)
 	if err != nil {
 		return nil, err
 	}

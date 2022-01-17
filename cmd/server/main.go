@@ -19,6 +19,7 @@ type Options struct {
 }
 
 func ParseBasicConnection(connectionStr string) (user, password, host string, port int, query url.Values) {
+	connectionStr = "whatever4rightparse://" + connectionStr
 	urlIns, err := url.Parse(connectionStr)
 	if err != nil {
 		panic(fmt.Sprintf(

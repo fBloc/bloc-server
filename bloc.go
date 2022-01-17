@@ -237,10 +237,10 @@ func (bA *BlocApp) HttpListener() net.Listener {
 		bA.configBuilder.HttpServerConf.Port)
 }
 
-func (bA *BlocApp) GetOrCreateLogBackEnd(logType value_object.LogType) (log_collect_backend.LogBackEnd, error) {
+func (bA *BlocApp) GetOrCreateLogBackEnd() (log_collect_backend.LogBackEnd, error) {
 	influxConn := influxdb.NewConnection(bA.configBuilder.InfluxDBConf)
 	return influx_logBackend.New(
-		logType.String(), influxConn,
+		influxConn,
 		24*time.Duration(bA.configBuilder.LogConf.MaxKeepDays)*time.Hour)
 }
 
@@ -251,7 +251,7 @@ func (bA *BlocApp) GetOrCreateHttpLogger() *log.Logger {
 		return bA.httpServerLogger
 	}
 
-	influxBucketClient, err := bA.GetOrCreateLogBackEnd(value_object.HttpServerLog)
+	influxBucketClient, err := bA.GetOrCreateLogBackEnd()
 	if err != nil {
 		panic("GetOrCreateHttpLogger error: " + err.Error())
 	}
@@ -268,7 +268,7 @@ func (bA *BlocApp) GetOrCreateConsumerLogger() *log.Logger {
 		return bA.consumerLogger
 	}
 
-	influxBucketClient, err := bA.GetOrCreateLogBackEnd(value_object.ConsumerLog)
+	influxBucketClient, err := bA.GetOrCreateLogBackEnd()
 	if err != nil {
 		panic("GetOrCreateConsumerLogger error: " + err.Error())
 	}
@@ -279,7 +279,7 @@ func (bA *BlocApp) GetOrCreateConsumerLogger() *log.Logger {
 }
 
 func (bA *BlocApp) CreateFunctionRunLogger(funcRunRecordID value_object.UUID) *log.Logger {
-	influxBucketClient, err := bA.GetOrCreateLogBackEnd(value_object.FuncRunRecordLog)
+	influxBucketClient, err := bA.GetOrCreateLogBackEnd()
 	if err != nil {
 		panic("CreateFunctionRunLogger error: " + err.Error())
 	}
