@@ -185,4 +185,5 @@ func FunctionRunFinished(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 		map[string]string{"function_run_record_id": req.FunctionRunRecordID},
 		`function_run_finished report finshed.function_run_record id: %s`,
 		req.FunctionRunRecordID)
+	web.WritePlainSucOkResp(&w)
 }
