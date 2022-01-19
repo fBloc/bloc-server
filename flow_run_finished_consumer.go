@@ -8,7 +8,7 @@ import (
 // FlowTaskConsumer 接收到flow完成的任务，若是arr_flow，继续发布下一层的arr_flow的任务
 func (blocApp *BlocApp) FlowTaskFinishedConsumer() {
 	event.InjectMq(blocApp.GetOrCreateEventMQ())
-	logger := blocApp.GetOrCreateConsumerLogger()
+	logger := blocApp.GetOrCreateScheduleLogger()
 	flowRunRepo := blocApp.GetOrCreateFlowRunRecordRepository()
 
 	flowRunFinishedEventChan := make(chan event.DomainEvent)

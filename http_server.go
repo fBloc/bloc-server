@@ -293,7 +293,7 @@ func (blocApp *BlocApp) RunHttpServer() {
 		}
 		client.InjectFlowService(flowService)
 
-		client.InjectConsumerLogger(blocApp.GetOrCreateConsumerLogger())
+		client.InjectConsumerLogger(blocApp.GetOrCreateScheduleLogger())
 
 		flowRunRecordService, err := flowRunRecord_service.NewService(
 			flowRunRecord_service.WithLogger(httpLogger),

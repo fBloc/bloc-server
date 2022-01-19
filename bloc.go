@@ -261,7 +261,7 @@ func (bA *BlocApp) GetOrCreateHttpLogger() *log.Logger {
 	return bA.httpServerLogger
 }
 
-func (bA *BlocApp) GetOrCreateConsumerLogger() *log.Logger {
+func (bA *BlocApp) GetOrCreateScheduleLogger() *log.Logger {
 	bA.Lock()
 	defer bA.Unlock()
 	if !bA.consumerLogger.IsZero() {
@@ -270,10 +270,10 @@ func (bA *BlocApp) GetOrCreateConsumerLogger() *log.Logger {
 
 	influxBucketClient, err := bA.GetOrCreateLogBackEnd()
 	if err != nil {
-		panic("GetOrCreateConsumerLogger error: " + err.Error())
+		panic("GetOrCreateScheduleLogger error: " + err.Error())
 	}
 	bA.consumerLogger = log.New(
-		value_object.ConsumerLog.String(),
+		value_object.ScheduleLog.String(),
 		influxBucketClient)
 	return bA.consumerLogger
 }

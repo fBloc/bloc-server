@@ -5,7 +5,7 @@ type LogType int
 const (
 	UnknownLogType LogType = iota
 	HttpServerLog
-	ConsumerLog
+	ScheduleLog
 	FuncRunRecordLog
 	maxLogType
 )
@@ -14,8 +14,8 @@ func (l LogType) String() string {
 	switch l {
 	case HttpServerLog:
 		return "http-server"
-	case ConsumerLog:
-		return "consumer"
+	case ScheduleLog:
+		return "schedule"
 	case FuncRunRecordLog:
 		return "func-run-record"
 	default:

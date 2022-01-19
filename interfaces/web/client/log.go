@@ -14,12 +14,12 @@ func InjectLogBackend(lB log_collect_backend.LogBackEnd) {
 }
 
 type msg struct {
-	Level value_object.LogLevel `json:"level"`
-	Data  string                `json:"data"`
-	Time  time.Time             `json:"time"`
+	Level  value_object.LogLevel `json:"level"`
+	TagMap map[string]string     `json:"tag_map"`
+	Data   string                `json:"data"`
+	Time   time.Time             `json:"time"`
 }
 
-type LogHttpReq struct {
-	Name    string `json:"name"`
-	LogData []*msg `json:"log_data"`
+type FuncRunLogHttpReq struct {
+	LogData []*msg `json:"logs"`
 }

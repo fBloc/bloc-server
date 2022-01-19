@@ -11,7 +11,7 @@ import (
 func (blocApp *BlocApp) CrontabWatcher() {
 	flowRepo := blocApp.GetOrCreateFlowRepository()
 	flowRunRecordRepo := blocApp.GetOrCreateFlowRunRecordRepository()
-	logger := blocApp.GetOrCreateConsumerLogger()
+	logger := blocApp.GetOrCreateScheduleLogger()
 
 	ticker := time.NewTicker(time.Minute)
 	defer ticker.Stop()

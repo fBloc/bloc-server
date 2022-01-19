@@ -9,7 +9,7 @@ import (
 
 // RePubDeadRuns 重发运行中断的任务
 func (blocApp *BlocApp) RePubDeadRuns() {
-	logger := blocApp.GetOrCreateConsumerLogger()
+	logger := blocApp.GetOrCreateScheduleLogger()
 	heartBeatRepo := blocApp.GetOrCreateFuncRunHBeatRepository()
 	funcRunRecordRepo := blocApp.GetOrCreateFunctionRunRecordRepository()
 

@@ -17,7 +17,7 @@ import (
 func (blocApp *BlocApp) FunctionRunConsumer() {
 	event.InjectMq(blocApp.GetOrCreateEventMQ())
 	event.InjectFutureEventStorageImplement(blocApp.GetOrCreateFutureEventStorage())
-	logger := blocApp.GetOrCreateConsumerLogger()
+	logger := blocApp.GetOrCreateScheduleLogger()
 	funcRunRecordRepo := blocApp.GetOrCreateFunctionRunRecordRepository()
 	flowRepo := blocApp.GetOrCreateFlowRepository()
 	objectStorage := blocApp.GetOrCreateConsumerObjectStorage()

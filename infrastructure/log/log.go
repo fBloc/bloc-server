@@ -42,6 +42,23 @@ func New(
 
 func (
 	logger *Logger,
+) UploadLog(
+	happenTime time.Time,
+	logLevel value_object.LogLevel,
+	tagMap map[string]string,
+	format string,
+	a ...interface{},
+) {
+	tagMap["log_level"] = string(logLevel)
+	logger.logBackend.Write(
+		logger.name,
+		tagMap,
+		fmt.Sprintf(format, a...),
+		happenTime)
+}
+
+func (
+	logger *Logger,
 ) Infof(
 	tagMap map[string]string,
 	format string, a ...interface{},
@@ -49,7 +66,8 @@ func (
 	tagMap["log_level"] = string(value_object.Info)
 	logger.logBackend.Write(
 		logger.name, tagMap,
-		fmt.Sprintf(format, a...), time.Now())
+		fmt.Sprintf(format, a...),
+		time.Now())
 }
 
 func (
