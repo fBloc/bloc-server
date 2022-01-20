@@ -240,6 +240,7 @@ func (blocApp *BlocApp) RunHttpServer() {
 		{
 			basicPath := "/api/v1/log"
 			router.POST(basicPath+"/pull_log_between_time", log_data.PullLog)
+			router.GET(basicPath+"/pull_functionRunRecordLog_by_id/:function_run_record_id", log_data.PullFunctionRunRecordLog)
 		}
 	}
 

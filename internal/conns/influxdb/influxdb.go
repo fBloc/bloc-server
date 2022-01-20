@@ -15,6 +15,7 @@ import (
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	"github.com/influxdata/influxdb-client-go/v2/api"
 	"github.com/influxdata/influxdb-client-go/v2/domain"
+	"github.com/pkg/errors"
 )
 
 var (
@@ -215,9 +216,9 @@ func (bC *BucketClient) Write(
 }
 
 func buildFilterString(
-	bucket string, tagFilterMap map[string]string, start, end time.Time,
+	bucket, measurement string, tagFilterMap map[string]string, start, end time.Time,
 ) string {
-	var filters []string
+	filters := []string{fmt.Sprintf(`r._measurement == "%s"`, measurement)}
 	for tagK, tagV := range tagFilterMap {
 		filters = append(
 			filters,
@@ -227,17 +228,17 @@ func buildFilterString(
 	fromStr := fmt.Sprintf(`from(bucket:"%s")`, bucket)
 	totalSQL := []string{fromStr}
 
-	if !start.IsZero() {
-		var rangeStr string
-		if !end.IsZero() {
-			rangeStr = fmt.Sprintf(
-				`range(start: %s, stop: %s)`,
-				start.Format(`2006-01-02T15:04:05Z`), end.Format(`2006-01-02T15:04:05Z`))
-		} else {
-			rangeStr = fmt.Sprintf(`range(start: %s)`, start.Format(`2006-01-02T15:04:05Z`))
-		}
-		totalSQL = append(totalSQL, rangeStr)
+	var rangeStr string
+	if end.IsZero() {
+		rangeStr = fmt.Sprintf(
+			`range(start: %s)`,
+			start.Format(time.RFC3339))
+	} else {
+		rangeStr = fmt.Sprintf(
+			`range(start: %s, stop: %s)`,
+			start.Format(time.RFC3339), end.Format(time.RFC3339))
 	}
+	totalSQL = append(totalSQL, rangeStr)
 
 	if len(filters) > 0 {
 		filterStr := fmt.Sprintf(
@@ -251,39 +252,48 @@ func buildFilterString(
 }
 
 func (bC *BucketClient) Query(
-	bucket string, tagFilterMap map[string]string, start, end time.Time,
-) {
-	filterStr := buildFilterString(bucket, tagFilterMap, start, end)
+	measurement string, tagFilterMap map[string]string, start, end time.Time,
+) ([]map[string]interface{}, error) {
+	filterStr := buildFilterString(
+		bC.bucketName, measurement, tagFilterMap, start, end)
 
 	result, err := bC.client.queryAPI.Query(context.Background(), filterStr)
-	if err == nil {
-		for result.Next() {
-			fmt.Printf("===> :%+v\t%+v\t%+v\n\n", result.Record().Time().Add(8*time.Hour), result.Record().Measurement(), result.Record().Value())
-		}
-		if result.Err() != nil {
-			fmt.Printf("query parsing error: %s\n", result.Err().Error())
-		}
-	} else {
-		panic(err)
+	if err != nil {
+		return nil, err
 	}
+	if result.Err() != nil {
+		return nil, errors.Wrap(result.Err(), "query parsing error")
+	}
+
+	ret := make([]map[string]interface{}, 0, 100)
+	for result.Next() {
+		// influxdb query only support precision in second!
+		// need to give away some records
+		if !start.IsZero() && result.Record().Time().Before(start) {
+			continue
+		}
+		tmp := map[string]interface{}{
+			"time": result.Record().Time(),
+			"data": result.Record().Value(),
+		}
+		for i, j := range result.Record().Values() {
+			if strings.HasPrefix(i, "_") {
+				continue
+			}
+			if i == "result" || i == "table" {
+				continue
+			}
+			tmp[i] = j
+		}
+		ret = append(ret, tmp)
+	}
+	return ret, nil
 }
 
 func (bC *BucketClient) QueryAll(
-	key string, tagFilterMap map[string]string,
-) {
-	filterStr := buildFilterString(key, tagFilterMap, time.Time{}, time.Time{})
-
-	result, err := bC.client.queryAPI.Query(context.Background(), filterStr)
-	if err == nil {
-		for result.Next() {
-			fmt.Printf("===> :%+v - %s\n", result.Record().Time(), result.Record().Value())
-		}
-		if result.Err() != nil {
-			fmt.Printf("query parsing error: %s\n", result.Err().Error())
-		}
-	} else {
-		panic(err)
-	}
+	measurement string, tagFilterMap map[string]string,
+) ([]map[string]interface{}, error) {
+	return bC.Query(measurement, tagFilterMap, time.Time{}, time.Now())
 }
 
 func (bC *BucketClient) Flush() {

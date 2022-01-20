@@ -9,7 +9,7 @@ import (
 
 func (blocApp *BlocApp) FlowTaskStartConsumer() {
 	event.InjectMq(blocApp.GetOrCreateEventMQ())
-	logger := blocApp.GetOrCreateConsumerLogger()
+	logger := blocApp.GetOrCreateScheduleLogger()
 	flowRunRepo := blocApp.GetOrCreateFlowRunRecordRepository()
 	flowRepo := blocApp.GetOrCreateFlowRepository()
 	functionRunRecordRepo := blocApp.GetOrCreateFunctionRunRecordRepository()

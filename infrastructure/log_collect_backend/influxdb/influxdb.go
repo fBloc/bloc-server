@@ -9,6 +9,13 @@ import (
 	influxdb_conn "github.com/fBloc/bloc-server/internal/conns/influxdb"
 )
 
+/*
+influxDB save log about:
+1. org: bloc
+2. bucket: log
+3. _measurement: http-server | schedule | func-run-record (value_object.LogType)
+*/
+
 func init() {
 	var _ log_collect_backend.LogBackEnd = &InfluxDBLogBackendRepository{}
 }
@@ -32,28 +39,42 @@ func New(
 }
 
 func (inf *InfluxDBLogBackendRepository) Write(
-	key string, tagMap map[string]string, data string,
+	logName string, tagMap map[string]string, data string,
 	eventTime time.Time,
 ) error {
 	inf.bucketClient.Write(
-		key, tagMap,
+		logName, tagMap,
 		map[string]interface{}{"data": data},
 		eventTime)
 	return nil
 }
 
 func (inf *InfluxDBLogBackendRepository) Fetch(
-	key string, tagFilterMap map[string]string, start, end time.Time,
+	logName string, tagFilterMap map[string]string, start, end time.Time,
 ) ([]interface{}, error) {
-	inf.bucketClient.Query(key, tagFilterMap, start, end)
-	return nil, nil
+	tmp, err := inf.bucketClient.Query(logName, tagFilterMap, start, end)
+	if err != nil {
+		return nil, err
+	}
+	ret := make([]interface{}, 0, len(tmp))
+	for _, i := range tmp {
+		ret = append(ret, i)
+	}
+	return ret, nil
 }
 
 func (inf *InfluxDBLogBackendRepository) FetchAll(
-	key string, tagFilterMap map[string]string,
+	logName string, tagFilterMap map[string]string,
 ) ([]interface{}, error) {
-	inf.bucketClient.QueryAll(key, tagFilterMap)
-	return nil, nil
+	tmp, err := inf.bucketClient.QueryAll(logName, tagFilterMap)
+	if err != nil {
+		return nil, err
+	}
+	ret := make([]interface{}, 0, len(tmp))
+	for _, i := range tmp {
+		ret = append(ret, i)
+	}
+	return ret, nil
 }
 
 func (inf *InfluxDBLogBackendRepository) ForceFlush() error {
