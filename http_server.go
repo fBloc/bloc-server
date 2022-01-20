@@ -125,7 +125,7 @@ func (blocApp *BlocApp) RunHttpServer() {
 		basicPath := "/api/v1/function_run_record"
 		router.GET(basicPath, middleware.LoginAuth(function_run_record.Filter))
 		router.GET(basicPath+"/get_by_id/:id", middleware.LoginAuth(function_run_record.Get))
-		router.GET(basicPath+"/get_log_by_logkey/:log_key", middleware.LoginAuth(function_run_record.GetLogByKey))
+		router.GET(basicPath+"/pull_log_by_id/:function_run_record_id", function_run_record.PullLog)
 	}
 
 	// flow相关
@@ -240,7 +240,6 @@ func (blocApp *BlocApp) RunHttpServer() {
 		{
 			basicPath := "/api/v1/log"
 			router.POST(basicPath+"/pull_log_between_time", log_data.PullLog)
-			router.GET(basicPath+"/pull_functionRunRecordLog_by_id/:function_run_record_id", log_data.PullFunctionRunRecordLog)
 		}
 	}
 
