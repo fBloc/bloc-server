@@ -106,24 +106,27 @@ func (confbder *ConfigBuilder) SetInfluxDBConfig(
 }
 
 func (confbder *ConfigBuilder) SetRabbitConfig(
-	user, password, host string, port int, vHost string,
+	user, password, host string, vHost string,
 ) *ConfigBuilder {
 	confbder.RabbitConf = &rabbit.RabbitConfig{
 		User:     user,
 		Password: password,
 		Host:     host,
-		Port:     port,
 		Vhost:    vHost}
 	return confbder
 }
 
-func (confbder *ConfigBuilder) SetMongoConfig(hosts []string, port int, db, user, password string) *ConfigBuilder {
+func (confbder *ConfigBuilder) SetMongoConfig(
+	user, password string,
+	addresses []string,
+	defaultDB, replicaSetName string,
+) *ConfigBuilder {
 	confbder.mongoConf = &mongodb.MongoConfig{
-		Hosts:    hosts,
-		Port:     port,
-		Db:       db,
-		User:     user,
-		Password: password,
+		User:           user,
+		Password:       password,
+		Addresses:      addresses,
+		Db:             defaultDB,
+		ReplicaSetName: replicaSetName,
 	}
 	return confbder
 }
@@ -297,11 +300,7 @@ func (bA *BlocApp) GetOrCreateUserRepository() user_repository.UserRepository {
 
 	ur, err := mongo_user.New(
 		context.Background(),
-		bA.configBuilder.mongoConf.Hosts,
-		bA.configBuilder.mongoConf.Port,
-		bA.configBuilder.mongoConf.User,
-		bA.configBuilder.mongoConf.Password,
-		bA.configBuilder.mongoConf.Db,
+		bA.configBuilder.mongoConf,
 		mongo_user.DefaultCollectionName,
 	)
 	if err != nil {
@@ -321,11 +320,7 @@ func (bA *BlocApp) GetOrCreateFlowRepository() flow_repository.FlowRepository {
 
 	fr, err := mongo_flow.New(
 		context.Background(),
-		bA.configBuilder.mongoConf.Hosts,
-		bA.configBuilder.mongoConf.Port,
-		bA.configBuilder.mongoConf.User,
-		bA.configBuilder.mongoConf.Password,
-		bA.configBuilder.mongoConf.Db,
+		bA.configBuilder.mongoConf,
 		mongo_flow.DefaultCollectionName,
 	)
 	if err != nil {
@@ -345,11 +340,7 @@ func (bA *BlocApp) GetOrCreateFunctionRepository() function_repository.FunctionR
 
 	fR, err := mongo_func.New(
 		context.Background(),
-		bA.configBuilder.mongoConf.Hosts,
-		bA.configBuilder.mongoConf.Port,
-		bA.configBuilder.mongoConf.User,
-		bA.configBuilder.mongoConf.Password,
-		bA.configBuilder.mongoConf.Db,
+		bA.configBuilder.mongoConf,
 		mongo_func.DefaultCollectionName,
 	)
 	if err != nil {
@@ -369,11 +360,7 @@ func (bA *BlocApp) GetOrCreateFunctionRunRecordRepository() funcRunRec_repositor
 
 	fR, err := mongo_funcRunRecord.New(
 		context.Background(),
-		bA.configBuilder.mongoConf.Hosts,
-		bA.configBuilder.mongoConf.Port,
-		bA.configBuilder.mongoConf.User,
-		bA.configBuilder.mongoConf.Password,
-		bA.configBuilder.mongoConf.Db,
+		bA.configBuilder.mongoConf,
 		mongo_funcRunRecord.DefaultCollectionName,
 	)
 	if err != nil {
@@ -393,11 +380,7 @@ func (bA *BlocApp) GetOrCreateFlowRunRecordRepository() flowRunRecord_repository
 
 	fR, err := mongo_flowRunRecord.New(
 		context.Background(),
-		bA.configBuilder.mongoConf.Hosts,
-		bA.configBuilder.mongoConf.Port,
-		bA.configBuilder.mongoConf.User,
-		bA.configBuilder.mongoConf.Password,
-		bA.configBuilder.mongoConf.Db,
+		bA.configBuilder.mongoConf,
 		mongo_flowRunRecord.DefaultCollectionName,
 	)
 	if err != nil {
@@ -417,11 +400,7 @@ func (bA *BlocApp) GetOrCreateFuncRunHBeatRepository() function_execute_heartbea
 
 	fR, err := mongo_funcRunHBeat.New(
 		context.Background(),
-		bA.configBuilder.mongoConf.Hosts,
-		bA.configBuilder.mongoConf.Port,
-		bA.configBuilder.mongoConf.User,
-		bA.configBuilder.mongoConf.Password,
-		bA.configBuilder.mongoConf.Db,
+		bA.configBuilder.mongoConf,
 		mongo_funcRunHBeat.DefaultCollectionName,
 	)
 	if err != nil {
@@ -454,13 +433,8 @@ func (bA *BlocApp) GetOrCreateFutureEventStorage() event.FuturePubEventStorage {
 
 	mongoStorage, err := mongo_futureEventStorage.New(
 		context.Background(),
-		bA.configBuilder.mongoConf.Hosts,
-		bA.configBuilder.mongoConf.Port,
-		bA.configBuilder.mongoConf.User,
-		bA.configBuilder.mongoConf.Password,
-		bA.configBuilder.mongoConf.Db,
-		mongo_futureEventStorage.DefaultCollectionName,
-	)
+		bA.configBuilder.mongoConf,
+		mongo_futureEventStorage.DefaultCollectionName)
 	if err != nil {
 		panic(err)
 	}

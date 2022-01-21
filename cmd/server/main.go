@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/url"
-	"strconv"
+	"strings"
 
 	"github.com/fBloc/bloc-server"
 	flags "github.com/jessevdk/go-flags"
@@ -14,11 +14,11 @@ type Options struct {
 	AppName         string `long:"app_name" description:"the name of this app" required:"true"`
 	RabbitMQConnect string `long:"rabbitMQ_connection_str" description:"connection rabbitMQ string in format:'$user:$password@$host:$port/$vHost'" required:"true"`
 	MinioConnect    string `long:"minio_connection_str" description:"connection minio string in format:'$user:$password@$host:$port'" required:"true"`
-	MongoConnect    string `long:"mongo_connection_str" description:"connection mongo string in format:'$user:$password@$host:$port'" required:"true"`
+	MongoConnect    string `long:"mongo_connection_str" description:"connection mongo string in format:'[username:password@]host1[:port1][,...hostN[:portN]][/[defaultauthdb][?replicaSet=replicaSetName]]'" required:"true"`
 	InfluxdbConnect string `long:"influxdb_connection_str" description:"connection influxdb string in format:'$user:$password@$host:$port?token=$token&organization=$organization'" required:"true"`
 }
 
-func ParseBasicConnection(connectionStr string) (user, password, host string, port int, query url.Values) {
+func ParseBasicConnection(connectionStr string) (user, password, host string, query url.Values) {
 	connectionStr = "whatever4rightparse://" + connectionStr
 	urlIns, err := url.Parse(connectionStr)
 	if err != nil {
@@ -28,17 +28,7 @@ func ParseBasicConnection(connectionStr string) (user, password, host string, po
 	}
 	user = urlIns.User.Username()
 	password, _ = urlIns.User.Password()
-	host = urlIns.Hostname()
-
-	portStr := urlIns.Port()
-	if portStr == "" {
-		portStr = "80"
-	}
-	port, err = strconv.Atoi(portStr)
-	if err != nil {
-		panic(
-			fmt.Sprintf("connection string: %s port not valid", connectionStr))
-	}
+	host = urlIns.Host
 
 	query = urlIns.Query()
 	return
@@ -54,23 +44,24 @@ func main() {
 
 	blocApp := &bloc.BlocApp{Name: opts.AppName}
 
-	rabbitUser, rabbitPasswd, rabbitHost, rabbitPort, _ := ParseBasicConnection(opts.RabbitMQConnect)
-	minioUser, minioPasswd, minioHost, minioPort, _ := ParseBasicConnection(opts.MinioConnect)
-	mongoUser, mongoPasswd, mongoHost, mongoPort, _ := ParseBasicConnection(opts.MongoConnect)
-	influxdbUser, influxdbPasswd, influxdbHost, influxdbPort, influxQuery := ParseBasicConnection(opts.InfluxdbConnect)
+	rabbitUser, rabbitPasswd, rabbitHost, _ := ParseBasicConnection(opts.RabbitMQConnect)
+	minioUser, minioPasswd, minioHost, _ := ParseBasicConnection(opts.MinioConnect)
+	mongoUser, mongoPasswd, mongoAddress, mongoQuery := ParseBasicConnection(opts.MongoConnect)
+	influxdbUser, influxdbPasswd, influxdbHost, influxQuery := ParseBasicConnection(opts.InfluxdbConnect)
 
 	blocApp.GetConfigBuilder().
 		SetRabbitConfig(
-			rabbitUser, rabbitPasswd, rabbitHost, rabbitPort, "").
+			rabbitUser, rabbitPasswd, rabbitHost, "").
 		SetMongoConfig(
-			[]string{mongoHost}, mongoPort, opts.AppName, mongoUser, mongoPasswd).
+			mongoUser, mongoPasswd, strings.Split(mongoAddress, ","),
+			opts.AppName, mongoQuery.Get("replicaSet")).
 		SetMinioConfig(
-			opts.AppName, []string{fmt.Sprintf("%s:%d", minioHost, minioPort)}, minioUser, minioPasswd).
+			opts.AppName, strings.Split(minioHost, ","), minioUser, minioPasswd).
+		SetInfluxDBConfig(
+			influxdbUser, influxdbPasswd, influxdbHost,
+			influxQuery.Get("organization"), influxQuery.Get("token")).
 		SetHttpServer(
 			"0.0.0.0", 8000).
-		SetInfluxDBConfig(
-			influxdbUser, influxdbPasswd, fmt.Sprintf("%s:%d", influxdbHost, influxdbPort),
-			influxQuery.Get("organization"), influxQuery.Get("token")).
 		BuildUp()
 
 	blocApp.Run()

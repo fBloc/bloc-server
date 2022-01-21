@@ -2,7 +2,6 @@ package rabbit
 
 import (
 	"log"
-	"strconv"
 	"strings"
 
 	"github.com/fBloc/bloc-server/infrastructure/mq"
@@ -25,7 +24,6 @@ type RabbitConfig struct {
 	User     string
 	Password string
 	Host     string
-	Port     int
 	Vhost    string
 }
 
@@ -33,8 +31,9 @@ func (rC *RabbitConfig) IsNil() bool {
 	if rC == nil {
 		return true
 	}
-	return rC.Host == "" || rC.Port == 0 ||
-		rC.User == "" || rC.Password == ""
+	return rC.Host == "" ||
+		rC.User == "" ||
+		rC.Password == ""
 }
 
 func failOnError(err error, msg string) {
@@ -48,8 +47,7 @@ func InitChannel(conf *RabbitConfig) *RabbitMQ {
 		"amqp://",
 		conf.User, ":",
 		conf.Password, "@",
-		conf.Host, ":",
-		strconv.Itoa(conf.Port), "/",
+		conf.Host, "/",
 		conf.Vhost}, "")
 	connection, err := amqp.Dial(conStr)
 	failOnError(err, "Failed to connect to RabbitMQ")

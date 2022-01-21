@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/fBloc/bloc-server/infrastructure/log"
+	"github.com/fBloc/bloc-server/internal/conns/mongodb"
 	"github.com/fBloc/bloc-server/repository/flow_run_record"
 	mongoFRRC "github.com/fBloc/bloc-server/repository/flow_run_record/mongo"
 	user_cache "github.com/fBloc/bloc-server/services/userid_cache"
@@ -47,12 +48,12 @@ func WithLogger(logger *log.Logger) FlowRunRecordConfiguration {
 }
 
 func WithMongoFlowRunRecordRepository(
-	hosts []string, port int, db, user, password string,
+	mC *mongodb.MongoConfig,
 ) FlowRunRecordConfiguration {
 	return func(fts *FlowRunRecordService) error {
 		ur, err := mongoFRRC.New(
 			context.Background(),
-			hosts, port, db, user, password, mongoFRRC.DefaultCollectionName,
+			mC, mongoFRRC.DefaultCollectionName,
 		)
 		if err != nil {
 			return err

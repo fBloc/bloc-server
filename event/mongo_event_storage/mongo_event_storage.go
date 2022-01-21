@@ -23,11 +23,9 @@ type MongoEventStorage struct {
 
 func New(
 	ctx context.Context,
-	hosts []string, port int, user, password, db, collectionName string,
+	mC *mongodb.MongoConfig, collectionName string,
 ) (*MongoEventStorage, error) {
-	collection := mongodb.NewCollection(
-		hosts, port, user, password, db, collectionName,
-	)
+	collection := mongodb.NewCollection(mC, collectionName)
 	return &MongoEventStorage{mongoCollection: collection}, nil
 }
 

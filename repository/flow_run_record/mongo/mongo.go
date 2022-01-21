@@ -28,11 +28,9 @@ type MongoRepository struct {
 // Create a new mongodb repository
 func New(
 	ctx context.Context,
-	hosts []string, port int, user, password, db, collectionName string,
+	mC *mongodb.MongoConfig, collectionName string,
 ) (*MongoRepository, error) {
-	collection := mongodb.NewCollection(
-		hosts, port, user, password, db, collectionName,
-	)
+	collection := mongodb.NewCollection(mC, collectionName)
 	return &MongoRepository{mongoCollection: collection}, nil
 }
 

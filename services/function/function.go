@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/fBloc/bloc-server/infrastructure/log"
+	"github.com/fBloc/bloc-server/internal/conns/mongodb"
 	"github.com/fBloc/bloc-server/repository/function"
 	mongoFunc "github.com/fBloc/bloc-server/repository/function/mongo"
 	user_cache "github.com/fBloc/bloc-server/services/userid_cache"
@@ -47,12 +48,12 @@ func WithFunctionRepository(
 }
 
 func WithMongoFunctionRepository(
-	hosts []string, port int, db, user, password string,
+	mC *mongodb.MongoConfig,
 ) FunctionConfiguration {
 	return func(fs *FunctionService) error {
 		ur, err := mongoFunc.New(
 			context.Background(),
-			hosts, port, db, user, password, mongoFunc.DefaultCollectionName,
+			mC, mongoFunc.DefaultCollectionName,
 		)
 		if err != nil {
 			return err

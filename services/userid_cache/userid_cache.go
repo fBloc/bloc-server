@@ -7,6 +7,7 @@ import (
 
 	"github.com/fBloc/bloc-server/aggregate"
 	"github.com/fBloc/bloc-server/infrastructure/log"
+	"github.com/fBloc/bloc-server/internal/conns/mongodb"
 	"github.com/fBloc/bloc-server/repository/user"
 	mongoUser "github.com/fBloc/bloc-server/repository/user/mongo"
 	"github.com/fBloc/bloc-server/value_object"
@@ -34,12 +35,12 @@ func NewUserCacheService(
 }
 
 func WithMongoUserRepository(
-	hosts []string, port int, db, user, password string,
+	mC *mongodb.MongoConfig,
 ) UserConfiguration {
 	return func(us *UserCacheService) error {
 		ur, err := mongoUser.New(
 			context.Background(),
-			hosts, port, user, password, db, mongoUser.DefaultCollectionName,
+			mC, mongoUser.DefaultCollectionName,
 		)
 		if err != nil {
 			return err

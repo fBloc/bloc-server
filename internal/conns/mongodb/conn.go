@@ -3,7 +3,6 @@ package mongodb
 import (
 	"context"
 	"errors"
-	"strconv"
 	"strings"
 	"time"
 
@@ -21,33 +20,39 @@ import (
 )
 
 type MongoConfig struct {
-	Hosts    []string
-	Port     int
-	Db       string
-	User     string
-	Password string
+	Addresses      []string
+	Db             string
+	User           string
+	Password       string
+	ReplicaSetName string
 }
 
 func (mC *MongoConfig) IsNil() bool {
 	if mC == nil {
 		return true
 	}
-	return len(mC.Hosts) == 0 || mC.Port == 0
+	return len(mC.Addresses) == 0
+}
+
+func (mC *MongoConfig) IsReplicaSet() bool {
+	return len(mC.Addresses) > 0 && mC.ReplicaSetName != ""
 }
 
 func (mC MongoConfig) Equal(anotherMC MongoConfig) bool {
-	if mC.Port != anotherMC.Port || mC.Db != anotherMC.Db ||
-		mC.User != anotherMC.User || mC.Password != anotherMC.Password {
+	if mC.Db != anotherMC.Db ||
+		mC.ReplicaSetName != mC.ReplicaSetName ||
+		mC.User != anotherMC.User ||
+		mC.Password != anotherMC.Password {
 		return false
 	}
-	if len(mC.Hosts) != len(anotherMC.Hosts) {
+	if len(mC.Addresses) != len(anotherMC.Addresses) {
 		return false
 	}
-	hostMapAmount := make(map[string]uint, len(mC.Hosts))
-	for _, v := range mC.Hosts {
+	hostMapAmount := make(map[string]uint, len(mC.Addresses))
+	for _, v := range mC.Addresses {
 		hostMapAmount[v]++
 	}
-	for _, v := range anotherMC.Hosts {
+	for _, v := range anotherMC.Addresses {
 		hostMapAmount[v]--
 	}
 	for _, v := range hostMapAmount {
@@ -61,6 +66,7 @@ func (mC MongoConfig) Equal(anotherMC MongoConfig) bool {
 var (
 	client *mongo.Client
 	config *MongoConfig
+	err    error
 )
 
 func CheckConfValid(conf *MongoConfig) {
@@ -72,23 +78,26 @@ func InitClient(conf *MongoConfig) *mongo.Client {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
-	var url string
+
+	url := "mongodb://"
 	if conf.User != "" && conf.Password != "" {
-		url = strings.Join([]string{
-			"mongodb://",
-			util.EncodeString(conf.User), ":",
-			util.EncodeString(conf.Password), "@",
-			conf.Hosts[0], ":",
-			strconv.Itoa(conf.Port)},
-			"")
-	} else {
-		url = strings.Join([]string{
-			"mongodb://",
-			conf.Hosts[0], ":",
-			strconv.Itoa(conf.Port)},
-			"")
+		url += util.EncodeString(conf.User) + ":" + util.EncodeString(conf.Password) + "@"
 	}
-	client, _ = mongo.Connect(ctx, options.Client().ApplyURI(url))
+
+	url += strings.Join(conf.Addresses, ",")
+
+	// TODO handle authSource param
+
+	if conf.ReplicaSetName != "" {
+		url += "&replicaSet=" + conf.ReplicaSetName
+	}
+
+	client, err = mongo.Connect(
+		ctx, options.Client().ApplyURI(url),
+		options.Client().SetReadPreference(readpref.SecondaryPreferred()))
+	if err != nil {
+		panic(err)
+	}
 
 	pingCtx, pingCancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer pingCancel()
@@ -110,20 +119,14 @@ type Collection struct {
 }
 
 func NewCollection(
-	hosts []string, port int, user, password, db, collectionName string,
+	mC *MongoConfig, collectionName string,
 ) *Collection {
-	client := InitClient(&MongoConfig{
-		Hosts:    hosts,
-		Port:     port,
-		User:     user,
-		Password: password,
-		Db:       db,
-	})
-	collection := client.Database(db).Collection(collectionName)
+	client := InitClient(mC)
+
+	collection := client.Database(mC.Db).Collection(collectionName)
 	return &Collection{
 		Name:       collectionName,
-		collection: collection,
-	}
+		collection: collection}
 }
 
 // GetByID get by id

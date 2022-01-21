@@ -5,6 +5,7 @@ import (
 
 	"github.com/fBloc/bloc-server/aggregate"
 	"github.com/fBloc/bloc-server/infrastructure/log"
+	"github.com/fBloc/bloc-server/internal/conns/mongodb"
 	flow_repo "github.com/fBloc/bloc-server/repository/flow"
 	mongo_flow "github.com/fBloc/bloc-server/repository/flow/mongo"
 	"github.com/fBloc/bloc-server/repository/flow_run_record"
@@ -64,12 +65,12 @@ func WithFunctionRunRecordRepository(
 }
 
 func WithMongoFlowRepository(
-	hosts []string, port int, db, user, password string,
+	mC *mongodb.MongoConfig,
 ) FlowConfiguration {
 	return func(fs *FlowService) error {
 		mF, err := mongo_flow.New(
 			context.Background(),
-			hosts, port, db, user, password, mongo_flow.DefaultCollectionName,
+			mC, mongo_flow.DefaultCollectionName,
 		)
 		if err != nil {
 			return err
@@ -80,12 +81,12 @@ func WithMongoFlowRepository(
 }
 
 func WithMongoFlowRunRecordRepository(
-	hosts []string, port int, db, user, password string,
+	mC *mongodb.MongoConfig,
 ) FlowConfiguration {
 	return func(fs *FlowService) error {
 		mF, err := mongoFlowRRecord.New(
 			context.Background(),
-			hosts, port, db, user, password, mongo_flow.DefaultCollectionName,
+			mC, mongo_flow.DefaultCollectionName,
 		)
 		if err != nil {
 			return err
@@ -105,12 +106,12 @@ func WithFlowRunRecordRepository(
 }
 
 func WithMongoFunctionRepository(
-	hosts []string, port int, db, user, password string,
+	mC *mongodb.MongoConfig,
 ) FlowConfiguration {
 	return func(fs *FlowService) error {
 		mF, err := mongoFunction.New(
 			context.Background(),
-			hosts, port, db, user, password, mongo_flow.DefaultCollectionName,
+			mC, mongo_flow.DefaultCollectionName,
 		)
 		if err != nil {
 			return err

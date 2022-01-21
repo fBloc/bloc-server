@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/fBloc/bloc-server/infrastructure/log"
+	"github.com/fBloc/bloc-server/internal/conns/mongodb"
 	"github.com/fBloc/bloc-server/repository/flow"
 	mongoFlow "github.com/fBloc/bloc-server/repository/flow/mongo"
 	"github.com/fBloc/bloc-server/repository/flow_run_record"
@@ -26,11 +27,13 @@ func WithLogger(logger *log.Logger) FlowTaskConfiguration {
 	}
 }
 
-func WithMongoFlowRepository(hosts []string, port int, db, user, password string) FlowTaskConfiguration {
+func WithMongoFlowRepository(
+	mC *mongodb.MongoConfig,
+) FlowTaskConfiguration {
 	return func(fts *FlowTaskService) error {
 		ur, err := mongoFlow.New(
 			context.Background(),
-			hosts, port, db, user, password, mongoFlow.DefaultCollectionName,
+			mC, mongoFlow.DefaultCollectionName,
 		)
 		if err != nil {
 			return err
@@ -41,12 +44,12 @@ func WithMongoFlowRepository(hosts []string, port int, db, user, password string
 }
 
 func WithMongoFunctionRunRecordRepository(
-	hosts []string, port int, db, user, password string,
+	mC *mongodb.MongoConfig,
 ) FlowTaskConfiguration {
 	return func(fts *FlowTaskService) error {
 		ur, err := mongoFRR.New(
 			context.Background(),
-			hosts, port, db, user, password, mongoFRR.DefaultCollectionName,
+			mC, mongoFRR.DefaultCollectionName,
 		)
 		if err != nil {
 			return err
