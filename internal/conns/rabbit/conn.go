@@ -1,11 +1,11 @@
 package rabbit
 
 import (
+	"fmt"
 	"log"
-	"strconv"
-	"strings"
 
 	"github.com/fBloc/bloc-server/internal/mq_msg"
+	"github.com/sirius1024/go-amqp-reconnect/rabbitmq"
 
 	"github.com/streadway/amqp"
 )
@@ -13,8 +13,7 @@ import (
 type RabbitConfig struct {
 	User     string
 	Password string
-	Host     string
-	Port     int
+	Host     []string
 	Vhost    string
 }
 
@@ -22,7 +21,7 @@ func (rC *RabbitConfig) IsNil() bool {
 	if rC == nil {
 		return true
 	}
-	return rC.User == "" || rC.Password == "" || rC.Host == "" || rC.Port == 0
+	return rC.User == "" || rC.Password == "" || len(rC.Host) <= 0
 }
 
 func failOnError(err error, msg string) {
@@ -34,22 +33,30 @@ func failOnError(err error, msg string) {
 var channel *amqp.Channel
 
 func InitChannel(conf *RabbitConfig) {
-	conStr := strings.Join([]string{
-		"amqp://",
-		conf.User, ":",
-		conf.Password, "@",
-		conf.Host, ":",
-		strconv.Itoa(conf.Port), "/",
-		conf.Vhost}, "")
-	connection, err := amqp.Dial(conStr)
+	var connection *rabbitmq.Connection
+	var err error
+	if len(conf.Host) > 1 { // cluster
+		conStrs := make([]string, 0, len(conf.Host))
+		for _, i := range conf.Host {
+			conStrs = append(
+				conStrs,
+				fmt.Sprintf("amqp://%s:%s@%s/%s", conf.User, conf.Password, i, conf.Vhost))
+		}
+		connection, err = rabbitmq.DialCluster(conStrs)
+	} else {
+		connection, err = rabbitmq.Dial(
+			fmt.Sprintf(
+				"amqp://%s:%s@%s/%s",
+				conf.User, conf.Password,
+				conf.Host[0], conf.Vhost))
+	}
 	failOnError(err, "Failed to connect to RabbitMQ")
 
-	channel, err = connection.Channel()
+	channel, err := connection.Channel()
 	failOnError(err, "Failed to open a channel")
 
 	channel.Qos(1, 0, false)
 }
-
 func GetChannel() *amqp.Channel {
 	return channel
 }

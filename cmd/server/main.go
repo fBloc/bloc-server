@@ -12,9 +12,9 @@ import (
 
 type Options struct {
 	AppName         string `long:"app_name" description:"the name of this app" required:"true"`
-	RabbitMQConnect string `long:"rabbitMQ_connection_str" description:"connection rabbitMQ string in format:'$user:$password@$host:$port/$vHost'" required:"true"`
+	RabbitMQConnect string `long:"rabbitMQ_connection_str" description:"connection rabbitMQ string in format:'[username:password@]host1[:port1][,...hostN[:portN]]/[?vhost=$vhost]'" required:"true"`
 	MinioConnect    string `long:"minio_connection_str" description:"connection minio string in format:'$user:$password@$host:$port'" required:"true"`
-	MongoConnect    string `long:"mongo_connection_str" description:"connection mongo string in format:'[username:password@]host1[:port1][,...hostN[:portN]][/[defaultauthdb][?replicaSet=replicaSetName]]'" required:"true"`
+	MongoConnect    string `long:"mongo_connection_str" description:"connection mongo string in format:'[username:password@]host1[:port1][,...hostN[:portN]][/[defaultauthdb][?replicaSet=$replicaSet]]'" required:"true"`
 	InfluxdbConnect string `long:"influxdb_connection_str" description:"connection influxdb string in format:'$user:$password@$host:$port?token=$token&organization=$organization'" required:"true"`
 }
 
@@ -44,14 +44,14 @@ func main() {
 
 	blocApp := &bloc.BlocApp{Name: opts.AppName}
 
-	rabbitUser, rabbitPasswd, rabbitHost, _ := ParseBasicConnection(opts.RabbitMQConnect)
+	rabbitUser, rabbitPasswd, rabbitHost, rabbitQuery := ParseBasicConnection(opts.RabbitMQConnect)
 	minioUser, minioPasswd, minioHost, _ := ParseBasicConnection(opts.MinioConnect)
 	mongoUser, mongoPasswd, mongoAddress, mongoQuery := ParseBasicConnection(opts.MongoConnect)
 	influxdbUser, influxdbPasswd, influxdbHost, influxQuery := ParseBasicConnection(opts.InfluxdbConnect)
 
 	blocApp.GetConfigBuilder().
 		SetRabbitConfig(
-			rabbitUser, rabbitPasswd, rabbitHost, "").
+			rabbitUser, rabbitPasswd, strings.Split(rabbitHost, ","), rabbitQuery.Get("vhost")).
 		SetMongoConfig(
 			mongoUser, mongoPasswd, strings.Split(mongoAddress, ","),
 			opts.AppName, mongoQuery.Get("replicaSet")).

@@ -106,7 +106,7 @@ func (confbder *ConfigBuilder) SetInfluxDBConfig(
 }
 
 func (confbder *ConfigBuilder) SetRabbitConfig(
-	user, password, host string, vHost string,
+	user, password string, host []string, vHost string,
 ) *ConfigBuilder {
 	confbder.RabbitConf = &rabbit.RabbitConfig{
 		User:     user,
