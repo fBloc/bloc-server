@@ -5,14 +5,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 )
 
 var (
-	client *minio.Client
-	config *MinioConfig
+	client         *minio.Client
+	config         *MinioConfig
+	setClientMutex sync.Mutex
 )
 
 type MinioConfig struct {
@@ -32,7 +34,9 @@ func (mF *MinioConfig) IsNil() bool {
 
 func Init(conf *MinioConfig) *minio.Client {
 	config = conf
+	setClientMutex.Lock()
 	client = getValidClient()
+	setClientMutex.Unlock()
 	if client == nil {
 		panic("connect to minio fialed, check your minio service")
 	}
@@ -52,10 +56,15 @@ func Init(conf *MinioConfig) *minio.Client {
 
 func getValidClient() *minio.Client {
 	for i := 0; i < len(config.Addresses); i++ {
-		minioClient, err := minio.New(config.Addresses[i], &minio.Options{
+		// this seconds return error make no sense.
+		// as i tested, event the address not exist server. error stands nil
+		minioClient, _ := minio.New(config.Addresses[i], &minio.Options{
 			Creds:  credentials.NewStaticV4(config.AccessKey, config.AccessPassword, ""),
 			Secure: false,
 		})
+
+		// make sure client is valid
+		_, err := minioClient.ListBuckets(context.TODO())
 		if err == nil {
 			return minioClient
 		}
@@ -94,6 +103,9 @@ func setWithRetry(key string, byteData []byte) error {
 		if validClient == nil {
 			return errors.New("get no valid minio client")
 		}
+		setClientMutex.Lock()
+		client = validClient
+		setClientMutex.Unlock()
 	}
 	return errors.New("save to oss failed")
 }
@@ -114,6 +126,10 @@ func getWithRetry(key string) ([]byte, error) {
 			if validClient == nil {
 				continue
 			}
+			setClientMutex.Lock()
+			client = validClient
+			setClientMutex.Unlock()
+			continue
 		}
 		defer reader.Close()
 
@@ -123,6 +139,10 @@ func getWithRetry(key string) ([]byte, error) {
 			if validClient == nil {
 				continue
 			}
+			setClientMutex.Lock()
+			client = validClient
+			setClientMutex.Unlock()
+			continue
 		}
 		data := make([]byte, stat.Size)
 		reader.Read(data)
