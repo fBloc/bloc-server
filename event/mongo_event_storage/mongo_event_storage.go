@@ -25,7 +25,10 @@ func New(
 	ctx context.Context,
 	mC *mongodb.MongoConfig, collectionName string,
 ) (*MongoEventStorage, error) {
-	collection := mongodb.NewCollection(mC, collectionName)
+	collection, err := mongodb.NewCollection(mC, collectionName)
+	if err != nil {
+		return nil, err
+	}
 	return &MongoEventStorage{mongoCollection: collection}, nil
 }
 

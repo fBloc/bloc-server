@@ -35,7 +35,10 @@ func New(
 	ctx context.Context,
 	mC *mongodb.MongoConfig, collectionName string,
 ) (*MongoRepository, error) {
-	collection := mongodb.NewCollection(mC, collectionName)
+	collection, err := mongodb.NewCollection(mC, collectionName)
+	if err != nil {
+		return nil, err
+	}
 	return &MongoRepository{mongoCollection: collection}, nil
 }
 

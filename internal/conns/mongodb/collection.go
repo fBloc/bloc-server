@@ -3,130 +3,33 @@ package mongodb
 import (
 	"context"
 	"errors"
-	"strings"
-	"time"
 
 	"github.com/fBloc/bloc-server/internal/filter_options"
 	"github.com/fBloc/bloc-server/value_object"
 
 	"go.mongodb.org/mongo-driver/bson"
 
-	"github.com/fBloc/bloc-server/internal/util"
-
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
-
-type MongoConfig struct {
-	Addresses      []string
-	Db             string
-	User           string
-	Password       string
-	ReplicaSetName string
-}
-
-func (mC *MongoConfig) IsNil() bool {
-	if mC == nil {
-		return true
-	}
-	return len(mC.Addresses) == 0
-}
-
-func (mC *MongoConfig) IsReplicaSet() bool {
-	return len(mC.Addresses) > 0 && mC.ReplicaSetName != ""
-}
-
-func (mC MongoConfig) Equal(anotherMC MongoConfig) bool {
-	if mC.Db != anotherMC.Db ||
-		mC.ReplicaSetName != mC.ReplicaSetName ||
-		mC.User != anotherMC.User ||
-		mC.Password != anotherMC.Password {
-		return false
-	}
-	if len(mC.Addresses) != len(anotherMC.Addresses) {
-		return false
-	}
-	hostMapAmount := make(map[string]uint, len(mC.Addresses))
-	for _, v := range mC.Addresses {
-		hostMapAmount[v]++
-	}
-	for _, v := range anotherMC.Addresses {
-		hostMapAmount[v]--
-	}
-	for _, v := range hostMapAmount {
-		if v != 0 {
-			return false
-		}
-	}
-	return true
-}
-
-var (
-	client *mongo.Client
-	config *MongoConfig
-	err    error
-)
-
-func CheckConfValid(conf *MongoConfig) {
-	InitClient(conf)
-}
-
-func InitClient(conf *MongoConfig) *mongo.Client {
-	config = conf
-
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
-
-	url := "mongodb://"
-	if conf.User != "" && conf.Password != "" {
-		url += util.EncodeString(conf.User) + ":" + util.EncodeString(conf.Password) + "@"
-	}
-
-	url += strings.Join(conf.Addresses, ",")
-
-	// TODO handle authSource param
-
-	if conf.ReplicaSetName != "" {
-		url += "&replicaSet=" + conf.ReplicaSetName
-	}
-
-	client, err = mongo.Connect(
-		ctx, options.Client().ApplyURI(url),
-		options.Client().SetReadPreference(readpref.SecondaryPreferred()))
-	if err != nil {
-		panic(err)
-	}
-
-	pingCtx, pingCancel := context.WithTimeout(context.Background(), 2*time.Second)
-	defer pingCancel()
-	err := client.Ping(pingCtx, readpref.Primary())
-	if err != nil {
-		panic(err)
-	}
-	return client
-}
-
-func GetCollection(name string) *mongo.Collection {
-	collection := client.Database(config.Db).Collection(name)
-	return collection
-}
 
 type Collection struct {
 	Name       string
 	collection *mongo.Collection
 }
 
+// NewCollection return mongo collection(if u not familiar with it, think as sql table)
 func NewCollection(
 	mC *MongoConfig, collectionName string,
-) *Collection {
-	client := InitClient(mC)
+) (*Collection, error) {
+	client, err := InitClient(mC)
+	if err != nil {
+		return nil, err
+	}
 
 	collection := client.Database(mC.Db).Collection(collectionName)
-	return &Collection{
-		Name:       collectionName,
-		collection: collection}
+	return &Collection{Name: collectionName, collection: collection}, nil
 }
 
 // GetByID get by id
@@ -274,11 +177,14 @@ func (c *Collection) InsertOne(insertData interface{}) (string, error) {
 	return "", errors.New("insert ok. gen ID failed")
 }
 
+// FindOneOrInsert first try to find the doc by filter:
+// if exist, do nothing & put the find record to oldDocResultPointer
+// if not exist, insert the insertData & oldDocResultPointer keep point to blank content
 func (c *Collection) FindOneOrInsert(
 	mFilter *MongoFilter,
 	insertData interface{},
 	oldDocResultPointer interface{},
-) (err error) {
+) (alreadyExist bool, err error) {
 	err = c.collection.FindOneAndUpdate(
 		context.TODO(),
 		mFilter.filter,
@@ -287,6 +193,8 @@ func (c *Collection) FindOneOrInsert(
 	).Decode(oldDocResultPointer)
 	if err != nil && err == mongo.ErrNoDocuments {
 		err = nil
+	} else {
+		alreadyExist = true
 	}
 	return
 }
