@@ -172,7 +172,10 @@ func (congbder *ConfigBuilder) BuildUp() {
 	if congbder.mongoConf.IsNil() {
 		panic("must set mongo config")
 	}
-	mongodb.Connect(congbder.mongoConf)
+	_, err := mongodb.Connect(congbder.mongoConf)
+	if err != nil {
+		panic(err)
+	}
 
 	// minioConf 查看minIO是否能够有效工作
 	if congbder.minioConf.IsNil() {

@@ -30,23 +30,7 @@ type testData struct {
 	Name string            `bson:"name"`
 }
 
-var (
-	test = testData{
-		ID:   value_object.NewUUID(),
-		Name: gofakeit.Name()}
-
-	tests = []testData{
-		{
-			ID:   value_object.NewUUID(),
-			Name: gofakeit.Name()},
-		{
-			ID:   value_object.NewUUID(),
-			Name: gofakeit.Name()},
-		{
-			ID:   value_object.NewUUID(),
-			Name: gofakeit.Name()},
-	}
-)
+var test = testData{ID: value_object.NewUUID(), Name: gofakeit.Name()}
 
 func TestMongo(t *testing.T) {
 	Convey("mongo", t, func() {
@@ -59,8 +43,6 @@ func TestMongo(t *testing.T) {
 		Convey("insert one doc", func() {
 			_, err := collec.InsertOne(test)
 			So(err, ShouldBeNil)
-
-			collec.ClearCollection()
 		})
 
 		Convey("insert one doc and count", func() {
@@ -73,8 +55,6 @@ func TestMongo(t *testing.T) {
 			amount, err = collec.Count(NewFilter())
 			So(err, ShouldBeNil)
 			So(amount, ShouldEqual, 1)
-
-			collec.ClearCollection()
 		})
 
 		Convey("insert one doc and clear collection", func() {
@@ -119,8 +99,6 @@ func TestMongo(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(resp, ShouldNotBeNil)
 			So(resp.Name, ShouldEqual, test.Name)
-
-			collec.ClearCollection()
 		})
 
 		Convey("insert one doc and Get by filter", func() {
@@ -133,8 +111,6 @@ func TestMongo(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(byNameGetResp, ShouldNotBeNil)
 			So(byNameGetResp.Name, ShouldEqual, test.Name)
-
-			collec.ClearCollection()
 		})
 
 		Convey("insert one doc and filter", func() {
@@ -153,8 +129,6 @@ func TestMongo(t *testing.T) {
 				}
 			}
 			So(existTheNameRecord, ShouldBeTrue)
-
-			collec.ClearCollection()
 		})
 
 		Convey("insert one and patch field", func() {
@@ -172,8 +146,6 @@ func TestMongo(t *testing.T) {
 			collec.GetByID(test.ID, &resp)
 			So(resp.Name, ShouldNotEqual, test.Name)
 			So(resp.Name, ShouldEqual, newName)
-
-			collec.ClearCollection()
 		})
 
 		Convey("FindOneOrInsert", func() {
@@ -200,8 +172,6 @@ func TestMongo(t *testing.T) {
 
 			insertedAmount, _ = collec.Count(NewFilter())
 			So(insertedAmount, ShouldEqual, 1)
-
-			collec.ClearCollection()
 		})
 
 		Convey("insert multi same name docs and test filter & count", func() {
@@ -238,6 +208,10 @@ func TestMongo(t *testing.T) {
 
 			amount, _ = collec.Count(NewFilter().AddEqual("name", theName))
 			So(amount, ShouldEqual, 0)
+		})
+
+		Reset(func() {
+			collec.ClearCollection()
 		})
 	})
 }
