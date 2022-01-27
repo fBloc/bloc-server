@@ -70,6 +70,9 @@ func (mC MongoConfig) Equal(anotherMC MongoConfig) bool {
 }
 
 func (mC MongoConfig) signature() confSignature {
+	if mC.IsNil() {
+		panic("nil conf cannot gen signature")
+	}
 	return util.Md5Digest(
 		fmt.Sprintf(
 			"%s_%s_%s_%s_%s",

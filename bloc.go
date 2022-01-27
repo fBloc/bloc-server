@@ -181,7 +181,10 @@ func (congbder *ConfigBuilder) BuildUp() {
 	if congbder.minioConf.IsNil() {
 		panic("must set minio config")
 	}
-	minio.Init(congbder.minioConf)
+	_, err = minio.Connect(congbder.minioConf)
+	if err != nil {
+		panic(err)
+	}
 
 	// influxdb 查看influxdb是否有效工作
 	influxdb.NewConnection(congbder.InfluxDBConf)
@@ -453,12 +456,11 @@ func (bA *BlocApp) GetOrCreateConsumerObjectStorage() object_storage.ObjectStora
 		return bA.consumerObjectStorage
 	}
 
-	minioOS := minioInf.New(
-		bA.configBuilder.minioConf.Addresses,
-		bA.configBuilder.minioConf.AccessKey,
-		bA.configBuilder.minioConf.AccessPassword,
-		bA.configBuilder.minioConf.BucketName,
-	)
+	minioOS, err := minioInf.New(bA.configBuilder.minioConf)
+	if err != nil {
+		panic(err)
+	}
+
 	bA.consumerObjectStorage = minioOS
 
 	return bA.consumerObjectStorage
