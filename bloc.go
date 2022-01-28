@@ -187,7 +187,10 @@ func (congbder *ConfigBuilder) BuildUp() {
 	}
 
 	// influxdb 查看influxdb是否有效工作
-	influxdb.NewConnection(congbder.InfluxDBConf)
+	_, err = influxdb.Connect(congbder.InfluxDBConf)
+	if err != nil {
+		panic(err)
+	}
 
 	// LogConf
 	if congbder.LogConf.IsNil() {
@@ -247,7 +250,10 @@ func (bA *BlocApp) HttpListener() net.Listener {
 }
 
 func (bA *BlocApp) GetOrCreateLogBackEnd() (log_collect_backend.LogBackEnd, error) {
-	influxConn := influxdb.NewConnection(bA.configBuilder.InfluxDBConf)
+	influxConn, err := influxdb.Connect(bA.configBuilder.InfluxDBConf)
+	if err != nil {
+		return nil, err
+	}
 	return influx_logBackend.New(
 		influxConn,
 		24*time.Duration(bA.configBuilder.LogConf.MaxKeepDays)*time.Hour)
