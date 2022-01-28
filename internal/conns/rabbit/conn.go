@@ -2,37 +2,18 @@ package rabbit
 
 import (
 	"fmt"
-	"log"
 
-	"github.com/fBloc/bloc-server/internal/mq_msg"
 	"github.com/sirius1024/go-amqp-reconnect/rabbitmq"
 
 	"github.com/streadway/amqp"
 )
 
-type RabbitConfig struct {
-	User     string
-	Password string
-	Host     []string
-	Vhost    string
+type RabbitChannel struct {
+	conf    *RabbitConfig
+	channel *rabbitmq.Channel
 }
 
-func (rC *RabbitConfig) IsNil() bool {
-	if rC == nil {
-		return true
-	}
-	return rC.User == "" || rC.Password == "" || len(rC.Host) <= 0
-}
-
-func failOnError(err error, msg string) {
-	if err != nil {
-		log.Fatalf("%s: %s", msg, err)
-	}
-}
-
-var channel *amqp.Channel
-
-func InitChannel(conf *RabbitConfig) {
+func InitChannel(conf *RabbitConfig) (*RabbitChannel, error) {
 	var connection *rabbitmq.Connection
 	var err error
 	if len(conf.Host) > 1 { // cluster
@@ -50,26 +31,27 @@ func InitChannel(conf *RabbitConfig) {
 				conf.User, conf.Password,
 				conf.Host[0], conf.Vhost))
 	}
-	failOnError(err, "Failed to connect to RabbitMQ")
+	if err != nil {
+		return nil, err
+	}
 
 	channel, err := connection.Channel()
-	failOnError(err, "Failed to open a channel")
+	if err != nil {
+		return nil, err
+	}
 
 	channel.Qos(1, 0, false)
-}
-func GetChannel() *amqp.Channel {
-	return channel
+	return &RabbitChannel{conf: conf, channel: channel}, nil
 }
 
-func iniExchange(exchange string, ch *amqp.Channel) error {
-	return ch.ExchangeDeclare(exchange, "direct", true, false, false, false, nil)
+func (rC *RabbitChannel) IniExchange(exchange string, exchangeType string) error {
+	return rC.channel.ExchangeDeclare(exchange, exchangeType, true, false, false, false, nil)
 }
 
-func initQueAndBindToExchange(queue, exchange, routingKey string) error {
+func (rC *RabbitChannel) initQueAndBindToExchange(queue, exchange, routingKey string) error {
 	var err error
-	ch := GetChannel()
 
-	q, err := ch.QueueDeclare(
+	q, err := rC.channel.QueueDeclare(
 		queue, // name
 		true,  // durable
 		false, // delete when unused
@@ -81,7 +63,7 @@ func initQueAndBindToExchange(queue, exchange, routingKey string) error {
 		return err
 	}
 
-	err = ch.QueueBind(
+	err = rC.channel.QueueBind(
 		q.Name,     // queue name
 		routingKey, // routing key
 		exchange,   // exchange
@@ -90,15 +72,15 @@ func initQueAndBindToExchange(queue, exchange, routingKey string) error {
 	return err
 }
 
-func Pub(exchange string, routingKey string, value string) error {
-	var err error
-	ch := GetChannel()
-	err = iniExchange(exchange, ch)
+func (rC *RabbitChannel) Pub(
+	exchange, routingKey string, value []byte,
+) (err error) {
+	err = rC.IniExchange(exchange, "topic")
 	if err != nil {
 		return err
 	}
 
-	err = ch.Publish(
+	err = rC.channel.Publish(
 		exchange,   // exchange
 		routingKey, // routing key
 		false,      // mandatory
@@ -106,33 +88,27 @@ func Pub(exchange string, routingKey string, value string) error {
 		amqp.Publishing{
 			DeliveryMode: amqp.Persistent,
 			ContentType:  "text/plain",
-			Body:         []byte(value),
+			Body:         value,
 		})
-	return err
+	return
 }
 
-type mqMsg struct {
-	d *amqp.Delivery
-}
+func (rC *RabbitChannel) Pull(
+	exchange, routingKey, queue string,
+	autoAck bool,
+	respMsgByteChan chan []byte,
+) (err error) {
+	err = rC.IniExchange(exchange, "topic")
+	if err != nil {
+		return
+	}
 
-func (msg mqMsg) String() string {
-	return string(msg.d.Body)
-}
+	err = rC.initQueAndBindToExchange(queue, exchange, routingKey)
+	if err != nil {
+		return
+	}
 
-func (msg mqMsg) Ack() error {
-	return msg.d.Ack(false)
-}
-
-func (msg mqMsg) Nack() error {
-	return msg.d.Nack(false, false)
-}
-
-func Pull(exchange, queue string, autoAck bool, msg chan mq_msg.MqMsg) {
-	ch := GetChannel()
-	iniExchange(exchange, ch)
-	initQueAndBindToExchange(queue, exchange, queue)
-
-	msgs, err := ch.Consume(
+	msgs, err := rC.channel.Consume(
 		queue,   // queue
 		"",      // consumer
 		autoAck, // auto-ack
@@ -142,13 +118,13 @@ func Pull(exchange, queue string, autoAck bool, msg chan mq_msg.MqMsg) {
 		nil,     // args
 	)
 	if err != nil {
-		panic(err.Error())
+		return
 	}
 
 	go func() {
 		for d := range msgs {
-			m := mqMsg{&d}
-			msg <- m
+			respMsgByteChan <- d.Body
 		}
 	}()
+	return
 }

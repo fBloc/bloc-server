@@ -147,7 +147,6 @@ func TestMain(m *testing.M) {
 	if err := pool.Retry(func() error {
 		conn, err = Connect(conf)
 		if err != nil {
-			log.Println(err)
 			return err
 		}
 		return nil

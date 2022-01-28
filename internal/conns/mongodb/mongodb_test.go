@@ -2,9 +2,9 @@ package mongodb
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
-	"strings"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v6"
@@ -19,10 +19,9 @@ var dbClient *mongo.Client
 var collec *Collection
 
 var conf = &MongoConfig{
-	Addresses: []string{"localhost"},
-	Db:        "bloc-test-mongo",
-	User:      "root",
-	Password:  "password",
+	Db:       "bloc-test-mongo",
+	User:     "root",
+	Password: "password",
 }
 
 type testData struct {
@@ -242,13 +241,12 @@ func TestMain(m *testing.M) {
 		log.Fatalf("Could not start resource: %s", err)
 	}
 
+	conf.Addresses = []string{
+		fmt.Sprintf("localhost:%s", resource.GetPort("27017/tcp"))}
+
 	// exponential backoff-retry, because the application in the container might not be ready to accept connections yet
 	err = pool.Retry(func() error {
 		var err error
-		port := resource.GetPort("27017/tcp")
-		if !strings.Contains(conf.Addresses[0], port) {
-			conf.Addresses[0] += ":" + port
-		}
 
 		dbClient, err = InitClient(conf)
 		if err != nil {

@@ -84,6 +84,10 @@ func (con *MinioCon) switchToAValidClient() error {
 	con.getClientMutex.Lock()
 	defer con.getClientMutex.Unlock()
 
+	if con.client != nil {
+		return nil
+	}
+
 	client := getValidClient(&con.conf)
 	if client == nil {
 		return errors.New("no valid client")

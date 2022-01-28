@@ -37,6 +37,7 @@ import (
 	"sync"
 
 	"github.com/fBloc/bloc-server/infrastructure/mq/rabbit"
+	rabbit_conn "github.com/fBloc/bloc-server/internal/conns/rabbit"
 	user_repository "github.com/fBloc/bloc-server/repository/user"
 )
 
@@ -75,7 +76,7 @@ func (lF *LogConfig) IsNil() bool {
 type ConfigBuilder struct {
 	DefaultUserConf *DefaultUserConfig
 	HttpServerConf  *HttpServerConfig
-	RabbitConf      *rabbit.RabbitConfig
+	RabbitConf      *rabbit_conn.RabbitConfig
 	mongoConf       *mongodb.MongoConfig
 	minioConf       *minio.MinioConfig
 	InfluxDBConf    *influxdb.InfluxDBConfig
@@ -108,7 +109,7 @@ func (confbder *ConfigBuilder) SetInfluxDBConfig(
 func (confbder *ConfigBuilder) SetRabbitConfig(
 	user, password string, host []string, vHost string,
 ) *ConfigBuilder {
-	confbder.RabbitConf = &rabbit.RabbitConfig{
+	confbder.RabbitConf = &rabbit_conn.RabbitConfig{
 		User:     user,
 		Password: password,
 		Host:     host,
@@ -151,6 +152,8 @@ func (confbder *ConfigBuilder) SetLogConfig(maxKeepDays int) *ConfigBuilder {
 
 // BuildUp 对于必须要输入的做输入检查 & 有效性检查
 func (congbder *ConfigBuilder) BuildUp() {
+	var err error
+
 	// DefaultUserConf 默认超级用户设置检测
 	if congbder.DefaultUserConf.IsNil() {
 		congbder.DefaultUserConf = &DefaultUserConfig{
@@ -166,13 +169,16 @@ func (congbder *ConfigBuilder) BuildUp() {
 	if congbder.RabbitConf.IsNil() {
 		panic("must set rabbit config")
 	}
-	rabbit.InitChannel(congbder.RabbitConf)
+	_, err = rabbit.Connect(congbder.RabbitConf)
+	if err != nil {
+		panic(err)
+	}
 
 	// mongoConf 查看mongo是否能够有效链接
 	if congbder.mongoConf.IsNil() {
 		panic("must set mongo config")
 	}
-	_, err := mongodb.Connect(congbder.mongoConf)
+	_, err = mongodb.Connect(congbder.mongoConf)
 	if err != nil {
 		panic(err)
 	}
@@ -430,7 +436,11 @@ func (bA *BlocApp) GetOrCreateEventMQ() mq.MsgQueue {
 		return bA.eventMQ
 	}
 
-	rabbitMQ := rabbit.InitChannel(bA.configBuilder.RabbitConf)
+	rabbitMQ, err := rabbit.Connect(bA.configBuilder.RabbitConf)
+	if err != nil {
+		panic(err)
+	}
+
 	bA.eventMQ = rabbitMQ
 
 	return bA.eventMQ

@@ -41,14 +41,14 @@ func Connect(
 		conf.Address = "http://" + conf.Address
 	}
 
+	confSignatureMapClientMutex.Lock()
+	defer confSignatureMapClientMutex.Unlock()
+
 	sig := conf.signature()
 	con, ok := confSignatureMapConnection[sig]
 	if ok && con.client != nil {
 		return con, nil
 	}
-
-	confSignatureMapClientMutex.Lock()
-	defer confSignatureMapClientMutex.Unlock()
 
 	// setup
 	needSetup, err := canSetup(conf)
