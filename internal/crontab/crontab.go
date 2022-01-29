@@ -1,9 +1,6 @@
 package crontab
 
 import (
-	"bytes"
-	"errors"
-	"fmt"
 	"strings"
 	"time"
 
@@ -51,10 +48,10 @@ func (cr *CrontabRepresent) IsValid() bool {
 	if cr.IsZero() {
 		return true
 	}
-	return CheckValidCrontab(cr.CrontabStr)
+	return IsCrontabStringValid(cr.CrontabStr)
 }
 
-func CheckValidCrontab(crontabStr string) bool {
+func IsCrontabStringValid(crontabStr string) bool {
 	if crontabStr == "" {
 		return true
 	}
@@ -98,19 +95,4 @@ func (cr *CrontabRepresent) TimeMatched(theTime time.Time) bool {
 		return true
 	}
 	return false
-}
-
-func (cr *CrontabRepresent) UnmarshalJSON(crontabByte []byte) error {
-	crontabByte = bytes.Trim(crontabByte, "\"")
-	valid := CheckValidCrontab(string(crontabByte))
-	if !valid {
-		return errors.New("crontab not valid")
-	}
-	*cr = CrontabRepresent{CrontabStr: string(crontabByte)}
-	return nil
-}
-
-func (cr *CrontabRepresent) MarshalJSON() ([]byte, error) {
-	str := fmt.Sprintf("\"%s\"", cr.CrontabStr)
-	return []byte(str), nil
 }

@@ -20,7 +20,7 @@ type MongoConfig struct {
 func (mC *MongoConfig) ConnectionUrl() string {
 	url := "mongodb://"
 	if mC.User != "" && mC.Password != "" {
-		url += util.EncodeString(mC.User) + ":" + util.EncodeString(mC.Password) + "@"
+		url += util.UrlEncode(mC.User) + ":" + util.UrlEncode(mC.Password) + "@"
 	}
 
 	url += strings.Join(mC.Addresses, ",")

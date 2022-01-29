@@ -46,6 +46,7 @@ func get(
 	return httpResp.StatusCode, nil
 }
 
+// Get Warning: this assume resp is json data
 func Get(
 	remoteUrl string, headers map[string]string, respStructPointer interface{},
 ) (statusCode int, err error) {
@@ -58,6 +59,7 @@ func Get(
 	return
 }
 
+// Post Warning: this assume req/resp is all json data
 func Post(
 	remoteUrl string, headers map[string]string,
 	bodyByte []byte, respIns interface{},

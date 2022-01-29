@@ -7,6 +7,7 @@ import (
 	"time"
 )
 
+// TODO 废弃，不应该使用这种方式表达时间
 var cstSh, _ = time.LoadLocation("Asia/Shanghai")
 
 const timeFormat = time.RFC3339

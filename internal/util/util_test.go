@@ -1,13 +1,28 @@
 package util
 
 import (
-	"fmt"
 	"testing"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestUtil(t *testing.T) {
+func TestUrlEncode(t *testing.T) {
 	str := "afhas/6#12"
-	encodeStr := EncodeString(str)
 
-	fmt.Println(encodeStr)
+	Convey("test urlencode", t, func() {
+		encodeStr := UrlEncode(str)
+		So(encodeStr, ShouldNotContainSubstring, "#")
+	})
+
+	Convey("test md5Digest", t, func() {
+		encodeStr := Md5Digest(str)
+		So(encodeStr, ShouldNotEqual, "")
+		So(encodeStr, ShouldNotEqual, str)
+	})
+
+	Convey("test Sha1", t, func() {
+		encodeStr := Sha1([]byte(str))
+		So(encodeStr, ShouldNotEqual, "")
+		So(encodeStr, ShouldNotEqual, str)
+	})
 }

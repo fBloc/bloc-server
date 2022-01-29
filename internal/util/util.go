@@ -7,7 +7,7 @@ import (
 	"net/url"
 )
 
-func EncodeString(str string) string {
+func UrlEncode(str string) string {
 	return url.QueryEscape(str)
 }
 
