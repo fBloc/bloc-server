@@ -19,7 +19,7 @@ func ChangeSalt(userSalt string) {
 type User struct {
 	ID          value_object.UUID
 	Name        string
-	RaWPassword string
+	RawPassword string
 	Password    string
 	CreateTime  time.Time
 	IsSuper     bool
@@ -29,7 +29,7 @@ func NewUser(name, rawPassword string, isSuper bool) User {
 	return User{
 		ID:          value_object.NewUUID(),
 		Name:        name,
-		RaWPassword: rawPassword,
+		RawPassword: rawPassword,
 		Password:    encodePassword(rawPassword),
 		CreateTime:  time.Now(),
 		IsSuper:     isSuper,

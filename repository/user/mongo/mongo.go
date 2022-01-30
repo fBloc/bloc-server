@@ -45,7 +45,17 @@ type mongoUser struct {
 	IsSuper    bool              `bson:"is_super"`
 }
 
+func (mU *mongoUser) isNil() bool {
+	if mU == nil {
+		return true
+	}
+	return mU.ID.IsNil()
+}
+
 func (m mongoUser) ToAggregate() *aggregate.User {
+	if m.isNil() {
+		return nil
+	}
 	return &aggregate.User{
 		ID:         m.ID,
 		Name:       m.Name,
