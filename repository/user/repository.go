@@ -7,7 +7,7 @@ import (
 
 type UserRepository interface {
 	// create
-	Create(aggregate.User) error
+	Create(*aggregate.User) error
 
 	// read
 	GetByName(name string) (*aggregate.User, error)

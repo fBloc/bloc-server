@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/fBloc/bloc-server/aggregate"
@@ -29,7 +30,7 @@ var (
 
 func TestNewFromUser(t *testing.T) {
 	Convey("build from aggregate user", t, func() {
-		aggregateUser := aggregate.NewUser(
+		aggregateUser, _ := aggregate.NewUser(
 			fakeUserName, fakeUserPasswd, false)
 		mUser := NewFromUser(aggregateUser)
 		So(mUser, ShouldNotBeNil)
@@ -40,7 +41,7 @@ func TestNewFromUser(t *testing.T) {
 
 func TestToAggregate(t *testing.T) {
 	Convey("build from aggregate user", t, func() {
-		aggregateUser := aggregate.NewUser(
+		aggregateUser, _ := aggregate.NewUser(
 			fakeUserName, fakeUserPasswd, false)
 		mUser := NewFromUser(aggregateUser)
 		mToAggUser := mUser.ToAggregate()
@@ -54,10 +55,11 @@ func TestToAggregate(t *testing.T) {
 
 func TestCreate(t *testing.T) {
 	Convey("create", t, func() {
-		aggregateUser := aggregate.NewUser(
+		aggregateUser, _ := aggregate.NewUser(
 			fakeUserName, fakeUserPasswd, false)
 		err := epo.Create(aggregateUser)
 		So(err, ShouldBeNil)
+		So(aggregateUser.CreateTime, ShouldNotEqual, time.Time{})
 
 		Reset(func() {
 			epo.DeleteByID(aggregateUser.ID)
@@ -67,7 +69,7 @@ func TestCreate(t *testing.T) {
 
 func TestDeleteByID(t *testing.T) {
 	Convey("DeleteByID", t, func() {
-		aggregateUser := aggregate.NewUser(
+		aggregateUser, _ := aggregate.NewUser(
 			fakeUserName, fakeUserPasswd, false)
 		err := epo.Create(aggregateUser)
 		So(err, ShouldBeNil)
@@ -81,7 +83,7 @@ func TestDeleteByID(t *testing.T) {
 }
 
 func TestQuery(t *testing.T) {
-	aggregateUser := aggregate.NewUser(
+	aggregateUser, _ := aggregate.NewUser(
 		fakeUserName, fakeUserPasswd, false)
 	epo.Create(aggregateUser)
 

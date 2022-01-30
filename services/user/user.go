@@ -100,7 +100,11 @@ func (u *UserService) AddUser(name, rawPassword string, isSuper bool) error {
 	if !sameNameIns.IsZero() {
 		return errors.New("cannot create same name user")
 	}
-	return u.user.Create(aggregate.NewUser(name, rawPassword, isSuper))
+	aggUser, err := aggregate.NewUser(name, rawPassword, isSuper)
+	if err != nil {
+		return err
+	}
+	return u.user.Create(aggUser)
 }
 
 func (u *UserService) DeleteUserByID(id value_object.UUID) (int64, error) {

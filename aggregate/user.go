@@ -1,6 +1,7 @@
 package aggregate
 
 import (
+	"errors"
 	"time"
 
 	"github.com/fBloc/bloc-server/internal/util"
@@ -10,9 +11,6 @@ import (
 var salt = "may the force be with you"
 
 func ChangeSalt(userSalt string) {
-	if userSalt == "" {
-		return
-	}
 	salt = userSalt
 }
 
@@ -25,15 +23,21 @@ type User struct {
 	IsSuper     bool
 }
 
-func NewUser(name, rawPassword string, isSuper bool) User {
-	return User{
+func NewUser(name, rawPassword string, isSuper bool) (*User, error) {
+	if name == "" {
+		return nil, errors.New("not allowed blank user name")
+	}
+	if rawPassword == "" {
+		return nil, errors.New("not allowed blank password")
+	}
+	return &User{
 		ID:          value_object.NewUUID(),
 		Name:        name,
 		RawPassword: rawPassword,
 		Password:    encodePassword(rawPassword),
 		CreateTime:  time.Now(),
 		IsSuper:     isSuper,
-	}
+	}, nil
 }
 
 func (u *User) IsZero() bool {
@@ -49,7 +53,7 @@ func encodePassword(rawPassword string) string {
 
 func (u *User) IsRawPasswordMatch(rawPassword string) (bool, error) {
 	if u.IsZero() {
-		return false, nil
+		return false, errors.New("zero user cannot do match check")
 	}
 	if u.Password == encodePassword(rawPassword) {
 		return true, nil

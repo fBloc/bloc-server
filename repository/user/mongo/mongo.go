@@ -65,7 +65,7 @@ func (m mongoUser) ToAggregate() *aggregate.User {
 	}
 }
 
-func NewFromUser(u aggregate.User) *mongoUser {
+func NewFromUser(u *aggregate.User) *mongoUser {
 	mU := mongoUser{
 		ID:         u.ID,
 		Name:       u.Name,
@@ -79,7 +79,7 @@ func NewFromUser(u aggregate.User) *mongoUser {
 	return &mU
 }
 
-func (mr *MongoRepository) Create(u aggregate.User) error {
+func (mr *MongoRepository) Create(u *aggregate.User) error {
 	m := NewFromUser(u)
 
 	_, err := mr.mongoCollection.InsertOne(*m)
