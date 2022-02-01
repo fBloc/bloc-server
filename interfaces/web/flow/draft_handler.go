@@ -209,14 +209,12 @@ func PubDraft(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	// 具体开始检查每个节点的各项配置是否正确/有效
 	for flowFuncID, flowFunc := range draftFlowIns.FlowFunctionIDMapFlowFunction {
-		if flowFuncID == config.FlowFunctionStartID {
-			continue
-		}
-		valid, errorStr := flowFunc.CheckValid(
+		valid, error := flowFunc.CheckValid(
+			flowFuncID,
 			draftFlowIns.FlowFunctionIDMapFlowFunction,
 		)
 		if !valid {
-			web.WriteBadRequestDataResp(&w, errorStr)
+			web.WriteBadRequestDataResp(&w, error.Error())
 			return
 		}
 	}

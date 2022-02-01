@@ -1,9 +1,11 @@
 package aggregate
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
+	"github.com/fBloc/bloc-server/config"
 	"github.com/fBloc/bloc-server/internal/crontab"
 	"github.com/fBloc/bloc-server/pkg/value_type"
 	"github.com/fBloc/bloc-server/value_object"
@@ -32,19 +34,13 @@ type FlowFunction struct {
 
 // CheckValid 检测此function node的配置是否正确且有效
 func (flowFunc *FlowFunction) CheckValid(
+	thisFlowFuncID string,
 	flowFuncIDMapFlowFunction map[string]*FlowFunction,
-) (bool, string) {
-	// 所有节点都应该要有输入节点
-	if len(flowFunc.UpstreamFlowFunctionIDs) <= 0 {
-		return false, fmt.Sprintf(
-			"「%s」节点没有上游节点 - 不允许",
-			flowFunc.Note)
-	}
-
+) (bool, error) {
 	// 节点上游id必须是在数据里的（防止前端传过来的数据不对）
 	for _, funcID := range flowFunc.UpstreamFlowFunctionIDs {
 		if _, ok := flowFuncIDMapFlowFunction[funcID]; !ok {
-			return false, fmt.Sprintf(
+			return false, fmt.Errorf(
 				`「%s」节点填写的上游节点flow_function_id(%s)无效
 				-没有找到对应的flow_function_id`,
 				flowFunc.Note, funcID)
@@ -54,32 +50,53 @@ func (flowFunc *FlowFunction) CheckValid(
 	// 节点下游id必须是在数据里的（防止前端传过来的数据不对）
 	for _, funcID := range flowFunc.DownstreamFlowFunctionIDs {
 		if _, ok := flowFuncIDMapFlowFunction[funcID]; !ok {
-			return false, fmt.Sprintf(
+			return false, fmt.Errorf(
 				`「%s」节点填写的下游节点flow_function_id(%s)无效
 				-没有找到对应的flow_function_id`,
 				flowFunc.Note, funcID)
 		}
 	}
 
+	// 开始节点的特殊情况
+	if thisFlowFuncID == config.FlowFunctionStartID {
+		if len(flowFunc.DownstreamFlowFunctionIDs) == 0 && len(flowFuncIDMapFlowFunction) > 1 {
+			return false, fmt.Errorf(
+				"start function says no downstreams, but get all %d function",
+				len(flowFuncIDMapFlowFunction))
+		}
+		return true, nil
+	}
+
+	// 下面开始都是非开始节点才需要做的检测
+
+	// 所有节点都应该要有输入节点
+	if len(flowFunc.UpstreamFlowFunctionIDs) <= 0 {
+		return false, fmt.Errorf(
+			"「%s」节点没有上游节点 - 不允许",
+			flowFunc.Note)
+	}
+
 	// 检测输入参数的类型是否正确
 	for iptIndex, iptParamConfig := range flowFunc.ParamIpts { // 对应到ipt
 		for componentIndex, componentParamConfig := range iptParamConfig { // 对应到component
+			if flowFunc.Function.IsZero() {
+				return false, fmt.Errorf(
+					"not set function to flow_function: %s, cannot check whether ipt param is valid",
+					thisFlowFuncID)
+			}
+
 			// 若是必填参数、但没有配置参数
-			if componentParamConfig.Blank {
-				thisParamIpt := flowFunc.Function.Ipts[iptIndex]
-				if thisParamIpt.Must {
-					return false, fmt.Sprintf(
-						"「%s」节点第%d个ipt下的第%d个component要求必填，但是没填",
-						flowFunc.Note,
-						iptIndex, componentIndex)
-				}
-				continue
+			if componentParamConfig.Blank && flowFunc.Function.Ipts[iptIndex].Must {
+				return false, fmt.Errorf(
+					"「%s」节点第%d个ipt下的第%d个component要求必填，但是没填",
+					flowFunc.Note,
+					iptIndex, componentIndex)
 			}
 
 			if componentParamConfig.IptWay == value_object.Connection { // 配置的参数输入方式是链接
 				// connection写的节点ID是否存在
 				if _, ok := flowFuncIDMapFlowFunction[componentParamConfig.FlowFunctionID]; !ok {
-					return false, fmt.Sprintf(
+					return false, fmt.Errorf(
 						`「%s」节点第%d个ipt下的第%d个component输入的上游flow_function节点id(%s)无效
 						-没有此flow_function_id的上游节点`,
 						flowFunc.Note,
@@ -96,7 +113,7 @@ func (flowFunc *FlowFunction) CheckValid(
 					}
 				}
 				if !isUpstreamFuncNodeID {
-					return false, fmt.Sprintf(
+					return false, fmt.Errorf(
 						`「%s」节点第%d个ipt下的第%d个component输入的上游flow_function节点id(%s)无效
 						-此flow_function_id对应的节点不是直接上游节点、不能作为输入`,
 						flowFunc.Note,
@@ -105,34 +122,30 @@ func (flowFunc *FlowFunction) CheckValid(
 				}
 
 				// 3. 检查对应出参的类型是不是和此参数的输入要求类型一致
-				// TODO 这里的iptNode.Function为nil，需要想办法处理附上function实例才能检查
 				iptNode := flowFuncIDMapFlowFunction[componentParamConfig.FlowFunctionID]
 				for _, optItem := range iptNode.Function.Opts {
 					if optItem.Key != componentParamConfig.Key {
 						continue
 					}
 					if optItem.ValueType != componentParamConfig.ValueType {
-						return false, fmt.Sprintf(
+						return false, fmt.Errorf(
 							`「%s」节点第%d个ipt下的第%d个component输入的上游flow_function节点id(%s)无效
 							-此flow_function_id对应的节点不是直接上游节点、不能作为输入`,
 							flowFunc.Note,
 							iptIndex, componentIndex, componentParamConfig.FlowFunctionID)
 					}
-					return true, ""
+					return true, nil
 				}
 			} else if componentParamConfig.IptWay == value_object.UserIpt { // 配置的参数输入方式是用户输入的值
 				valueValid := value_type.CheckValueTypeValueValid(
 					componentParamConfig.ValueType, componentParamConfig.Value)
 				if !valueValid {
-					return false, "user_ipt value type wrong"
+					return false, errors.New("user_ipt value type wrong")
 				}
-			} else {
-				// TODO 这里的值user_ipt/connection不应该写死
-				return false, "ipt config type not right(should be in user_ipt/connection)"
 			}
 		}
 	}
-	return true, ""
+	return true, nil
 }
 
 type Flow struct {
@@ -172,7 +185,7 @@ func (flow *Flow) IsZero() bool {
 }
 
 func (flow *Flow) HaveRetryStrategy() bool {
-	if flow == nil {
+	if flow.IsZero() {
 		return false
 	}
 	return flow.RetryAmount > 0 && flow.RetryIntervalInSecond > 0
