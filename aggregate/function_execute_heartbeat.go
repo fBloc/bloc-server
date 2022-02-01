@@ -36,7 +36,12 @@ func (beb *FunctionExecuteHeartBeat) IsZero() bool {
 	return beb.ID.IsNil()
 }
 
-func (beb *FunctionExecuteHeartBeat) IsTimeout(thresholdInSecond float64) bool {
+func (beb *FunctionExecuteHeartBeat) IsTimeout(
+	thresholdInSecond float64,
+) bool {
+	if beb.IsZero() {
+		return false
+	}
 	gap := time.Since(beb.LatestHeartbeatTime)
 	return gap.Seconds() > thresholdInSecond
 }

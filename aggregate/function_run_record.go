@@ -69,6 +69,9 @@ func (bh *FunctionRunRecord) IsZero() bool {
 }
 
 func (bh *FunctionRunRecord) UsedSeconds() float64 {
+	if bh.IsZero() {
+		return 0
+	}
 	end := bh.End
 	if end.IsZero() {
 		end = time.Now()
@@ -83,7 +86,7 @@ func (bh *FunctionRunRecord) Failed() bool {
 	if bh.End.IsZero() {
 		return false
 	}
-	return bh.Suc
+	return !bh.Suc
 }
 
 func (bh *FunctionRunRecord) Finished() bool {
@@ -97,10 +100,18 @@ func (bh *FunctionRunRecord) Finished() bool {
 }
 
 func (bh *FunctionRunRecord) SetSuc() {
+	if bh.IsZero() {
+		return
+	}
 	bh.Suc = true
+	bh.End = time.Now()
 }
 
 func (bh *FunctionRunRecord) SetFail(errorMsg string) {
+	if bh.IsZero() {
+		return
+	}
 	bh.Suc = false
 	bh.ErrorMsg = errorMsg
+	bh.End = time.Now()
 }
