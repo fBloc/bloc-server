@@ -11,12 +11,8 @@ import (
 )
 
 var (
-	funcID            = value_object.NewUUID()
-	ReadeUser         = User{ID: value_object.NewUUID()}
-	ExecuteUser       = User{ID: value_object.NewUUID()}
-	AllPermissionUser = User{ID: value_object.NewUUID()}
-	SuperUser         = User{ID: value_object.NewUUID(), IsSuper: true}
-	fakeFunction      = Function{
+	funcID       = value_object.NewUUID()
+	fakeFunction = Function{
 		ID:           funcID,
 		Name:         "two add",
 		GroupName:    "math operation",
@@ -47,9 +43,9 @@ var (
 			},
 		},
 		ProcessStages:           []string{"parsing ipt", "finished parse ipt & start do the math", "finished"},
-		ReadUserIDs:             []value_object.UUID{ReadeUser.ID, AllPermissionUser.ID},
-		ExecuteUserIDs:          []value_object.UUID{ExecuteUser.ID, AllPermissionUser.ID},
-		AssignPermissionUserIDs: []value_object.UUID{AllPermissionUser.ID},
+		ReadUserIDs:             []value_object.UUID{readeUser.ID, allPermissionUser.ID},
+		ExecuteUserIDs:          []value_object.UUID{executeUser.ID, allPermissionUser.ID},
+		AssignPermissionUserIDs: []value_object.UUID{allPermissionUser.ID},
 	}
 )
 
@@ -75,37 +71,37 @@ func TestFunctionIsZero(t *testing.T) {
 
 func TestFunctionUserCanRead(t *testing.T) {
 	Convey("User cannot read", t, func() {
-		So(fakeFunction.UserCanRead(&ExecuteUser), ShouldBeFalse)
+		So(fakeFunction.UserCanRead(&executeUser), ShouldBeFalse)
 	})
 
 	Convey("User can read", t, func() {
-		So(fakeFunction.UserCanRead(&ReadeUser), ShouldBeTrue)
-		So(fakeFunction.UserCanRead(&AllPermissionUser), ShouldBeTrue)
-		So(fakeFunction.UserCanRead(&SuperUser), ShouldBeTrue)
+		So(fakeFunction.UserCanRead(&readeUser), ShouldBeTrue)
+		So(fakeFunction.UserCanRead(&allPermissionUser), ShouldBeTrue)
+		So(fakeFunction.UserCanRead(&superUser), ShouldBeTrue)
 	})
 }
 
 func TestFunctionUserCanExecute(t *testing.T) {
 	Convey("User cannot execute", t, func() {
-		So(fakeFunction.UserCanExecute(&ReadeUser), ShouldBeFalse)
+		So(fakeFunction.UserCanExecute(&readeUser), ShouldBeFalse)
 	})
 
 	Convey("User can execute", t, func() {
-		So(fakeFunction.UserCanExecute(&ExecuteUser), ShouldBeTrue)
-		So(fakeFunction.UserCanExecute(&AllPermissionUser), ShouldBeTrue)
-		So(fakeFunction.UserCanExecute(&SuperUser), ShouldBeTrue)
+		So(fakeFunction.UserCanExecute(&executeUser), ShouldBeTrue)
+		So(fakeFunction.UserCanExecute(&allPermissionUser), ShouldBeTrue)
+		So(fakeFunction.UserCanExecute(&superUser), ShouldBeTrue)
 	})
 }
 
 func TestFunctionUserCanAssignPermission(t *testing.T) {
 	Convey("User cannot assign permission", t, func() {
-		So(fakeFunction.UserCanAssignPermission(&ReadeUser), ShouldBeFalse)
-		So(fakeFunction.UserCanAssignPermission(&ExecuteUser), ShouldBeFalse)
+		So(fakeFunction.UserCanAssignPermission(&readeUser), ShouldBeFalse)
+		So(fakeFunction.UserCanAssignPermission(&executeUser), ShouldBeFalse)
 	})
 
 	Convey("User can assign permission", t, func() {
-		So(fakeFunction.UserCanAssignPermission(&AllPermissionUser), ShouldBeTrue)
-		So(fakeFunction.UserCanAssignPermission(&SuperUser), ShouldBeTrue)
+		So(fakeFunction.UserCanAssignPermission(&allPermissionUser), ShouldBeTrue)
+		So(fakeFunction.UserCanAssignPermission(&superUser), ShouldBeTrue)
 	})
 }
 

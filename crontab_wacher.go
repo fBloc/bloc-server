@@ -34,7 +34,7 @@ func (blocApp *BlocApp) CrontabWatcher() {
 				}
 
 				// 符合就发布运行任务
-				flowRunRecord := aggregate.NewCrontabTriggeredRunRecord(flowIns)
+				flowRunRecord := aggregate.NewCrontabTriggeredRunRecord(&flowIns)
 				created, err := flowRunRecordRepo.CrontabFindOrCreate(flowRunRecord, crontabTrigTime)
 				if err != nil {
 					logger.Errorf(

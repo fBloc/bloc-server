@@ -1,6 +1,7 @@
 package aggregate
 
 import (
+	"errors"
 	"time"
 
 	"github.com/fBloc/bloc-server/value_object"
@@ -29,7 +30,7 @@ type FlowRunRecord struct {
 	CancelUserID                 value_object.UUID
 }
 
-func newFromFlow(f Flow) *FlowRunRecord {
+func newFromFlow(f *Flow) *FlowRunRecord {
 	ret := &FlowRunRecord{
 		ID:            value_object.NewUUID(),
 		FlowID:        f.ID,
@@ -42,14 +43,17 @@ func newFromFlow(f Flow) *FlowRunRecord {
 	return ret
 }
 
-func NewUserTriggeredRunRecord(f Flow, triggerUserID value_object.UUID) *FlowRunRecord {
+func NewUserTriggeredFlowRunRecord(f *Flow, triggerUser *User) (*FlowRunRecord, error) {
+	if !f.UserCanExecute(triggerUser) {
+		return nil, errors.New("user: %s have no permission to trigger this flow")
+	}
 	rR := newFromFlow(f)
-	rR.TriggerUserID = triggerUserID
+	rR.TriggerUserID = triggerUser.ID
 	rR.TriggerType = value_object.Manual
-	return rR
+	return rR, nil
 }
 
-func NewCrontabTriggeredRunRecord(f Flow) *FlowRunRecord {
+func NewCrontabTriggeredRunRecord(f *Flow) *FlowRunRecord {
 	rR := newFromFlow(f)
 	rR.TriggerType = value_object.Crontab
 	return rR
@@ -60,14 +64,4 @@ func (task *FlowRunRecord) IsZero() bool {
 		return true
 	}
 	return task.ID.IsNil()
-}
-
-func (task *FlowRunRecord) IsFromArrangement() bool {
-	if task == nil {
-		return false
-	}
-	if task.ArrangementID.IsNil() {
-		return false
-	}
-	return true
 }

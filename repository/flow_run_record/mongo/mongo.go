@@ -270,9 +270,6 @@ func (mr *MongoRepository) AllRunRecordOfFlowTriggeredByFlowID(
 	resp := make([]*aggregate.FlowRunRecord, 0, len(mFRRs))
 	for _, i := range mFRRs {
 		aggRR := i.ToAggregate()
-		if aggRR.IsFromArrangement() {
-			continue
-		}
 		resp = append(resp, aggRR)
 	}
 

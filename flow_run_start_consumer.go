@@ -103,9 +103,19 @@ func (blocApp *BlocApp) FlowTaskStartConsumer() {
 				goto PubFailed
 			}
 			aggFunctionRunRecord := aggregate.NewFunctionRunRecordFromFlowDriven(
-				*functionIns, *flowRunIns,
-				flowFunctionID)
-			err := functionRunRecordRepo.Create(aggFunctionRunRecord)
+				*functionIns, *flowRunIns, flowFunctionID)
+			err = event.PubEvent(&event.FunctionToRun{FunctionRunRecordID: aggFunctionRunRecord.ID})
+			if err != nil {
+				logger.Errorf(
+					map[string]string{
+						"flow_run_record_id": flowRunRecordStr,
+						"flow_id":            flowRunIns.FlowID.String(),
+						"function_id":        flowFunction.FunctionID.String()},
+					"pub FunctionToRun event failed. function_id: %s, err: %v",
+					flowFunction.FunctionID.String(), err)
+				goto PubFailed
+			}
+			err = functionRunRecordRepo.Create(aggFunctionRunRecord)
 			if err != nil {
 				logger.Errorf(
 					map[string]string{

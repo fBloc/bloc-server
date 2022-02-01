@@ -3,7 +3,6 @@ package aggregate
 import (
 	"time"
 
-	"github.com/fBloc/bloc-server/event"
 	"github.com/fBloc/bloc-server/pkg/value_type"
 	"github.com/fBloc/bloc-server/value_object"
 )
@@ -45,10 +44,11 @@ type FunctionRunRecord struct {
 }
 
 func NewFunctionRunRecordFromFlowDriven(
-	functionIns Function, flowRunRecordIns FlowRunRecord,
+	functionIns Function,
+	flowRunRecordIns FlowRunRecord,
 	flowFunctionID string,
 ) *FunctionRunRecord {
-	fRR := &FunctionRunRecord{
+	return &FunctionRunRecord{
 		ID:                   value_object.NewUUID(),
 		FlowID:               flowRunRecordIns.FlowID,
 		FlowOriginID:         flowRunRecordIns.FlowOriginID,
@@ -59,9 +59,6 @@ func NewFunctionRunRecordFromFlowDriven(
 		ProcessStages:        functionIns.ProcessStages,
 		FunctionProviderName: functionIns.ProviderName,
 	}
-	event.PubEvent(
-		&event.FunctionToRun{FunctionRunRecordID: fRR.ID})
-	return fRR
 }
 
 func (bh *FunctionRunRecord) IsZero() bool {

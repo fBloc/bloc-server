@@ -41,7 +41,15 @@ func Run(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	}
 
 	// create new run record
-	aggFlowRunRecord := aggregate.NewUserTriggeredRunRecord(*flowIns, reqUser.ID)
+	aggFlowRunRecord, err := aggregate.NewUserTriggeredFlowRunRecord(flowIns, reqUser)
+	if err != nil {
+		fService.Logger.Errorf(
+			map[string]string{"flow_origin_id": flowOriginID, "user_name": reqUser.Name},
+			"user %s trigger flow run failed. origin_id %s, error: %s",
+			reqUser.Name, flowOriginID, err.Error())
+		web.WriteInternalServerErrorResp(&w, err, "build aggregate flow failed")
+	}
+
 	err = fService.FlowRunRecord.Create(aggFlowRunRecord)
 	if err != nil {
 		fService.Logger.Errorf(

@@ -82,14 +82,20 @@ func FunctionRunFinished(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 					downStreamFunctionIns := reported.idMapFunc[downStreamFlowFunction.FunctionID]
 
 					downStreamFunctionRunRecord := aggregate.NewFunctionRunRecordFromFlowDriven(
-						downStreamFunctionIns, *flowRunRecordIns,
-						downStreamFlowFunctionID)
+						downStreamFunctionIns, *flowRunRecordIns, downStreamFlowFunctionID)
+					err = event.PubEvent(&event.FunctionToRun{FunctionRunRecordID: downStreamFunctionRunRecord.ID})
+					if err != nil {
+						consumerLogger.Errorf(
+							map[string]string{"flow_run_record_id": flowRunRecordIns.ID.String()},
+							`pub function to run event failed. flow_run_record_id: %s, function_id: %s, function_run_record_id: %s. error: %v`,
+							flowRunRecordIns.ID.String(), downStreamFunctionRunRecord.FunctionID.String(),
+							downStreamFunctionRunRecord.ID.String(), err)
+					}
+
 					_ = fRRService.FunctionRunRecords.Create(downStreamFunctionRunRecord)
 
 					err = flowRunRecordService.FlowRunRecord.AddFlowFuncIDMapFuncRunRecordID(
-						flowRunRecordIns.ID,
-						downStreamFlowFunctionID,
-						downStreamFunctionRunRecord.ID)
+						flowRunRecordIns.ID, downStreamFlowFunctionID, downStreamFunctionRunRecord.ID)
 					if err != nil {
 						consumerLogger.Errorf(
 							map[string]string{"flow_run_record_id": flowRunRecordIns.ID.String()},
@@ -160,25 +166,23 @@ func FunctionRunFinished(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 				flowRunRecordIns.ID)
 		}
 	} else { // function节点运行失败, 处理有重试的情况
-		if !flowRunRecordIns.IsFromArrangement() { // 非arrangement触发
-			// 无重试策略
-			if !flowIns.HaveRetryStrategy() || flowRunRecordIns.RetriedAmount >= flowIns.RetryAmount {
-				fRRService.FunctionRunRecords.SaveFail(funcRunRecordUUID, req.ErrorMsg)
-				flowRunRecordService.FlowRunRecord.Fail(flowRunRecordIns.ID, "have function failed")
-			} else { // 有重试策略
-				flowRunRecordService.FlowRunRecord.PatchDataForRetry(
-					flowRunRecordIns.ID, flowRunRecordIns.RetriedAmount)
+		// 无重试策略
+		if !flowIns.HaveRetryStrategy() || flowRunRecordIns.RetriedAmount >= flowIns.RetryAmount {
+			fRRService.FunctionRunRecords.SaveFail(funcRunRecordUUID, req.ErrorMsg)
+			flowRunRecordService.FlowRunRecord.Fail(flowRunRecordIns.ID, "have function failed")
+		} else { // 有重试策略
+			flowRunRecordService.FlowRunRecord.PatchDataForRetry(
+				flowRunRecordIns.ID, flowRunRecordIns.RetriedAmount)
 
-				retryGapSeconds := 3
-				if flowIns.RetryIntervalInSecond > 0 {
-					retryGapSeconds = int(flowIns.RetryIntervalInSecond)
-				}
-				futureTime := time.Now().Add(time.Duration(retryGapSeconds) * time.Second)
-				event.PubEventAtCertainTime(
-					&event.FunctionToRun{
-						FunctionRunRecordID: funcRunRecordUUID},
-					futureTime)
+			retryGapSeconds := 3
+			if flowIns.RetryIntervalInSecond > 0 {
+				retryGapSeconds = int(flowIns.RetryIntervalInSecond)
 			}
+			futureTime := time.Now().Add(time.Duration(retryGapSeconds) * time.Second)
+			event.PubEventAtCertainTime(
+				&event.FunctionToRun{
+					FunctionRunRecordID: funcRunRecordUUID},
+				futureTime)
 		}
 	}
 	fRRService.Logger.Infof(
