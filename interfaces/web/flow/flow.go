@@ -214,7 +214,7 @@ func fromAggWithoutUserPermission(aggF *aggregate.Flow) *Flow {
 		CreateTime:                    json_date.New(aggF.CreateTime),
 		Position:                      aggF.Position,
 		FlowFunctionIDMapFlowFunction: httpFuncs,
-		Crontab:                       &aggF.Crontab,
+		Crontab:                       aggF.Crontab,
 		TriggerKey:                    aggF.TriggerKey,
 		TimeoutInSeconds:              aggF.TimeoutInSeconds,
 		RetryAmount:                   aggF.RetryAmount,

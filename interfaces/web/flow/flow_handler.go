@@ -211,9 +211,9 @@ func SetExecuteControlAttributes(w http.ResponseWriter, r *http.Request, _ httpr
 	// > 开始更新相应字段
 	var changedFieldAmount uint8
 	// >> 更新crontab
-	if !reqFlow.Crontab.Equal(&flowIns.Crontab) {
+	if !reqFlow.Crontab.Equal(flowIns.Crontab) {
 		changedFieldAmount++
-		flowIns.Crontab = *reqFlow.Crontab
+		flowIns.Crontab = reqFlow.Crontab
 	}
 
 	// >> 更新trigger_key

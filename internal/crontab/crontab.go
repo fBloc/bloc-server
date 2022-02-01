@@ -46,7 +46,7 @@ func (cr *CrontabRepresent) String() string {
 
 func (cr *CrontabRepresent) IsValid() bool {
 	if cr.IsZero() {
-		return true
+		return false
 	}
 	return IsCrontabStringValid(cr.CrontabStr)
 }

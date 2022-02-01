@@ -69,7 +69,7 @@ type mongoFlow struct {
 	CreateTime                    time.Time                     `bson:"create_time"`
 	Position                      interface{}                   `bson:"position"`
 	FlowFunctionIDMapFlowFunction map[string]*mongoFlowFunction `bson:"flowFunctionID_map_flowFunction"`
-	Crontab                       crontab.CrontabRepresent      `bson:"crontab,omitempty"`
+	Crontab                       *crontab.CrontabRepresent     `bson:"crontab,omitempty"`
 	TriggerKey                    string                        `bson:"trigger_key,omitempty"`
 	TimeoutInSeconds              uint32                        `bson:"timeout_in_seconds,omitempty"`
 	RetryAmount                   uint16                        `bson:"retry_amount,omitempty"`
@@ -144,8 +144,8 @@ func NewFromFlow(f *aggregate.Flow) *mongoFlow {
 		Newest:                  f.Newest,
 		CreateUserID:            f.CreateUserID,
 		CreateTime:              f.CreateTime,
-		Position:                f.Position,
 		Crontab:                 f.Crontab,
+		Position:                f.Position,
 		TriggerKey:              f.TriggerKey,
 		TimeoutInSeconds:        f.TimeoutInSeconds,
 		RetryAmount:             f.RetryAmount,
@@ -316,7 +316,7 @@ func (mr *MongoRepository) PatchPosition(id value_object.UUID, position interfac
 
 // OfflineByID 对flow进行下线
 func (mr *MongoRepository) OfflineByID(id value_object.UUID) error {
-	updater := mongodb.NewUpdater().AddSet("newest", false)
+	updater := mongodb.NewUpdater().AddSet("newest", false).AddSet("is_draft", true)
 	return mr.mongoCollection.PatchByID(id, updater)
 }
 
@@ -346,9 +346,9 @@ func (mr *MongoRepository) PatchCrontab(id value_object.UUID, c crontab.CrontabR
 }
 
 // PatchAllowParallelRun  更新是否在运行的时候有新的发布仍然发布
-func (mr *MongoRepository) PatchAllowParallelRun(id value_object.UUID, pub bool) error {
+func (mr *MongoRepository) PatchAllowParallelRun(id value_object.UUID, allowParallel bool) error {
 	updater := mongodb.NewUpdater().
-		AddSet("allow_parallel_run", pub)
+		AddSet("allow_parallel_run", allowParallel)
 	return mr.mongoCollection.PatchByID(id, updater)
 }
 
@@ -372,7 +372,10 @@ func (mr *MongoRepository) ReplaceByID(id value_object.UUID, aggFlow *aggregate.
 	return mr.mongoCollection.ReplaceByID(id, *mFlow)
 }
 
-func (mr *MongoRepository) userOperation(id, userID value_object.UUID, permType value_object.PermissionType, aod add_or_del.AddOrDel) error {
+func (mr *MongoRepository) userOperation(
+	id, userID value_object.UUID,
+	permType value_object.PermissionType, aod add_or_del.AddOrDel,
+) error {
 	var roleStr string
 	if permType == value_object.Read {
 		roleStr = "read_user_ids"
@@ -476,6 +479,7 @@ func (mr *MongoRepository) CreateDraftFromScratch(
 	return &aggFlow, nil
 }
 
+// TODO this functions's ipt param is strange. should be the exist flow is better
 func (mr *MongoRepository) CreateDraftFromExistFlow(
 	name string,
 	createUserID, originID value_object.UUID,
@@ -493,7 +497,7 @@ func (mr *MongoRepository) CreateDraftFromExistFlow(
 		return nil, errors.Wrap(err, "origin_id find exist flow error")
 	}
 	if existFlow.IsZero() {
-		return nil, errors.Wrap(err, "origin_id find no exist flow")
+		return nil, errors.New("origin_id find no exist flow")
 	}
 
 	aggFlow := aggregate.Flow{
