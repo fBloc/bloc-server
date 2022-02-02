@@ -16,7 +16,7 @@ func (blocApp *BlocApp) RePubDeadRuns() {
 	ticker := time.NewTicker(aggregate.HeartBeatDeadThreshold)
 	defer ticker.Stop()
 	for range ticker.C {
-		deads, err := heartBeatRepo.AllDeads()
+		deads, err := heartBeatRepo.AllDeads(aggregate.HeartBeatDeadThreshold)
 		if err != nil {
 			logger.Errorf(
 				map[string]string{},

@@ -55,7 +55,11 @@ func NewFromAggregate(f *aggregate.FunctionExecuteHeartBeat) *mongoFunctionExecu
 		ID:                  f.ID,
 		FunctionRunRecordID: f.FunctionRunRecordID,
 		StartTime:           f.StartTime,
-		LatestHeartbeatTime: f.LatestHeartbeatTime,
+	}
+	if f.LatestHeartbeatTime.IsZero() {
+		resp.LatestHeartbeatTime = f.LatestHeartbeatTime
+	} else {
+		resp.LatestHeartbeatTime = time.Now()
 	}
 	return &resp
 }
@@ -63,7 +67,8 @@ func NewFromAggregate(f *aggregate.FunctionExecuteHeartBeat) *mongoFunctionExecu
 func (mr *MongoRepository) Create(
 	f *aggregate.FunctionExecuteHeartBeat,
 ) error {
-	_, err := mr.mongoCollection.InsertOne(*f)
+	mFunctionExecuteHeartBeat := NewFromAggregate(f)
+	_, err := mr.mongoCollection.InsertOne(mFunctionExecuteHeartBeat)
 	return err
 }
 
@@ -91,10 +96,12 @@ func (mr *MongoRepository) GetByFunctionRunRecordID(
 	return m.ToAggregate(), nil
 }
 
-func (mr *MongoRepository) AllDeads() ([]*aggregate.FunctionExecuteHeartBeat, error) {
+func (mr *MongoRepository) AllDeads(
+	timeoutThreshold time.Duration,
+) ([]*aggregate.FunctionExecuteHeartBeat, error) {
 	var mSlice []mongoFunctionExecuteHeartBeat
 	err := mr.mongoCollection.Filter(
-		mongodb.NewFilter().AddLt("latest_heartbeat_time", time.Now().Add(aggregate.HeartBeatDeadThreshold)),
+		mongodb.NewFilter().AddLt("latest_heartbeat_time", time.Now().Add(-timeoutThreshold)),
 		&filter_options.FilterOption{}, &mSlice,
 	)
 	if err != nil {
