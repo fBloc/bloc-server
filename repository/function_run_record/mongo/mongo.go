@@ -4,8 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/fBloc/bloc-server/aggregate"
@@ -78,7 +76,7 @@ type mongoFunctionRunRecord struct {
 }
 
 func NewFromAggregate(fRR *aggregate.FunctionRunRecord) *mongoFunctionRunRecord {
-	resp := mongoFunctionRunRecord{
+	ret := mongoFunctionRunRecord{
 		ID:                        fRR.ID,
 		FlowID:                    fRR.FlowID,
 		FlowOriginID:              fRR.FlowOriginID,
@@ -98,17 +96,20 @@ func NewFromAggregate(fRR *aggregate.FunctionRunRecord) *mongoFunctionRunRecord 
 		OptKeyMapValueType:        fRR.OptKeyMapValueType,
 		OptKeyMapIsArray:          fRR.OptKeyMapIsArray,
 		Progress:                  fRR.Progress,
-		ProgressMsg:               fRR.ProgressMsg,
 		ProcessStages:             fRR.ProcessStages,
 		ProcessStageIndex:         fRR.ProcessStageIndex,
 		FunctionProviderName:      fRR.FunctionProviderName,
 		ShouldBeCanceledAt:        fRR.ShouldBeCanceledAt,
 	}
-	resp.IptBriefAndObskey = make([][]mongoIptBriefAndKey, len(fRR.IptBriefAndObskey))
+	if fRR.ProgressMsg == nil {
+		// mongo's $push not support push to nil! so this must be initial as []string{}
+		ret.ProgressMsg = []string{}
+	}
+	ret.IptBriefAndObskey = make([][]mongoIptBriefAndKey, len(fRR.IptBriefAndObskey))
 	for i, param := range fRR.IptBriefAndObskey {
-		resp.IptBriefAndObskey[i] = make([]mongoIptBriefAndKey, len(param))
+		ret.IptBriefAndObskey[i] = make([]mongoIptBriefAndKey, len(param))
 		for j, component := range param {
-			resp.IptBriefAndObskey[i][j] = mongoIptBriefAndKey{
+			ret.IptBriefAndObskey[i][j] = mongoIptBriefAndKey{
 				IsArray:   component.IsArray,
 				ValueType: component.ValueType,
 				Brief:     component.Brief,
@@ -116,7 +117,7 @@ func NewFromAggregate(fRR *aggregate.FunctionRunRecord) *mongoFunctionRunRecord 
 			}
 		}
 	}
-	return &resp
+	return &ret
 }
 
 func (m mongoFunctionRunRecord) ToAggregate() *aggregate.FunctionRunRecord {
@@ -184,47 +185,6 @@ func (mr *MongoRepository) GetByID(
 	return mr.get(mongodb.NewFilter().AddEqual("id", id))
 }
 
-func (mr *MongoRepository) FilterByFilterOption(
-	kv map[string]interface{}, filterOptions *filter_options.FilterOption,
-) ([]*aggregate.FunctionRunRecord, error) {
-	filter := mongodb.NewFilter()
-	for k, v := range kv {
-		if strings.HasSuffix(k, "__contains") {
-			realKey := strings.Split(k, "__")[0]
-			filter.AddContains(realKey, fmt.Sprintf("%v", v))
-			continue
-		}
-		if strings.HasSuffix(k, "__in") {
-			realKey := strings.Split(k, "__")[0]
-			valueSlice := strings.Split(fmt.Sprintf("%v", v), ",")
-			interfaceVals := make([]interface{}, 0, len(valueSlice))
-			for _, v := range valueSlice {
-				intVar, err := strconv.Atoi(v)
-				if err != nil {
-					interfaceVals = append(interfaceVals, v)
-				} else {
-					interfaceVals = append(interfaceVals, intVar)
-				}
-			}
-			filter.AddIn(realKey, interfaceVals)
-			continue
-		}
-		filter.AddEqual(k, v)
-	}
-
-	var mRRRs []mongoFunctionRunRecord
-	err := mr.mongoCollection.Filter(filter, filterOptions, &mRRRs)
-	if err != nil {
-		return nil, err
-	}
-
-	ret := make([]*aggregate.FunctionRunRecord, len(mRRRs))
-	for i, j := range mRRRs {
-		ret[i] = j.ToAggregate()
-	}
-	return ret, nil
-}
-
 func (mr *MongoRepository) Count(
 	filter value_object.RepositoryFilter,
 ) (int64, error) {
@@ -250,11 +210,11 @@ func (mr *MongoRepository) Filter(
 }
 
 func (mr *MongoRepository) FilterByFlowRunRecordID(
-	FlowRunRecordID value_object.UUID,
+	flowRunRecordID value_object.UUID,
 ) ([]*aggregate.FunctionRunRecord, error) {
 	var mRRRs []mongoFunctionRunRecord
 	err := mr.mongoCollection.Filter(
-		mongodb.NewFilter().AddEqual("flow_Run_record_id", FlowRunRecordID),
+		mongodb.NewFilter().AddEqual("flow_run_record_id", flowRunRecordID),
 		&filter_options.FilterOption{}, &mRRRs)
 	if err != nil {
 		return nil, err
@@ -277,20 +237,13 @@ func (mr *MongoRepository) PatchProgress(id value_object.UUID, progress float32)
 
 func (mr *MongoRepository) PatchProgressMsg(id value_object.UUID, progressMsg string) error {
 	return mr.mongoCollection.PatchByID(
-		id,
-		mongodb.NewUpdater().AddSet("progress_msg", progressMsg))
+		id, mongodb.NewUpdater().AddPush("progress_msg", progressMsg))
 }
 
 func (mr *MongoRepository) PatchStageIndex(id value_object.UUID, progressStageIndex int) error {
 	return mr.mongoCollection.PatchByID(
 		id,
 		mongodb.NewUpdater().AddSet("process_stage_index", progressStageIndex))
-}
-
-func (mr *MongoRepository) PatchProgressStages(id value_object.UUID, progressStages []string) error {
-	return mr.mongoCollection.PatchByID(
-		id,
-		mongodb.NewUpdater().AddSet("process_stages", progressStages))
 }
 
 func (mr *MongoRepository) SetTimeout(
@@ -303,7 +256,8 @@ func (mr *MongoRepository) SetTimeout(
 
 func (mr *MongoRepository) SaveIptBrief(
 	id value_object.UUID,
-	iptConfig ipt.IptSlice, ipts [][]interface{},
+	iptConfig ipt.IptSlice,
+	ipts [][]interface{},
 	objectStorageImplement object_storage.ObjectStorage,
 ) error {
 	iptBAOk := make([][]mongoIptBriefAndKey, len(ipts))
@@ -340,7 +294,7 @@ func (mr *MongoRepository) ClearProgress(id value_object.UUID) error {
 		id,
 		mongodb.NewUpdater().
 			AddSet("start", time.Time{}).
-			AddSet("process", 0).
+			AddSet("progress", 0).
 			AddSet("progress_msg", []string{}).
 			AddSet("process_stage_index", 0),
 	)
