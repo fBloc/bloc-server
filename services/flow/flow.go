@@ -147,12 +147,3 @@ func (u *FlowService) GetLatestRunRecordByFlowID(
 	}
 	return u.FlowRunRecord.GetLatestByFlowID(flowID)
 }
-
-func (u *FlowService) GetLatestRunRecordByArrangementFlowID(
-	arrFlowID string,
-) (*aggregate.FlowRunRecord, error) {
-	if arrFlowID == "" {
-		return nil, nil
-	}
-	return u.FlowRunRecord.GetLatestByArrangementFlowID(arrFlowID)
-}

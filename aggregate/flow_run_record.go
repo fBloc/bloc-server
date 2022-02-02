@@ -1,7 +1,7 @@
 package aggregate
 
 import (
-	"errors"
+	"fmt"
 	"time"
 
 	"github.com/fBloc/bloc-server/value_object"
@@ -24,6 +24,7 @@ type FlowRunRecord struct {
 	EndTime                      time.Time
 	Status                       value_object.RunState
 	ErrorMsg                     string
+	InterceptMsg                 string
 	RetriedAmount                uint16
 	TimeoutCanceled              bool
 	Canceled                     bool
@@ -45,7 +46,9 @@ func newFromFlow(f *Flow) *FlowRunRecord {
 
 func NewUserTriggeredFlowRunRecord(f *Flow, triggerUser *User) (*FlowRunRecord, error) {
 	if !f.UserCanExecute(triggerUser) {
-		return nil, errors.New("user: %s have no permission to trigger this flow")
+		return nil, fmt.Errorf(
+			"user: %s have no permission to trigger this flow",
+			triggerUser.Name)
 	}
 	rR := newFromFlow(f)
 	rR.TriggerUserID = triggerUser.ID

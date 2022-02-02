@@ -8,7 +8,6 @@ import (
 	"github.com/fBloc/bloc-server/aggregate"
 	"github.com/fBloc/bloc-server/internal/conns/mongodb"
 	"github.com/fBloc/bloc-server/internal/crontab"
-	"github.com/fBloc/bloc-server/internal/json_date"
 	"github.com/fBloc/bloc-server/repository/flow_run_record"
 	"github.com/fBloc/bloc-server/value_object"
 )
@@ -50,6 +49,7 @@ type mongoFlowRunRecord struct {
 	TriggerSource                value_object.FlowTriggeredSourceType `bson:"source_type"`
 	TriggerType                  value_object.TriggerType             `bson:"trigger_type"`
 	TriggerUserID                value_object.UUID                    `bson:"trigger_user_id"`
+	CrontabTriggerflag           string                               `bson:"crontab_trigger_flag,omitempty"` // same crontab not repub
 	StartTime                    time.Time                            `bson:"start_time,omitempty"`
 	EndTime                      time.Time                            `bson:"end_time,omitempty"`
 	Status                       value_object.RunState                `bson:"status"`
@@ -91,6 +91,7 @@ func NewFromAggregate(
 		EndTime:                      fRR.EndTime,
 		Status:                       fRR.Status,
 		ErrorMsg:                     fRR.ErrorMsg,
+		InterceptMsg:                 fRR.InterceptMsg,
 		RetriedAmount:                fRR.RetriedAmount,
 		TimeoutCanceled:              fRR.TimeoutCanceled,
 		Canceled:                     fRR.Canceled,
@@ -117,6 +118,7 @@ func (m mongoFlowRunRecord) ToAggregate() *aggregate.FlowRunRecord {
 		EndTime:                      m.EndTime,
 		Status:                       m.Status,
 		ErrorMsg:                     m.ErrorMsg,
+		InterceptMsg:                 m.InterceptMsg,
 		RetriedAmount:                m.RetriedAmount,
 		TimeoutCanceled:              m.TimeoutCanceled,
 		Canceled:                     m.Canceled,
@@ -143,13 +145,13 @@ func (mr *MongoRepository) CrontabFindOrCreate(
 	crontabRep := fmt.Sprintf("%s_%s",
 		fRR.FlowID.String(), crontab.TriggeredTimeFlag(crontabTime))
 	_, err = mr.mongoCollection.FindOneOrInsert(
-		mongodb.NewFilter().AddEqual("crontab_represent", crontabRep),
+		mongodb.NewFilter().AddEqual("crontab_trigger_flag", crontabRep),
 		*m,
 		&old)
 	if err != nil {
 		return
 	}
-	if !old.IsZero() { // 老文档存在，表示已经创建过了
+	if old.IsZero() { // 老文档不存在，表示此次为新建
 		created = true
 	}
 	return
@@ -193,12 +195,6 @@ func (mr *MongoRepository) GetLatestByFlowID(
 	flowID value_object.UUID,
 ) (*aggregate.FlowRunRecord, error) {
 	return mr.get(mongodb.NewFilter().AddEqual("flow_id", flowID))
-}
-
-func (mr *MongoRepository) GetLatestByArrangementFlowID(
-	arrangementFlowID string,
-) (*aggregate.FlowRunRecord, error) {
-	return mr.get(mongodb.NewFilter().AddEqual("arrangement_flow_id", arrangementFlowID))
 }
 
 func (mr *MongoRepository) IsHaveRunningTask(
@@ -359,7 +355,7 @@ func (mr *MongoRepository) TimeoutCancel(id value_object.UUID) error {
 		mongodb.NewUpdater().
 			AddSet("status", value_object.TimeoutCanceled).
 			AddSet("canceled", true).
-			AddSet("end_time", json_date.Now()),
+			AddSet("end_time", time.Now()),
 	)
 }
 
@@ -370,7 +366,7 @@ func (mr *MongoRepository) UserCancel(id, userID value_object.UUID) error {
 			AddSet("status", value_object.UserCanceled).
 			AddSet("canceled", true).
 			AddSet("cancel_user_id", userID).
-			AddSet("end_time", json_date.Now()),
+			AddSet("end_time", time.Now()),
 	)
 }
 

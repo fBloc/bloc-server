@@ -20,7 +20,6 @@ type FlowRunRecordRepository interface {
 
 	GetLatestByFlowOriginID(flowOriginID value_object.UUID) (*aggregate.FlowRunRecord, error)
 	GetLatestByFlowID(flowID value_object.UUID) (*aggregate.FlowRunRecord, error)
-	GetLatestByArrangementFlowID(arrangementFlowID string) (*aggregate.FlowRunRecord, error)
 
 	Filter(
 		filter value_object.RepositoryFilter,
