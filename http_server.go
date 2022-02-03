@@ -62,7 +62,10 @@ func (blocApp *BlocApp) RunHttpServer() {
 
 		// 确保默认用户存在（否则没法登录前端、查看功能）
 		initialUserName, initialUserPasswd := blocApp.InitialUserInfo()
-		user.InitialUserExistOrCreate(initialUserName, initialUserPasswd)
+		_, err = user.InitialUserExistOrCreate(initialUserName, initialUserPasswd)
+		if err != nil {
+			panic(err)
+		}
 
 		// router
 		router.POST("/api/v1/login", user.LoginHandler)

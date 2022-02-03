@@ -1,6 +1,8 @@
 package http_server
 
 import (
+	"fmt"
+
 	"github.com/fBloc/bloc-server/internal/conns/influxdb"
 	"github.com/fBloc/bloc-server/internal/conns/minio"
 	"github.com/fBloc/bloc-server/internal/conns/mongodb"
@@ -31,4 +33,10 @@ var (
 		User:     "blocRabbit",
 		Password: "blocRabbitPasswd",
 	}
+
+	serverHost    = "localhost"
+	serverPort    = 8080
+	serverAddress = fmt.Sprintf("%s:%d", serverHost, serverPort)
+
+	loginedToken = ""
 )

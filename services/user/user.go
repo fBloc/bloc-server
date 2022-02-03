@@ -67,6 +67,9 @@ func (u *UserService) Login(
 	if err != nil {
 		return false, nil, err
 	}
+	if sameNameUser.IsZero() {
+		return false, nil, err
+	}
 	suc, err = sameNameUser.IsRawPasswordMatch(rawPassword)
 	return
 }

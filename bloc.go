@@ -163,7 +163,7 @@ func (congbder *ConfigBuilder) BuildUp() {
 	}
 
 	// HttpServerConf http server 地址配置。
-	// 不用检查，没有设置就自行分配就是了
+	// 不用检查，有问题的话直接失败就是了
 
 	// RabbitConf。需要检查输入的配置能够建立有效的链接
 	if congbder.RabbitConf.IsNil() {

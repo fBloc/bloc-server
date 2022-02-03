@@ -1,6 +1,7 @@
 package http_server
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -9,7 +10,9 @@ import (
 	"time"
 
 	"github.com/fBloc/bloc-server"
+	"github.com/fBloc/bloc-server/config"
 	"github.com/fBloc/bloc-server/interfaces/web"
+	"github.com/fBloc/bloc-server/interfaces/web/user"
 	"github.com/fBloc/bloc-server/internal/conns/influxdb"
 	"github.com/fBloc/bloc-server/internal/conns/minio"
 	"github.com/fBloc/bloc-server/internal/conns/mongodb"
@@ -171,6 +174,24 @@ func TestMain(m *testing.M) {
 			break
 		}
 	}
+
+	// initial the user token
+	loginUser := user.User{
+		Name:        config.DefaultUserName,
+		RaWPassword: config.DefaultUserPassword}
+	loginPostBody, _ := json.Marshal(loginUser)
+	loginResp := struct {
+		Code int       `json:"status_code"`
+		Msg  string    `json:"status_msg"`
+		Data user.User `json:"data"`
+	}{}
+	http_util.Post(
+		serverAddress+"/api/v1/login",
+		http_util.BlankHeader, loginPostBody, &loginResp)
+	if loginResp.Data.Token.IsNil() {
+		log.Panicf("login to get token error:" + err.Error())
+	}
+	loginedToken = loginResp.Data.Token.String()
 
 	// run tests
 	code := m.Run()
