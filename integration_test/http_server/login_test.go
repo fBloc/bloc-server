@@ -24,8 +24,9 @@ func TestLogin(t *testing.T) {
 			Data user.User `json:"data"`
 		}{}
 		_, err = http_util.Post(
+			http_util.BlankHeader,
 			serverAddress+"/api/v1/login",
-			http_util.BlankHeader, postBody, &resp)
+			http_util.BlankGetParam, postBody, &resp)
 		So(err, ShouldBeNil)
 		So(resp.Data.Token.IsNil(), ShouldBeTrue)
 	})
@@ -43,8 +44,9 @@ func TestLogin(t *testing.T) {
 			Data user.User `json:"data"`
 		}{}
 		_, err = http_util.Post(
+			http_util.BlankHeader,
 			serverAddress+"/api/v1/login",
-			http_util.BlankHeader, postBody, &resp)
+			http_util.BlankGetParam, postBody, &resp)
 		So(err, ShouldBeNil)
 		So(resp.Data.Token.IsNil(), ShouldBeFalse)
 	})

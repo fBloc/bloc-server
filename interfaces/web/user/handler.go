@@ -43,7 +43,6 @@ func FilterByName(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		web.WriteInternalServerErrorResp(&w, err, "visit user repository failed")
 		return
 	}
-
 	FilterRespFromAggs(&w, users)
 }
 

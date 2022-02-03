@@ -139,6 +139,7 @@ func TestMain(m *testing.M) {
 		log.Fatalf("Could not connect to rabbit docker: %s", err)
 	}
 
+	// start bloc server
 	go func() {
 		appName := "test"
 		blocApp := &bloc.BlocApp{Name: appName}
@@ -155,7 +156,7 @@ func TestMain(m *testing.M) {
 				influxDBConf.UserName, influxDBConf.Password, influxDBConf.Address,
 				influxDBConf.Organization, influxDBConf.Token).
 			SetHttpServer(
-				"localhost", 8080).
+				serverHost, serverPort).
 			BuildUp()
 
 		blocApp.Run()
@@ -165,7 +166,10 @@ func TestMain(m *testing.M) {
 	checkTicker := time.NewTicker(2 * time.Second)
 	for range checkTicker.C {
 		var resp web.RespMsg
-		_, err := http_util.Get("localhost:8080/api/v1/bloc", http_util.BlankHeader, &resp)
+		_, err := http_util.Get(
+			http_util.BlankHeader,
+			serverAddress+"/api/v1/bloc",
+			http_util.BlankGetParam, &resp)
 		if err != nil {
 			continue
 		}
@@ -186,8 +190,9 @@ func TestMain(m *testing.M) {
 		Data user.User `json:"data"`
 	}{}
 	http_util.Post(
+		http_util.BlankHeader,
 		serverAddress+"/api/v1/login",
-		http_util.BlankHeader, loginPostBody, &loginResp)
+		http_util.BlankGetParam, loginPostBody, &loginResp)
 	if loginResp.Data.Token.IsNil() {
 		log.Panicf("login to get token error:" + err.Error())
 	}

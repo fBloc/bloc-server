@@ -50,7 +50,9 @@ func TestHttpUtil(t *testing.T) {
 
 		searchID := gofakeit.RandomInt([]int{1, 2, 3, 4, 5, 6, 7, 8, 9})
 		var resp testData
-		_, err := Get(fmt.Sprintf("%s/?id=%d", ts.URL, searchID), BlankHeader, &resp)
+		_, err := Get(
+			BlankHeader, ts.URL,
+			map[string]string{"id": strconv.Itoa(searchID)}, &resp)
 		So(err, ShouldBeNil)
 		So(resp.Name, ShouldEqual, idMapName[searchID])
 		ts.Close()
@@ -85,8 +87,8 @@ func TestHttpUtil(t *testing.T) {
 		So(err, ShouldBeNil)
 		var resp testData
 		_, err = Post(
-			fmt.Sprintf("%s", ts.URL),
-			BlankHeader, reqBytes, &resp)
+			BlankHeader, ts.URL,
+			BlankGetParam, reqBytes, &resp)
 		So(err, ShouldBeNil)
 		So(resp.Name, ShouldEqual, idMapName[searchID])
 	})
@@ -118,8 +120,9 @@ func TestHttpUtil(t *testing.T) {
 		searchID := gofakeit.RandomInt([]int{1, 2, 3, 4, 5, 6, 7, 8, 9})
 		var resp testData
 		_, err := Get(
-			fmt.Sprintf("%s/?id=%d", ts.URL, searchID),
 			map[string]string{headerKey: headerValue},
+			fmt.Sprintf("%s/?id=%d", ts.URL, searchID),
+			BlankGetParam,
 			&resp)
 		So(err, ShouldBeNil)
 		So(resp.Name, ShouldEqual, idMapName[searchID])

@@ -35,8 +35,12 @@ var (
 	}
 
 	serverHost    = "localhost"
-	serverPort    = 8080
+	serverPort    = 8484
 	serverAddress = fmt.Sprintf("%s:%d", serverHost, serverPort)
 
 	loginedToken = ""
 )
+
+func loginedHeader() map[string]string {
+	return map[string]string{"token": loginedToken}
+}

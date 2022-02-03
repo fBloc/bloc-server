@@ -119,7 +119,9 @@ func canSetup(conf *InfluxDBConfig) (bool, error) {
 	var resp struct {
 		Allowed bool `json:"allowed"`
 	}
-	_, err = http_util.Get(u.String(), http_util.BlankHeader, &resp)
+	_, err = http_util.Get(
+		http_util.BlankHeader, u.String(),
+		http_util.BlankGetParam, &resp)
 	if err != nil {
 		return false, err
 	}
@@ -161,7 +163,9 @@ func setup(conf *InfluxDBConfig) (bool, error) {
 
 	u.Path = path.Join(u.Path, setupPath)
 	statusCode, err := http_util.Post(
-		u.String(), http_util.BlankHeader, reqBody, &failResp)
+		http_util.BlankHeader,
+		u.String(), http_util.BlankGetParam,
+		reqBody, &failResp)
 	if err != nil {
 		return false, err
 	}
