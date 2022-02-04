@@ -12,6 +12,7 @@ import (
 	"github.com/fBloc/bloc-server"
 	"github.com/fBloc/bloc-server/config"
 	"github.com/fBloc/bloc-server/interfaces/web"
+	"github.com/fBloc/bloc-server/interfaces/web/client"
 	"github.com/fBloc/bloc-server/interfaces/web/user"
 	"github.com/fBloc/bloc-server/internal/conns/influxdb"
 	"github.com/fBloc/bloc-server/internal/conns/minio"
@@ -194,9 +195,42 @@ func TestMain(m *testing.M) {
 		serverAddress+"/api/v1/login",
 		http_util.BlankGetParam, loginPostBody, &loginResp)
 	if loginResp.Data.Token.IsNil() {
-		log.Panicf("login to get token error:" + err.Error())
+		log.Fatalf("login to get token error:" + err.Error())
 	}
 	loginedToken = loginResp.Data.Token.String()
+
+	// register a function
+	registerFunction := client.RegisterFuncReq{
+		Who: fakeAggFunction.ProviderName,
+		GroupNameMapFunctions: map[string][]*client.HttpFunction{
+			fakeAggFunction.GroupName: []*client.HttpFunction{
+				{
+					Name:          fakeAggFunction.Name,
+					GroupName:     fakeAggFunction.GroupName,
+					Description:   fakeAggFunction.Description,
+					Ipts:          fakeAggFunction.Ipts,
+					Opts:          fakeAggFunction.Opts,
+					ProcessStages: fakeAggFunction.ProcessStages,
+				},
+			},
+		},
+	}
+	registerFunctionBody, _ := json.Marshal(registerFunction)
+	registerFunctionResp := struct {
+		web.RespMsg
+		Data client.RegisterFuncReq `json:"data"`
+	}{}
+	_, err = http_util.Post(
+		http_util.BlankHeader,
+		serverAddress+"/api/v1/client/register_functions",
+		http_util.BlankGetParam, registerFunctionBody, &registerFunctionResp)
+	if err != nil {
+		log.Fatalf("register function error: %v", err)
+	}
+	if registerFunctionResp.Code != http.StatusOK {
+		log.Fatalf("register function failed: %v", registerFunctionResp)
+	}
+	fakeAggFunction.ID = registerFunctionResp.Data.GroupNameMapFunctions[fakeAggFunction.GroupName][0].ID
 
 	// run tests
 	code := m.Run()

@@ -31,7 +31,7 @@ type PermissionReq struct {
 	UserID         value_object.UUID      `json:"user_id"`
 }
 
-func BuildPermissionReqAndCheck(
+func buildPermissionReqAndCheck(
 	w *http.ResponseWriter, r *http.Request, body io.ReadCloser,
 ) *PermissionReq {
 	var req PermissionReq

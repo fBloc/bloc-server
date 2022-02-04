@@ -7,7 +7,7 @@ import (
 	"github.com/fBloc/bloc-server/internal/conns/mongodb"
 	"github.com/fBloc/bloc-server/repository/function"
 	mongoFunc "github.com/fBloc/bloc-server/repository/function/mongo"
-	user_cache "github.com/fBloc/bloc-server/services/userid_cache"
+	user_cache "github.com/fBloc/bloc-server/services/user_cache"
 )
 
 type FunctionConfiguration func(fs *FunctionService) error

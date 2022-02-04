@@ -36,10 +36,10 @@ func InitialUserExistOrCreate(
 }
 
 type User struct {
+	ID          value_object.UUID `json:"id,omitempty"`
+	Token       value_object.UUID `json:"token,omitempty"` // only return when login in
 	Name        string            `json:"name"`
 	RaWPassword string            `json:"password"`
-	Token       value_object.UUID `json:"token,omitempty"`
-	ID          value_object.UUID `json:"id,omitempty"`
 	CreateTime  time.Time         `json:"create_time"`
 	IsSuper     bool              `json:"super"`
 }
@@ -56,6 +56,7 @@ func FromAgg(aggU *aggregate.User) *User {
 		return nil
 	}
 	return &User{
+		ID:         aggU.ID,
 		Name:       aggU.Name,
 		CreateTime: aggU.CreateTime,
 		IsSuper:    aggU.IsSuper,
@@ -64,7 +65,7 @@ func FromAgg(aggU *aggregate.User) *User {
 
 func LoginRespFromAgg(w *http.ResponseWriter, aggU *aggregate.User) {
 	tmp := FromAgg(aggU)
-	tmp.Token = aggU.ID // 只有login的才返回token
+	tmp.Token = aggU.Token // only login should return token!
 	web.WriteSucResp(w, tmp)
 }
 
@@ -72,7 +73,6 @@ func FilterRespFromAggs(w *http.ResponseWriter, aggUs []aggregate.User) {
 	us := make([]*User, len(aggUs))
 	for i, j := range aggUs {
 		tmp := FromAgg(&j)
-		tmp.ID = j.ID
 		us[i] = tmp
 	}
 	web.WriteSucResp(w, us)

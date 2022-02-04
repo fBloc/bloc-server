@@ -15,7 +15,8 @@ func ChangeSalt(userSalt string) {
 }
 
 type User struct {
-	ID          value_object.UUID
+	ID          value_object.UUID // used for mark this user
+	Token       value_object.UUID // used for login
 	Name        string
 	RawPassword string
 	Password    string
@@ -32,6 +33,7 @@ func NewUser(name, rawPassword string, isSuper bool) (*User, error) {
 	}
 	return &User{
 		ID:          value_object.NewUUID(),
+		Token:       value_object.NewUUID(),
 		Name:        name,
 		RawPassword: rawPassword,
 		Password:    encodePassword(rawPassword),

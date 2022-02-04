@@ -20,7 +20,7 @@ import (
 	function_service "github.com/fBloc/bloc-server/services/function"
 	functionRunRecord_service "github.com/fBloc/bloc-server/services/function_run_record"
 	user_service "github.com/fBloc/bloc-server/services/user"
-	user_cache "github.com/fBloc/bloc-server/services/userid_cache"
+	user_cache "github.com/fBloc/bloc-server/services/user_cache"
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/rs/cors"

@@ -60,6 +60,8 @@ func TestCreate(t *testing.T) {
 		err := epo.Create(aggregateUser)
 		So(err, ShouldBeNil)
 		So(aggregateUser.CreateTime, ShouldNotEqual, time.Time{})
+		So(aggregateUser.ID.IsNil(), ShouldBeFalse)
+		So(aggregateUser.Token.IsNil(), ShouldBeFalse)
 
 		Reset(func() {
 			epo.DeleteByID(aggregateUser.ID)
@@ -95,6 +97,19 @@ func TestQuery(t *testing.T) {
 
 	Convey("GetByID hit", t, func() {
 		aggUser, err := epo.GetByID(aggregateUser.ID)
+		So(err, ShouldBeNil)
+		So(aggUser, ShouldNotBeNil)
+		So(aggUser.Name, ShouldEqual, fakeUserName)
+	})
+
+	Convey("GetByToken miss", t, func() {
+		aggUser, err := epo.GetByToken(value_object.NewUUID())
+		So(err, ShouldBeNil)
+		So(aggUser, ShouldBeNil)
+	})
+
+	Convey("GetByToken hit", t, func() {
+		aggUser, err := epo.GetByToken(aggregateUser.Token)
 		So(err, ShouldBeNil)
 		So(aggUser, ShouldNotBeNil)
 		So(aggUser.Name, ShouldEqual, fakeUserName)

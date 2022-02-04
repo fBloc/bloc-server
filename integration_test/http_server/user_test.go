@@ -28,11 +28,13 @@ func TestUserFilterByName(t *testing.T) {
 		}{}
 		name := config.DefaultUserName[1 : len(config.DefaultUserName)-1]
 		_, err := http_util.Get(
-			loginedHeader(),
+			superuserHeader(),
 			fmt.Sprintf("%s%s", serverAddress, "/api/v1/user"),
 			map[string]string{"name__contains": name}, &resp)
 		So(err, ShouldBeNil)
 		So(len(resp.Data), ShouldBeGreaterThan, 0)
+		So(resp.Data[0].ID.IsNil(), ShouldBeFalse)
+		So(resp.Data[0].Token.IsNil(), ShouldBeTrue) // filter should not return token
 	})
 
 	Convey("filter by name miss", t, func() {
@@ -42,7 +44,7 @@ func TestUserFilterByName(t *testing.T) {
 		}{}
 		name := config.DefaultUserName + "miss"
 		_, err := http_util.Get(
-			loginedHeader(),
+			superuserHeader(),
 			fmt.Sprintf("%s%s", serverAddress, "/api/v1/user"),
 			map[string]string{"name__contains": name}, &resp)
 		So(err, ShouldBeNil)
@@ -58,7 +60,7 @@ func TestAddDeleteUser(t *testing.T) {
 		addPostBody, _ := json.Marshal(addUser)
 		var addResp web.RespMsg
 		_, err := http_util.Post(
-			loginedHeader(),
+			superuserHeader(),
 			serverAddress+"/api/v1/user",
 			http_util.BlankGetParam, addPostBody, &addResp)
 		So(err, ShouldBeNil)
@@ -70,18 +72,19 @@ func TestAddDeleteUser(t *testing.T) {
 		}{}
 
 		_, err = http_util.Get(
-			loginedHeader(),
+			superuserHeader(),
 			fmt.Sprintf("%s%s", serverAddress, "/api/v1/user"),
 			map[string]string{"name__contains": toAddUserName}, &resp)
 		So(err, ShouldBeNil)
 		So(len(resp.Data), ShouldBeGreaterThan, 0)
 		So(resp.Data[0].ID.IsNil(), ShouldBeFalse)
+		So(resp.Data[0].Token.IsNil(), ShouldBeTrue)
 		theUserID := resp.Data[0].ID
 
 		Convey("DeleteUser", func() {
 			var resp web.RespMsg
 			_, err := http_util.Delete(
-				loginedHeader(),
+				superuserHeader(),
 				fmt.Sprintf(
 					"%s%s",
 					serverAddress, "/api/v1/user/delete_by_id/"+theUserID.String()),
@@ -95,7 +98,7 @@ func TestAddDeleteUser(t *testing.T) {
 			}{}
 
 			_, err = http_util.Get(
-				loginedHeader(),
+				superuserHeader(),
 				fmt.Sprintf("%s%s", serverAddress, "/api/v1/user"),
 				map[string]string{"name__contains": toAddUserName}, &resp)
 			So(err, ShouldBeNil)

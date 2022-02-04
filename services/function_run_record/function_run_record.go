@@ -7,7 +7,7 @@ import (
 	"github.com/fBloc/bloc-server/internal/conns/mongodb"
 	"github.com/fBloc/bloc-server/repository/function_run_record"
 	mongoFRRC "github.com/fBloc/bloc-server/repository/function_run_record/mongo"
-	user_cache "github.com/fBloc/bloc-server/services/userid_cache"
+	user_cache "github.com/fBloc/bloc-server/services/user_cache"
 )
 
 type FunctionRunRecordConfiguration func(

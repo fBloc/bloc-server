@@ -39,6 +39,7 @@ func New(
 
 type mongoUser struct {
 	ID         value_object.UUID `bson:"id"`
+	Token      value_object.UUID `bson:"token"`
 	Name       string            `bson:"name"`
 	Password   string            `bson:"password"` // 加密的password
 	CreateTime time.Time         `bson:"create_time"`
@@ -58,6 +59,7 @@ func (m mongoUser) ToAggregate() *aggregate.User {
 	}
 	return &aggregate.User{
 		ID:         m.ID,
+		Token:      m.Token,
 		Name:       m.Name,
 		CreateTime: m.CreateTime,
 		Password:   m.Password,
@@ -68,6 +70,7 @@ func (m mongoUser) ToAggregate() *aggregate.User {
 func NewFromUser(u *aggregate.User) *mongoUser {
 	mU := mongoUser{
 		ID:         u.ID,
+		Token:      u.Token,
 		Name:       u.Name,
 		Password:   u.Password,
 		IsSuper:    u.IsSuper,
@@ -127,6 +130,17 @@ func (mr *MongoRepository) GetByName(
 func (mr *MongoRepository) GetByID(id value_object.UUID) (*aggregate.User, error) {
 	var user mongoUser
 	err := mr.mongoCollection.GetByID(id, &user)
+	if err != nil {
+		return nil, err
+	}
+	return user.ToAggregate(), nil
+}
+
+func (mr *MongoRepository) GetByToken(token value_object.UUID) (*aggregate.User, error) {
+	var user mongoUser
+	err := mr.mongoCollection.Get(
+		mongodb.NewFilter().AddEqual("token", token),
+		nil, &user)
 	if err != nil {
 		return nil, err
 	}

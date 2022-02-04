@@ -7,7 +7,7 @@ import (
 
 	"github.com/fBloc/bloc-server/aggregate"
 	"github.com/fBloc/bloc-server/interfaces/web"
-	user_cache "github.com/fBloc/bloc-server/services/userid_cache"
+	user_cache "github.com/fBloc/bloc-server/services/user_cache"
 
 	"github.com/julienschmidt/httprouter"
 )
@@ -28,12 +28,12 @@ func getUserFromService(token string) (*aggregate.User, error) {
 	if token == "" {
 		return nil, errors.New("token for auth in req header is empty")
 	}
-	userIns, err := userCache.GetUserByIDString(token)
+	userIns, err := userCache.GetUserByTokenString(token)
 	if err != nil {
 		return nil, err
 	}
 	if userIns.IsZero() {
-		return nil, errors.New("token find no record")
+		return nil, nil
 	}
 	return &userIns, nil
 }

@@ -13,7 +13,7 @@ import (
 	"github.com/fBloc/bloc-server/repository/function"
 	mongoFunction "github.com/fBloc/bloc-server/repository/function/mongo"
 	"github.com/fBloc/bloc-server/repository/function_run_record"
-	user_cache "github.com/fBloc/bloc-server/services/userid_cache"
+	user_cache "github.com/fBloc/bloc-server/services/user_cache"
 	"github.com/fBloc/bloc-server/value_object"
 )
 

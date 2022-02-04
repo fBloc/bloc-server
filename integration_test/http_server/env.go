@@ -41,6 +41,6 @@ var (
 	loginedToken = ""
 )
 
-func loginedHeader() map[string]string {
+func superuserHeader() map[string]string {
 	return map[string]string{"token": loginedToken}
 }

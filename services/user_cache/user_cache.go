@@ -65,27 +65,73 @@ func WithLogger(logger *log.Logger) UserConfiguration {
 }
 
 type localCache struct {
-	userIDMapUser map[value_object.UUID]aggregate.User
+	userTokenMapUser map[value_object.UUID]aggregate.User
+	userIDMapUser    map[value_object.UUID]aggregate.User
 	sync.Mutex
 }
 
 var cache = &localCache{
-	userIDMapUser: make(map[value_object.UUID]aggregate.User),
+	userIDMapUser:    make(map[value_object.UUID]aggregate.User),
+	userTokenMapUser: make(map[value_object.UUID]aggregate.User),
 }
 
 func (us *UserCacheService) initialCache() {
+	cache.Lock()
+	defer cache.Unlock()
+
 	allUsers, err := us.user.All()
 	if err != nil {
 		panic(err)
 	}
-	tmp := make(map[value_object.UUID]aggregate.User, len(allUsers))
+	idMapUser := make(map[value_object.UUID]aggregate.User, len(allUsers))
+	tokenMapUser := make(map[value_object.UUID]aggregate.User, len(allUsers))
 	for _, i := range allUsers {
-		tmp[i.ID] = i
+		idMapUser[i.ID] = i
+		tokenMapUser[i.Token] = i
 	}
-	cache.userIDMapUser = tmp
+	cache.userIDMapUser = idMapUser
+	cache.userTokenMapUser = tokenMapUser
 }
 
-func (us *UserCacheService) visitRepositoryByID(id value_object.UUID) (aggregate.User, error) {
+func (us *UserCacheService) visitRepositoryByToken(token value_object.UUID) (aggregate.User, error) {
+	resp, err := us.user.GetByToken(token)
+	if err != nil {
+		return aggregate.User{}, err
+	}
+	if resp.IsZero() {
+		us.logger.Warningf(
+			map[string]string{},
+			"get user by token missed:%s", token.String())
+		return aggregate.User{}, nil
+	}
+	cache.Lock()
+	defer cache.Unlock()
+	cache.userIDMapUser[resp.ID] = *resp
+	cache.userTokenMapUser[resp.Token] = *resp
+	return *resp, nil
+}
+
+func (us *UserCacheService) GetUserByToken(token value_object.UUID) (aggregate.User, error) {
+	if userIns, ok := cache.userTokenMapUser[token]; ok {
+		return userIns, nil
+	}
+	return us.visitRepositoryByToken(token)
+}
+
+func (us *UserCacheService) GetUserByTokenString(token string) (aggregate.User, error) {
+	if token == "" {
+		return aggregate.User{}, errors.New("token cannot be blank string")
+	}
+	tokenUID, err := value_object.ParseToUUID(token)
+	if err != nil {
+		return aggregate.User{}, err
+	}
+	return us.GetUserByToken(tokenUID)
+}
+
+func (us *UserCacheService) visitRepositoryByID(
+	id value_object.UUID,
+) (aggregate.User, error) {
 	resp, err := us.user.GetByID(id)
 	if err != nil {
 		return aggregate.User{}, err
@@ -99,6 +145,7 @@ func (us *UserCacheService) visitRepositoryByID(id value_object.UUID) (aggregate
 	cache.Lock()
 	defer cache.Unlock()
 	cache.userIDMapUser[resp.ID] = *resp
+	cache.userTokenMapUser[resp.Token] = *resp
 	return *resp, nil
 }
 
@@ -111,11 +158,11 @@ func (us *UserCacheService) GetUserByID(id value_object.UUID) (aggregate.User, e
 
 func (us *UserCacheService) GetUserByIDString(id string) (aggregate.User, error) {
 	if id == "" {
-		return aggregate.User{}, errors.New("id cannot be blank string")
+		return aggregate.User{}, errors.New("token cannot be blank string")
 	}
-	uid, err := value_object.ParseToUUID(id)
+	uUID, err := value_object.ParseToUUID(id)
 	if err != nil {
 		return aggregate.User{}, err
 	}
-	return us.GetUserByID(uid)
+	return us.visitRepositoryByID(uUID)
 }

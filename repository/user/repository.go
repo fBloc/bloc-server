@@ -12,6 +12,7 @@ type UserRepository interface {
 	// read
 	GetByName(name string) (*aggregate.User, error)
 	GetByID(id value_object.UUID) (*aggregate.User, error)
+	GetByToken(token value_object.UUID) (*aggregate.User, error)
 	All() (users []aggregate.User, err error)
 	FilterByNameContains(nameContains string) (users []aggregate.User, err error)
 

@@ -24,6 +24,8 @@ func TestNewUser(t *testing.T) {
 			false)
 		So(err, ShouldBeNil)
 		So(u, ShouldNotBeNil)
+		So(u.ID.IsNil(), ShouldBeFalse)
+		So(u.Token.IsNil(), ShouldBeFalse)
 	})
 }
 
