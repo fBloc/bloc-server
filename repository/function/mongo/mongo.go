@@ -92,6 +92,17 @@ func NewFromFunction(f *aggregate.Function) *mongoFunction {
 		ExecuteUserIDs:          f.ExecuteUserIDs,
 		AssignPermissionUserIDs: f.AssignPermissionUserIDs,
 	}
+
+	// below set to []value_object.UUID{} is because mongo's $push not support push to nil
+	if f.ReadUserIDs == nil {
+		resp.ReadUserIDs = []value_object.UUID{}
+	}
+	if f.ExecuteUserIDs == nil {
+		resp.ExecuteUserIDs = []value_object.UUID{}
+	}
+	if f.AssignPermissionUserIDs == nil {
+		resp.AssignPermissionUserIDs = []value_object.UUID{}
+	}
 	return &resp
 }
 

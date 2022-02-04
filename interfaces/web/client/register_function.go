@@ -42,6 +42,10 @@ type RegisterFuncReq struct {
 }
 type GroupNameMapFunctions map[string][]*HttpFunction
 
+// HttpFunction
+// follow fields should not be provided in request but will be present in return data:
+// 	ID: the server will gen the ID and return it when first register.
+// 	ErrorMsg: like when function register failed. will put error msg in this field to return.
 type HttpFunction struct {
 	ID            value_object.UUID `json:"id"`
 	Name          string            `json:"name"`

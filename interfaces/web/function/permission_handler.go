@@ -47,7 +47,7 @@ func GetPermissionByFunctionID(w http.ResponseWriter, r *http.Request, _ httprou
 }
 
 func AddUserPermission(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	req := BuildPermissionReqAndCheck(&w, r, r.Body)
+	req := buildPermissionReqAndCheck(&w, r, r.Body)
 	if req == nil {
 		return
 	}
@@ -69,7 +69,7 @@ func AddUserPermission(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 }
 
 func DeleteUserPermission(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	req := BuildPermissionReqAndCheck(&w, r, r.Body)
+	req := buildPermissionReqAndCheck(&w, r, r.Body)
 	if req == nil {
 		return
 	}

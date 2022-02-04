@@ -83,11 +83,12 @@ func Delete(
 	headers map[string]string,
 	remoteUrl string,
 	params map[string]string,
+	bodyByte []byte,
 	respStructPointer interface{},
 ) (statusCode int, err error) {
 	remoteUrl = buildUrl(remoteUrl, params)
 
-	req, err := http.NewRequest("DELETE", remoteUrl, nil)
+	req, err := http.NewRequest("DELETE", remoteUrl, bytes.NewBuffer(bodyByte))
 	for k, v := range headers {
 		req.Header.Set(k, v)
 	}

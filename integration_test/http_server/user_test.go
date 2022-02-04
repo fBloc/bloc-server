@@ -88,7 +88,7 @@ func TestAddDeleteUser(t *testing.T) {
 				fmt.Sprintf(
 					"%s%s",
 					serverAddress, "/api/v1/user/delete_by_id/"+theUserID.String()),
-				http_util.BlankGetParam, &resp)
+				http_util.BlankGetParam, []byte{}, &resp)
 			So(err, ShouldBeNil)
 			So(resp.Code, ShouldEqual, http.StatusOK)
 
