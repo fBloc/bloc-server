@@ -198,6 +198,7 @@ func TestMain(m *testing.M) {
 		log.Fatalf("login to get token error:" + err.Error())
 	}
 	loginedToken = loginResp.Data.Token.String()
+	superuserID = loginResp.Data.ID
 
 	// register a function
 	registerFunction := client.RegisterFuncReq{

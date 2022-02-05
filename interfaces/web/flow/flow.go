@@ -2,10 +2,10 @@ package flow
 
 import (
 	"sync"
+	"time"
 
 	"github.com/fBloc/bloc-server/aggregate"
 	"github.com/fBloc/bloc-server/internal/crontab"
-	"github.com/fBloc/bloc-server/internal/json_date"
 	"github.com/fBloc/bloc-server/pkg/value_type"
 	"github.com/fBloc/bloc-server/services/flow"
 	"github.com/fBloc/bloc-server/value_object"
@@ -141,7 +141,7 @@ type Flow struct {
 	Newest                        bool                     `json:"newest"`
 	CreateUserID                  value_object.UUID        `json:"create_user_id,omitempty"`
 	CreateUserName                string                   `json:"create_user_name"`
-	CreateTime                    json_date.JsonDate       `json:"create_time"`
+	CreateTime                    time.Time                `json:"create_time"`
 	Position                      interface{}              `json:"position"`
 	FlowFunctionIDMapFlowFunction map[string]*FlowFunction `json:"flowFunctionID_map_flowFunction"`
 	// 运行控制相关
@@ -174,7 +174,7 @@ func (f *Flow) IsZero() bool {
 	return f == nil
 }
 
-func fromAggWithoutUserPermission(aggF *aggregate.Flow) *Flow {
+func FromAggWithoutUserPermission(aggF *aggregate.Flow) *Flow {
 	if aggF.IsZero() {
 		return nil
 	}
@@ -211,7 +211,7 @@ func fromAggWithoutUserPermission(aggF *aggregate.Flow) *Flow {
 		Version:                       aggF.Version,
 		OriginID:                      aggF.OriginID,
 		Newest:                        aggF.Newest,
-		CreateTime:                    json_date.New(aggF.CreateTime),
+		CreateTime:                    aggF.CreateTime,
 		Position:                      aggF.Position,
 		FlowFunctionIDMapFlowFunction: httpFuncs,
 		Crontab:                       aggF.Crontab,
@@ -231,7 +231,7 @@ func fromAggWithoutUserPermission(aggF *aggregate.Flow) *Flow {
 }
 
 func fromAgg(aggF *aggregate.Flow, reqUser *aggregate.User) *Flow {
-	bareFlow := fromAggWithoutUserPermission(aggF)
+	bareFlow := FromAggWithoutUserPermission(aggF)
 	if bareFlow.IsZero() {
 		return nil
 	}

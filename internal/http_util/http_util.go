@@ -15,6 +15,7 @@ var (
 	httpClient    *http.Client
 	BlankHeader   = map[string]string{}
 	BlankGetParam = map[string]string{}
+	BlankBody     = []byte{}
 )
 
 const urlPrefix = "http://"
@@ -41,41 +42,40 @@ func buildUrl(url string, getParam map[string]string) string {
 	return url
 }
 
-func get(
+func doRequest(
+	method string,
 	headers map[string]string, remoteUrl string,
-	getParam map[string]string, respStructPointer interface{},
-) (int, error) {
+	getParam map[string]string, body []byte, respStructPointer interface{},
+) (statusCode int, err error) {
 	remoteUrl = buildUrl(remoteUrl, getParam)
-
-	req, _ := http.NewRequest("GET", remoteUrl, nil)
+	req, _ := http.NewRequest(method, remoteUrl, bytes.NewBuffer(body))
 	for k, v := range headers {
 		req.Header.Set(k, v)
 	}
-	httpResp, err := httpClient.Do(req)
-	if err != nil {
-		return 0, err
+
+	for retriedAmount := 0; retriedAmount < 3; retriedAmount++ {
+		httpResp, err := httpClient.Do(req)
+		if err != nil {
+			continue
+		}
+		defer httpResp.Body.Close()
+		body, _ := ioutil.ReadAll(httpResp.Body)
+		err = json.Unmarshal(body, respStructPointer)
+
+		if err != nil {
+			continue
+		}
+		return httpResp.StatusCode, nil
 	}
-	defer httpResp.Body.Close()
-	body, _ := ioutil.ReadAll(httpResp.Body)
-	err = json.Unmarshal(body, respStructPointer)
-	if err != nil {
-		return 0, err
-	}
-	return httpResp.StatusCode, nil
+	return
 }
 
 // Get Warning: this assume resp is json data
 func Get(
 	headers map[string]string,
 	remoteUrl string, params map[string]string, respStructPointer interface{},
-) (statusCode int, err error) {
-	for retriedAmount := 0; retriedAmount < 3; retriedAmount++ {
-		statusCode, err = get(headers, remoteUrl, params, respStructPointer)
-		if err == nil {
-			return
-		}
-	}
-	return
+) (int, error) {
+	return doRequest("GET", headers, remoteUrl, params, BlankBody, respStructPointer)
 }
 
 // Delete Warning: this assume resp is json data
@@ -86,23 +86,18 @@ func Delete(
 	bodyByte []byte,
 	respStructPointer interface{},
 ) (statusCode int, err error) {
-	remoteUrl = buildUrl(remoteUrl, params)
+	return doRequest("DELETE", headers, remoteUrl, params, bodyByte, respStructPointer)
+}
 
-	req, err := http.NewRequest("DELETE", remoteUrl, bytes.NewBuffer(bodyByte))
-	for k, v := range headers {
-		req.Header.Set(k, v)
-	}
-	httpResp, err := httpClient.Do(req)
-	if err != nil {
-		return 0, err
-	}
-	defer httpResp.Body.Close()
-	body, _ := ioutil.ReadAll(httpResp.Body)
-	err = json.Unmarshal(body, respStructPointer)
-	if err != nil {
-		return 0, err
-	}
-	return httpResp.StatusCode, nil
+// Patch Warning: this assume resp is json data
+func Patch(
+	headers map[string]string,
+	remoteUrl string,
+	params map[string]string,
+	bodyByte []byte,
+	respStructPointer interface{},
+) (statusCode int, err error) {
+	return doRequest("PATCH", headers, remoteUrl, params, bodyByte, respStructPointer)
 }
 
 // Post Warning: this assume req/resp is all json data
@@ -113,28 +108,5 @@ func Post(
 	bodyByte []byte,
 	respIns interface{},
 ) (int, error) {
-	remoteUrl = buildUrl(remoteUrl, params)
-
-	req, err := http.NewRequest("POST", remoteUrl, bytes.NewBuffer(bodyByte))
-	if err != nil {
-		return 0, err
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-	for k, v := range headers {
-		req.Header.Set(k, v)
-	}
-
-	resp, err := httpClient.Do(req)
-	if err != nil {
-		return 0, err
-	}
-
-	defer resp.Body.Close()
-	respBodyByte, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return 0, err
-	}
-
-	return resp.StatusCode, json.Unmarshal(respBodyByte, respIns)
+	return doRequest("POST", headers, remoteUrl, params, bodyByte, respIns)
 }
