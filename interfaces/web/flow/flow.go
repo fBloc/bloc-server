@@ -174,7 +174,7 @@ func (f *Flow) IsZero() bool {
 	return f == nil
 }
 
-func FromAggWithoutUserPermission(aggF *aggregate.Flow) *Flow {
+func fromAggWithoutUserPermission(aggF *aggregate.Flow) *Flow {
 	if aggF.IsZero() {
 		return nil
 	}
@@ -231,7 +231,7 @@ func FromAggWithoutUserPermission(aggF *aggregate.Flow) *Flow {
 }
 
 func fromAgg(aggF *aggregate.Flow, reqUser *aggregate.User) *Flow {
-	bareFlow := FromAggWithoutUserPermission(aggF)
+	bareFlow := fromAggWithoutUserPermission(aggF)
 	if bareFlow.IsZero() {
 		return nil
 	}

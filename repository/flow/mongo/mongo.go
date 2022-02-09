@@ -245,10 +245,10 @@ func (mr *MongoRepository) GetDraftByOriginID(originID value_object.UUID) (*aggr
 	return mr.get(mongodb.NewFilter().AddEqual("origin_id", originID).AddEqual("is_draft", true))
 }
 
-func (mr *MongoRepository) FilterOnline(userID value_object.UUID, nameContains string) ([]aggregate.Flow, error) {
+func (mr *MongoRepository) FilterOnline(user *aggregate.User, nameContains string) ([]aggregate.Flow, error) {
 	filter := mongodb.NewFilter().AddEqual("is_draft", false).AddEqual("newest", true)
-	if !userID.IsNil() {
-		filter.AddEqual("read_user_ids", userID)
+	if !user.IsZero() && !user.IsSuper {
+		filter.AddEqual("read_user_ids", user.ID)
 	}
 	if nameContains != "" {
 		filter.AddContains("name", nameContains)

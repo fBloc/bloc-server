@@ -112,7 +112,7 @@ func CreateDraft(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 			return
 		}
 
-		web.WriteSucResp(&w, FromAggWithoutUserPermission(flowIns))
+		web.WriteSucResp(&w, fromAggWithoutUserPermission(flowIns))
 		return
 	}
 
@@ -135,7 +135,7 @@ func CreateDraft(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 			"create_user_id":   reqFlow.CreateUserID.String(),
 			"create_user_name": reqUser.Name},
 		"user %s created draft flow %s", reqUser.Name, flowIns.ID.String())
-	web.WriteSucResp(&w, FromAggWithoutUserPermission(flowIns))
+	web.WriteSucResp(&w, fromAggWithoutUserPermission(flowIns))
 }
 
 // PubDraft 提交草稿上线
@@ -234,7 +234,7 @@ func PubDraft(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		"user %s published draft flow %s", reqUser.Name, aggF.ID.String())
 	fService.Flow.DeleteDraftByOriginID(draftFlowIns.OriginID)
 
-	web.WriteSucResp(&w, FromAggWithoutUserPermission(aggF))
+	web.WriteSucResp(&w, fromAggWithoutUserPermission(aggF))
 }
 
 // Update 用户前端更新的draft_flow,此时id不是origin_id

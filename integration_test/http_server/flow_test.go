@@ -7,12 +7,60 @@ import (
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v6"
+	"github.com/fBloc/bloc-server/aggregate"
 	"github.com/fBloc/bloc-server/interfaces/web"
-	"github.com/fBloc/bloc-server/interfaces/web/client"
 	"github.com/fBloc/bloc-server/interfaces/web/flow"
 	"github.com/fBloc/bloc-server/internal/http_util"
+	"github.com/fBloc/bloc-server/value_object"
 	. "github.com/smartystreets/goconvey/convey"
 )
+
+func aggFlowToWebFlow(aggF *aggregate.Flow) *flow.Flow {
+	httpFuncs := make(map[string]*flow.FlowFunction, len(aggF.FlowFunctionIDMapFlowFunction))
+	for k, v := range aggF.FlowFunctionIDMapFlowFunction {
+		paramIpts := make([][]flow.IptComponentConfig, len(v.ParamIpts))
+		for i, j := range v.ParamIpts {
+			paramIpts[i] = make([]flow.IptComponentConfig, len(j))
+			for z, k := range j {
+				paramIpts[i][z] = flow.IptComponentConfig{
+					Blank:          k.Blank,
+					IptWay:         k.IptWay,
+					ValueType:      k.ValueType,
+					Value:          k.Value,
+					FlowFunctionID: k.FlowFunctionID,
+					Key:            k.Key,
+				}
+			}
+		}
+
+		httpFuncs[k] = &flow.FlowFunction{
+			FunctionID:                v.FunctionID,
+			Note:                      v.Note,
+			Position:                  v.Position,
+			UpstreamFlowFunctionIDs:   v.UpstreamFlowFunctionIDs,
+			DownstreamFlowFunctionIDs: v.DownstreamFlowFunctionIDs,
+			ParamIpts:                 paramIpts,
+		}
+	}
+	retFlow := &flow.Flow{
+		ID:                            aggF.ID,
+		Name:                          aggF.Name,
+		IsDraft:                       aggF.IsDraft,
+		Version:                       aggF.Version,
+		OriginID:                      aggF.OriginID,
+		Newest:                        aggF.Newest,
+		CreateTime:                    aggF.CreateTime,
+		Position:                      aggF.Position,
+		FlowFunctionIDMapFlowFunction: httpFuncs,
+		Crontab:                       aggF.Crontab,
+		TriggerKey:                    aggF.TriggerKey,
+		TimeoutInSeconds:              aggF.TimeoutInSeconds,
+		RetryAmount:                   aggF.RetryAmount,
+		RetryIntervalInSecond:         aggF.RetryIntervalInSecond,
+		AllowParallelRun:              aggF.AllowParallelRun,
+	}
+	return retFlow
+}
 
 func TestNeedLogin(t *testing.T) {
 	SkipConvey("need login to do all operations", t, func() {
@@ -49,56 +97,9 @@ func TestFilterBeforeCreateFlow(t *testing.T) {
 }
 
 func TestDraftFlow(t *testing.T) {
-	// register the two functions
-	registerFunction := client.RegisterFuncReq{
-		Who: fakeAggFunction.ProviderName,
-		GroupNameMapFunctions: map[string][]*client.HttpFunction{
-			fakeAggFunction.GroupName: []*client.HttpFunction{
-				{
-					Name:          aggFuncAdd.Name,
-					GroupName:     aggFuncAdd.GroupName,
-					Description:   aggFuncAdd.Description,
-					Ipts:          aggFuncAdd.Ipts,
-					Opts:          aggFuncAdd.Opts,
-					ProcessStages: aggFuncAdd.ProcessStages,
-				},
-				{
-					Name:          aggFuncMultiply.Name,
-					GroupName:     aggFuncMultiply.GroupName,
-					Description:   aggFuncMultiply.Description,
-					Ipts:          aggFuncMultiply.Ipts,
-					Opts:          aggFuncMultiply.Opts,
-					ProcessStages: aggFuncMultiply.ProcessStages,
-				},
-			},
-		},
-	}
-	registerFunctionBody, _ := json.Marshal(registerFunction)
-	registerFunctionResp := struct {
-		web.RespMsg
-		Data client.RegisterFuncReq `json:"data"`
-	}{}
-	_, err := http_util.Post(
-		http_util.BlankHeader,
-		serverAddress+"/api/v1/client/register_functions",
-		http_util.BlankGetParam, registerFunctionBody, &registerFunctionResp)
-	if err != nil {
-		log.Fatalf("register function error: %v", err)
-	}
-	if registerFunctionResp.Code != http.StatusOK {
-		log.Fatalf("register function failed: %v", registerFunctionResp)
-	}
-	for _, function := range registerFunctionResp.Data.GroupNameMapFunctions[fakeAggFunction.GroupName] {
-		if function.Name == aggFuncAdd.Name {
-			aggFuncAdd.ID = function.ID
-		} else if function.Name == aggFuncMultiply.Name {
-			aggFuncMultiply.ID = function.ID
-		}
-	}
-
 	Convey("create draft flow", t, func() {
 		aggFlow := getFakeAggFlow()
-		reqFlow := flow.FromAggWithoutUserPermission(aggFlow)
+		reqFlow := aggFlowToWebFlow(aggFlow)
 		reqBody, _ := json.Marshal(reqFlow)
 		resp := struct {
 			web.RespMsg
@@ -216,6 +217,314 @@ func TestDraftFlow(t *testing.T) {
 				superuserHeader(),
 				serverAddress+"/api/v1/draft_flow/delete_by_origin_id/"+createdFlowOringinID.String(),
 				http_util.BlankGetParam, http_util.BlankBody, &resp)
+		})
+	})
+}
+
+func TestOnlineFlow(t *testing.T) {
+	// before created online flow
+	Convey("before there is online flow", t, func() {
+		Convey("filter flows", func() {
+			resp := struct {
+				web.RespMsg
+				Flows []*flow.Flow `json:"data"`
+			}{}
+			_, err := http_util.Get(
+				superuserHeader(),
+				serverAddress+"/api/v1/flow",
+				http_util.BlankGetParam,
+				&resp)
+			So(err, ShouldBeNil)
+			So(resp.Code, ShouldEqual, http.StatusOK)
+			So(len(resp.Flows), ShouldEqual, 0)
+		})
+
+		Convey("get_by_id flow", func() {
+			resp := struct {
+				web.RespMsg
+				Flow *flow.Flow `json:"data"`
+			}{}
+			_, err := http_util.Get(
+				superuserHeader(),
+				serverAddress+"/api/v1/flow/get_by_id/"+value_object.NewUUID().String(),
+				http_util.BlankGetParam,
+				&resp)
+			So(err, ShouldBeNil)
+			So(resp.Code, ShouldEqual, http.StatusOK)
+			So(resp.Flow.IsZero(), ShouldBeTrue)
+		})
+	})
+
+	// create a draft flow
+	aggFlow := getFakeAggFlow()
+	reqFlow := aggFlowToWebFlow(aggFlow)
+	reqBody, _ := json.Marshal(reqFlow)
+	resp := struct {
+		web.RespMsg
+		DraftFlow *flow.Flow `json:"data"`
+	}{}
+	http_util.Post(
+		superuserHeader(),
+		serverAddress+"/api/v1/draft_flow",
+		http_util.BlankGetParam,
+		reqBody, &resp)
+	if resp.DraftFlow.IsZero() {
+		log.Panicf("create draft flow failed")
+	}
+	if resp.DraftFlow.ID.IsNil() {
+		log.Panicf("create draft flow's ID is nil")
+	}
+
+	// pub draft to online flow
+	pubResp := struct {
+		web.RespMsg
+		OnlineFlow *flow.Flow `json:"data"`
+	}{}
+	_, err := http_util.Get(
+		superuserHeader(),
+		serverAddress+"/api/v1/draft_flow/commit_by_id/"+resp.DraftFlow.ID.String(),
+		http_util.BlankGetParam,
+		&pubResp)
+	if err != nil {
+		log.Panicf("pub draft flow to online failed: %v", err)
+	}
+	if pubResp.OnlineFlow.IsZero() {
+		log.Panicf("pub draft flow to online returned zero flow. resp: %v", pubResp)
+	}
+
+	// test online flow about http api
+	Convey("after there is online flow", t, func() {
+		Convey("query", func() {
+			Convey("filter flows", func() {
+				resp := struct {
+					web.RespMsg
+					Flows []*flow.Flow `json:"data"`
+				}{}
+				_, err := http_util.Get(
+					superuserHeader(),
+					serverAddress+"/api/v1/flow",
+					http_util.BlankGetParam,
+					&resp)
+				So(err, ShouldBeNil)
+				So(resp.Code, ShouldEqual, http.StatusOK)
+				So(len(resp.Flows), ShouldEqual, 1)
+			})
+
+			Convey("get_by_id flow", func() {
+				resp := struct {
+					web.RespMsg
+					Flow *flow.Flow `json:"data"`
+				}{}
+				_, err := http_util.Get(
+					superuserHeader(),
+					serverAddress+"/api/v1/flow/get_by_id/"+pubResp.OnlineFlow.ID.String(),
+					http_util.BlankGetParam,
+					&resp)
+				So(err, ShouldBeNil)
+				So(resp.Code, ShouldEqual, http.StatusOK)
+				So(resp.Flow.IsZero(), ShouldBeFalse)
+				So(resp.Flow.Name, ShouldEqual, aggFlow.Name)
+			})
+
+			Convey("get_latestonline_by_origin_id flow", func() {
+				resp := struct {
+					web.RespMsg
+					Flow *flow.Flow `json:"data"`
+				}{}
+				_, err := http_util.Get(
+					superuserHeader(),
+					serverAddress+"/api/v1/flow/get_latestonline_by_origin_id/"+pubResp.OnlineFlow.OriginID.String(),
+					http_util.BlankGetParam,
+					&resp)
+				So(err, ShouldBeNil)
+				So(resp.Code, ShouldEqual, http.StatusOK)
+				So(resp.Flow.IsZero(), ShouldBeFalse)
+				So(resp.Flow.Name, ShouldEqual, aggFlow.Name)
+			})
+		})
+
+		Convey("update", func() {
+			Convey("SetExecuteControlAttributes", func() {
+				triggerKey := gofakeit.RandomString(allChars)
+				req := flow.Flow{
+					ID:         pubResp.OnlineFlow.ID,
+					TriggerKey: triggerKey,
+				}
+				reqBody, _ := json.Marshal(req)
+				var resp *web.RespMsg
+				_, err := http_util.Patch(
+					superuserHeader(),
+					serverAddress+"/api/v1/flow/set_execute_control_attributes",
+					http_util.BlankGetParam,
+					reqBody,
+					&resp)
+				So(err, ShouldBeNil)
+				So(resp.Code, ShouldEqual, http.StatusOK)
+
+				getFlowResp := struct {
+					web.RespMsg
+					Flow *flow.Flow `json:"data"`
+				}{}
+				http_util.Get(
+					superuserHeader(),
+					serverAddress+"/api/v1/flow/get_by_id/"+pubResp.OnlineFlow.ID.String(),
+					http_util.BlankGetParam, &getFlowResp)
+				So(err, ShouldBeNil)
+				So(resp.Code, ShouldEqual, http.StatusOK)
+				So(getFlowResp.Flow.IsZero(), ShouldBeFalse)
+				So(getFlowResp.Flow.TriggerKey, ShouldEqual, triggerKey)
+			})
+		})
+
+		Convey("permission", func() {
+			// now the flow is created by superuser. nobody should not can get it
+			Convey("nobody should not can get the flow", func() {
+				Convey("filter", func() {
+					resp := struct {
+						web.RespMsg
+						Flows []*flow.Flow `json:"data"`
+					}{}
+					_, err := http_util.Get(
+						nobodyHeader(),
+						serverAddress+"/api/v1/flow",
+						http_util.BlankGetParam,
+						&resp)
+					So(err, ShouldBeNil)
+					So(resp.Code, ShouldEqual, http.StatusOK)
+					So(len(resp.Flows), ShouldEqual, 0)
+				})
+
+				Convey("get_latestonline_by_origin_id", func() {
+					resp := struct {
+						web.RespMsg
+						Flow *flow.Flow `json:"data"`
+					}{}
+					_, err := http_util.Get(
+						nobodyHeader(),
+						serverAddress+"/api/v1/flow/get_latestonline_by_origin_id/"+pubResp.OnlineFlow.OriginID.String(),
+						http_util.BlankGetParam, &resp)
+					So(err, ShouldBeNil)
+					So(resp.Code, ShouldEqual, http.StatusForbidden)
+					So(resp.Flow.IsZero(), ShouldBeTrue)
+				})
+			})
+
+			Convey("permission", func() {
+				Convey("add permission", func() {
+					// add read permission for nobody
+					req := flow.PermissionReq{
+						PermissionType: flow.Read,
+						FlowID:         pubResp.OnlineFlow.ID,
+						UserID:         nobodyID,
+					}
+					reqBody, _ := json.Marshal(req)
+					var resp *web.RespMsg
+					_, err = http_util.Post(
+						superuserHeader(),
+						serverAddress+"/api/v1/flow_permission/add_permission",
+						http_util.BlankGetParam,
+						reqBody,
+						&resp)
+					So(err, ShouldBeNil)
+
+					// check it can get the flow after add read permission
+					getByOriginIDresp := struct {
+						web.RespMsg
+						Flow *flow.Flow `json:"data"`
+					}{}
+					_, err := http_util.Get(
+						nobodyHeader(),
+						serverAddress+"/api/v1/flow/get_latestonline_by_origin_id/"+pubResp.OnlineFlow.OriginID.String(),
+						http_util.BlankGetParam, &getByOriginIDresp)
+					So(err, ShouldBeNil)
+					So(getByOriginIDresp.Code, ShouldEqual, http.StatusOK)
+					So(getByOriginIDresp.Flow.IsZero(), ShouldBeFalse)
+					So(getByOriginIDresp.Flow.Name, ShouldEqual, pubResp.OnlineFlow.Name)
+
+					filterResp := struct {
+						web.RespMsg
+						Flows []*flow.Flow `json:"data"`
+					}{}
+					_, err = http_util.Get(
+						nobodyHeader(),
+						serverAddress+"/api/v1/flow",
+						http_util.BlankGetParam,
+						&filterResp)
+					So(err, ShouldBeNil)
+					So(filterResp.Code, ShouldEqual, http.StatusOK)
+					So(len(filterResp.Flows), ShouldEqual, 1)
+				})
+
+				Convey("delete permission", func() {
+					// delete read permission for nobody
+					req := flow.PermissionReq{
+						PermissionType: flow.Read,
+						FlowID:         pubResp.OnlineFlow.ID,
+						UserID:         nobodyID,
+					}
+					reqBody, _ := json.Marshal(req)
+					var resp *web.RespMsg
+					_, err = http_util.Delete(
+						superuserHeader(),
+						serverAddress+"/api/v1/flow_permission/remove_permission",
+						http_util.BlankGetParam,
+						reqBody,
+						&resp)
+					So(err, ShouldBeNil)
+
+					// check it can get the flow after add read permission
+					getByOriginIDresp := struct {
+						web.RespMsg
+						Flow *flow.Flow `json:"data"`
+					}{}
+					_, err := http_util.Get(
+						nobodyHeader(),
+						serverAddress+"/api/v1/flow/get_latestonline_by_origin_id/"+pubResp.OnlineFlow.OriginID.String(),
+						http_util.BlankGetParam, &getByOriginIDresp)
+					So(err, ShouldBeNil)
+					So(getByOriginIDresp.Code, ShouldEqual, http.StatusForbidden)
+
+					filterResp := struct {
+						web.RespMsg
+						Flows []*flow.Flow `json:"data"`
+					}{}
+					_, err = http_util.Get(
+						nobodyHeader(),
+						serverAddress+"/api/v1/flow",
+						http_util.BlankGetParam,
+						&filterResp)
+					So(err, ShouldBeNil)
+					So(filterResp.Code, ShouldEqual, http.StatusOK)
+					So(len(filterResp.Flows), ShouldEqual, 0)
+				})
+			})
+		})
+
+		Convey("DeleteFlowByOriginID", func() {
+			resp := struct {
+				web.RespMsg
+				Data map[string]int64 `json:"data"`
+			}{}
+			_, err := http_util.Delete(
+				superuserHeader(),
+				serverAddress+"/api/v1/flow/delete_by_origin_id/"+pubResp.OnlineFlow.OriginID.String(),
+				http_util.BlankGetParam, http_util.BlankBody,
+				&resp)
+			So(err, ShouldBeNil)
+			So(resp.Code, ShouldEqual, http.StatusOK)
+			So(resp.Data["delete_amount"], ShouldEqual, 1)
+
+			getFlowResp := struct {
+				web.RespMsg
+				Flow *flow.Flow `json:"data"`
+			}{}
+			http_util.Get(
+				superuserHeader(),
+				serverAddress+"/api/v1/flow/get_by_id/"+pubResp.OnlineFlow.ID.String(),
+				http_util.BlankGetParam, &getFlowResp)
+			So(err, ShouldBeNil)
+			So(resp.Code, ShouldEqual, http.StatusOK)
+			So(getFlowResp.Flow.IsZero(), ShouldBeTrue)
 		})
 	})
 }

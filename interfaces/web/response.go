@@ -61,8 +61,9 @@ func WriteNeedSuperUser(w *http.ResponseWriter) {
 }
 
 func WritePermissionNotEnough(w *http.ResponseWriter, msg string) {
-	resp := RespMsg{Code: http.StatusForbidden,
-		Msg: "permission not enough:" + msg}
+	resp := RespMsg{
+		Code: http.StatusForbidden,
+		Msg:  "permission not enough:" + msg}
 	(*w).Write(resp.JSONBytes())
 }
 

@@ -180,27 +180,55 @@ func TestMain(m *testing.M) {
 		}
 	}
 
-	// initial the user token
-	loginUser := user.User{
+	// initial superuser about
+	superUser := user.User{
 		Name:        config.DefaultUserName,
 		RaWPassword: config.DefaultUserPassword}
-	loginPostBody, _ := json.Marshal(loginUser)
-	loginResp := struct {
-		Code int       `json:"status_code"`
-		Msg  string    `json:"status_msg"`
+	superUserPostBody, _ := json.Marshal(superUser)
+	superUserLoginResp := struct {
+		web.RespMsg
 		Data user.User `json:"data"`
 	}{}
 	http_util.Post(
 		http_util.BlankHeader,
 		serverAddress+"/api/v1/login",
-		http_util.BlankGetParam, loginPostBody, &loginResp)
-	if loginResp.Data.Token.IsNil() {
+		http_util.BlankGetParam, superUserPostBody, &superUserLoginResp)
+	if superUserLoginResp.Data.Token.IsNil() {
 		log.Fatalf("login to get token error:" + err.Error())
 	}
-	loginedToken = loginResp.Data.Token.String()
-	superuserID = loginResp.Data.ID
+	superUserToken = superUserLoginResp.Data.Token.String()
+	superUserID = superUserLoginResp.Data.ID
 
-	// register a function
+	// initial a have no permission of anything user
+	addNobody := user.User{
+		Name:        nobodyName,
+		RaWPassword: nobodyRawPasswd}
+	addNobodyBody, _ := json.Marshal(addNobody)
+	var addNobodyResp web.RespMsg
+	http_util.Post(
+		superuserHeader(),
+		serverAddress+"/api/v1/user",
+		http_util.BlankGetParam, addNobodyBody, &addNobodyResp)
+
+	nobody := user.User{
+		Name:        nobodyName,
+		RaWPassword: nobodyRawPasswd}
+	nobodyPostBody, _ := json.Marshal(nobody)
+	nobodyLoginResp := struct {
+		web.RespMsg
+		Data user.User `json:"data"`
+	}{}
+	http_util.Post(
+		http_util.BlankHeader,
+		serverAddress+"/api/v1/login",
+		http_util.BlankGetParam, nobodyPostBody, &nobodyLoginResp)
+	if nobodyLoginResp.Data.Token.IsNil() {
+		log.Fatalf("login to get nobody's token error:" + err.Error())
+	}
+	nobodyToken = nobodyLoginResp.Data.Token.String()
+	nobodyID = nobodyLoginResp.Data.ID
+
+	// register a function for function test
 	registerFunction := client.RegisterFuncReq{
 		Who: fakeAggFunction.ProviderName,
 		GroupNameMapFunctions: map[string][]*client.HttpFunction{
@@ -232,6 +260,53 @@ func TestMain(m *testing.M) {
 		log.Fatalf("register function failed: %v", registerFunctionResp)
 	}
 	fakeAggFunction.ID = registerFunctionResp.Data.GroupNameMapFunctions[fakeAggFunction.GroupName][0].ID
+
+	// register the two function 4 flow test
+	register4FlowTestFunctions := client.RegisterFuncReq{
+		Who: fakeAggFunction.ProviderName,
+		GroupNameMapFunctions: map[string][]*client.HttpFunction{
+			fakeAggFunction.GroupName: []*client.HttpFunction{
+				{
+					Name:          aggFuncAdd.Name,
+					GroupName:     aggFuncAdd.GroupName,
+					Description:   aggFuncAdd.Description,
+					Ipts:          aggFuncAdd.Ipts,
+					Opts:          aggFuncAdd.Opts,
+					ProcessStages: aggFuncAdd.ProcessStages,
+				},
+				{
+					Name:          aggFuncMultiply.Name,
+					GroupName:     aggFuncMultiply.GroupName,
+					Description:   aggFuncMultiply.Description,
+					Ipts:          aggFuncMultiply.Ipts,
+					Opts:          aggFuncMultiply.Opts,
+					ProcessStages: aggFuncMultiply.ProcessStages,
+				},
+			},
+		},
+	}
+	register4FlowTestFunctionsBody, _ := json.Marshal(register4FlowTestFunctions)
+	register4FlowTestFunctionsResp := struct {
+		web.RespMsg
+		Data client.RegisterFuncReq `json:"data"`
+	}{}
+	_, err = http_util.Post(
+		http_util.BlankHeader,
+		serverAddress+"/api/v1/client/register_functions",
+		http_util.BlankGetParam, register4FlowTestFunctionsBody, &register4FlowTestFunctionsResp)
+	if err != nil {
+		log.Fatalf("register function error: %v", err)
+	}
+	if registerFunctionResp.Code != http.StatusOK {
+		log.Fatalf("register functions failed: %v", registerFunctionResp)
+	}
+	for _, function := range register4FlowTestFunctionsResp.Data.GroupNameMapFunctions[fakeAggFunction.GroupName] {
+		if function.Name == aggFuncAdd.Name {
+			aggFuncAdd.ID = function.ID
+		} else if function.Name == aggFuncMultiply.Name {
+			aggFuncMultiply.ID = function.ID
+		}
+	}
 
 	// run tests
 	code := m.Run()

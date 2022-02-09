@@ -60,7 +60,7 @@ func TestFunctionPermission(t *testing.T) {
 				Data function.PermissionResp `json:"data"`
 			}{}
 			_, err := http_util.Get(
-				nobodyHeader(),
+				notExistUserHeader(),
 				serverAddress+basePath,
 				map[string]string{"function_id": fakeAggFunction.ID.String()},
 				&permissionResp)

@@ -41,7 +41,7 @@ func GetFlowByID(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	retFlow = fromAggWithLatestRunFunctionView(flowIns, reqUser)
 
 	if !flowIns.Newest { // 老版本的话，只返回read权限(别的操作都不该有了)
-		retFlow = FromAggWithoutUserPermission(flowIns)
+		retFlow = fromAggWithoutUserPermission(flowIns)
 		retFlow.Write = false
 		retFlow.Execute = false
 		retFlow.Delete = false
@@ -92,7 +92,7 @@ func GetFlowByCertainFlowRunRecord(w http.ResponseWriter, r *http.Request, ps ht
 	}
 	retFlow := fromAggWithCertainRunFunctionView(flowIns, aggFlowRunRecord, reqUser)
 	if !flowIns.Newest { // 老版本的话，只返回read权限(别的操作都不该有了)
-		retFlow = FromAggWithoutUserPermission(flowIns)
+		retFlow = fromAggWithoutUserPermission(flowIns)
 		retFlow.Write = false
 		retFlow.Execute = false
 		retFlow.Delete = false
@@ -161,7 +161,7 @@ func FilterFlow(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	}
 
 	// 否则是过滤查找
-	aggSlice, err := fService.Flow.FilterOnline(reqUser.ID, r.URL.Query().Get("name__contains"))
+	aggSlice, err := fService.Flow.FilterOnline(reqUser, r.URL.Query().Get("name__contains"))
 	if err != nil {
 		web.WriteInternalServerErrorResp(&w, err, "visit repository failed")
 		return

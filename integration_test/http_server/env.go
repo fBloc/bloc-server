@@ -17,6 +17,13 @@ import (
 )
 
 var (
+	allChars = []string{
+		"a", "b", "c", "d", "e", "f",
+		"g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "e",
+		"u", "v", "w", "x", "y", "z"}
+)
+
+var (
 	influxDBConf = &influxdb.InfluxDBConfig{
 		UserName:     "testUser",
 		Password:     "password",
@@ -45,15 +52,24 @@ var (
 	serverPort    = 8484
 	serverAddress = fmt.Sprintf("%s:%d", serverHost, serverPort)
 
-	loginedToken = ""
-	superuserID  value_object.UUID
+	superUserToken string
+	superUserID    value_object.UUID
+
+	nobodyName      = gofakeit.Name()
+	nobodyRawPasswd = gofakeit.Password(false, false, false, false, false, 16)
+	nobodyID        value_object.UUID
+	nobodyToken     string
 )
 
 func superuserHeader() map[string]string {
-	return map[string]string{"token": loginedToken}
+	return map[string]string{"token": superUserToken}
 }
 
 func nobodyHeader() map[string]string {
+	return map[string]string{"token": nobodyToken}
+}
+
+func notExistUserHeader() map[string]string {
 	return map[string]string{"token": value_object.NewUUID().String()}
 }
 
@@ -99,7 +115,7 @@ var (
 )
 
 var aggFuncAddFlowFunctionID = value_object.NewUUID().String()
-var aggFuncAdd = aggregate.Function{
+var aggFuncAdd = &aggregate.Function{
 	Name:         "two add",
 	GroupName:    "math operation",
 	ProviderName: "test",
@@ -141,7 +157,7 @@ var aggFuncAdd = aggregate.Function{
 }
 
 var aggFuncMultiplyFlowFunctionID = value_object.NewUUID().String()
-var aggFuncMultiply = aggregate.Function{
+var aggFuncMultiply = &aggregate.Function{
 	Name:         "two multiply",
 	GroupName:    "math operation",
 	ProviderName: "test",
@@ -191,62 +207,62 @@ var aggFuncMultiply = aggregate.Function{
 }
 
 func getFakeAggFlow() *aggregate.Flow {
-	validFlowFunctionIDMapFlowFunction := map[string]*aggregate.FlowFunction{
-		config.FlowFunctionStartID: {
-			FunctionID:                value_object.NillUUID,
-			Note:                      "start node",
-			UpstreamFlowFunctionIDs:   []string{},
-			DownstreamFlowFunctionIDs: []string{aggFuncAddFlowFunctionID},
-			ParamIpts:                 [][]aggregate.IptComponentConfig{},
-		},
-		aggFuncAddFlowFunctionID: {
-			FunctionID:                aggFuncAdd.ID,
-			Function:                  &aggFuncAdd,
-			Note:                      "add",
-			UpstreamFlowFunctionIDs:   []string{config.FlowFunctionStartID},
-			DownstreamFlowFunctionIDs: []string{aggFuncMultiplyFlowFunctionID},
-			ParamIpts: [][]aggregate.IptComponentConfig{
-				{
-					{
-						Blank:     false,
-						IptWay:    value_object.UserIpt,
-						ValueType: value_type.StringValueType,
-						Value:     []int{1, 2, 3},
-					},
-				},
-			},
-		},
-		aggFuncMultiplyFlowFunctionID: {
-			FunctionID:                aggFuncMultiply.ID,
-			Function:                  &aggFuncMultiply,
-			Note:                      "multiply",
-			UpstreamFlowFunctionIDs:   []string{aggFuncAddFlowFunctionID},
-			DownstreamFlowFunctionIDs: []string{},
-			ParamIpts: [][]aggregate.IptComponentConfig{
-				{
-					{
-						Blank:          false,
-						IptWay:         value_object.Connection,
-						ValueType:      value_type.IntValueType,
-						FlowFunctionID: aggFuncAddFlowFunctionID,
-						Key:            "sum",
-					},
-				},
-				{
-					{
-						Blank:     false,
-						IptWay:    value_object.UserIpt,
-						ValueType: value_type.IntValueType,
-						Value:     10,
-					},
-				},
-			},
-		},
-	}
 	return &aggregate.Flow{
-		Name:                          gofakeit.Name(),
-		IsDraft:                       true,
-		CreateUserID:                  value_object.NewUUID(),
-		FlowFunctionIDMapFlowFunction: validFlowFunctionIDMapFlowFunction,
+		ID:           value_object.NewUUID(),
+		Name:         gofakeit.Name(),
+		IsDraft:      true,
+		CreateUserID: value_object.NewUUID(),
+		FlowFunctionIDMapFlowFunction: map[string]*aggregate.FlowFunction{
+			config.FlowFunctionStartID: {
+				FunctionID:                value_object.NillUUID,
+				Note:                      "start node",
+				UpstreamFlowFunctionIDs:   []string{},
+				DownstreamFlowFunctionIDs: []string{aggFuncAddFlowFunctionID},
+				ParamIpts:                 [][]aggregate.IptComponentConfig{},
+			},
+			aggFuncAddFlowFunctionID: {
+				FunctionID:                aggFuncAdd.ID,
+				Function:                  aggFuncAdd,
+				Note:                      "add",
+				UpstreamFlowFunctionIDs:   []string{config.FlowFunctionStartID},
+				DownstreamFlowFunctionIDs: []string{aggFuncMultiplyFlowFunctionID},
+				ParamIpts: [][]aggregate.IptComponentConfig{
+					{
+						{
+							Blank:     false,
+							IptWay:    value_object.UserIpt,
+							ValueType: value_type.StringValueType,
+							Value:     []int{1, 2, 3},
+						},
+					},
+				},
+			},
+			aggFuncMultiplyFlowFunctionID: {
+				FunctionID:                aggFuncMultiply.ID,
+				Function:                  aggFuncMultiply,
+				Note:                      "multiply",
+				UpstreamFlowFunctionIDs:   []string{aggFuncAddFlowFunctionID},
+				DownstreamFlowFunctionIDs: []string{},
+				ParamIpts: [][]aggregate.IptComponentConfig{
+					{
+						{
+							Blank:          false,
+							IptWay:         value_object.Connection,
+							ValueType:      value_type.IntValueType,
+							FlowFunctionID: aggFuncAddFlowFunctionID,
+							Key:            "sum",
+						},
+					},
+					{
+						{
+							Blank:     false,
+							IptWay:    value_object.UserIpt,
+							ValueType: value_type.IntValueType,
+							Value:     10,
+						},
+					},
+				},
+			},
+		},
 	}
 }

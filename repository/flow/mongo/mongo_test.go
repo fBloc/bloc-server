@@ -316,7 +316,7 @@ func TestOnline(t *testing.T) {
 		epo.DeleteDraftByOriginID(draftFlow.OriginID)
 
 		Convey("FilterOnline", func() {
-			flows, err := epo.FilterOnline(readeUser.ID, fakeName)
+			flows, err := epo.FilterOnline(&readeUser, fakeName)
 			So(err, ShouldBeNil)
 			So(len(flows), ShouldEqual, 1)
 			So(flows[0].Name, ShouldEqual, fakeName)
