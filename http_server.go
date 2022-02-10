@@ -248,7 +248,6 @@ func (blocApp *BlocApp) RunHttpServer() {
 
 	// function provider client
 	{
-
 		funcService, err := function_service.NewFunctionService(
 			function_service.WithLogger(httpLogger),
 			function_service.WithFunctionRepository(

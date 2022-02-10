@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"sync"
 	"testing"
 	"time"
 
@@ -29,116 +30,140 @@ func TestMain(m *testing.M) {
 		log.Fatalf("Could not connect to docker: %s", err)
 	}
 
-	// influxdb
-	influxdbOptions := &dockertest.RunOptions{
-		Repository: "influxdb",
-		Tag:        "2.1.1"}
-	influxdbResource, err := pool.RunWithOptions(influxdbOptions)
-	if err != nil {
-		log.Fatalf("Could not start influxdbResource: %s", err)
-	}
-	influxDBConf.Address = "localhost:" + influxdbResource.GetPort("8086/tcp")
-	if err := pool.Retry(func() error {
-		_, err = influxdb.Connect(influxDBConf)
+	var waitContainerAllReady sync.WaitGroup
+
+	var influxdbResource *dockertest.Resource
+	waitContainerAllReady.Add(1)
+	go func(wg *sync.WaitGroup) {
+		defer wg.Done()
+		// influxdb
+		influxdbOptions := &dockertest.RunOptions{
+			Repository: "influxdb",
+			Tag:        "2.1.1"}
+		influxdbResource, err = pool.RunWithOptions(influxdbOptions)
 		if err != nil {
-			return err
+			log.Fatalf("Could not start influxdbResource: %s", err)
 		}
-		log.Println("influxdb ready")
-		return nil
-	}); err != nil {
-		log.Fatalf("Could not connect to docker influxdb: %s", err)
-	}
+		influxDBConf.Address = "localhost:" + influxdbResource.GetPort("8086/tcp")
+		if err := pool.Retry(func() error {
+			_, err = influxdb.Connect(influxDBConf)
+			if err != nil {
+				return err
+			}
+			log.Println("influxdb ready")
+			return nil
+		}); err != nil {
+			log.Fatalf("Could not connect to docker influxdb: %s", err)
+		}
+	}(&waitContainerAllReady)
 
-	// minio
-	minioOptions := &dockertest.RunOptions{
-		Repository: "minio/minio",
-		Tag:        "RELEASE.2021-11-24T23-19-33Z",
-		Cmd:        []string{"server", "/data"},
-		Env: []string{
-			"MINIO_ROOT_USER=" + minioConf.AccessKey,
-			"MINIO_ROOT_PASSWORD=" + minioConf.AccessPassword,
-		},
-	}
-	minioResource, err := pool.RunWithOptions(minioOptions)
-	if err != nil {
-		log.Fatalf("Could not start minioResource: %s", err)
-	}
-	minioConf.Addresses = []string{
-		fmt.Sprintf("localhost:%s", minioResource.GetPort("9000/tcp"))}
-	if err := pool.Retry(func() error {
-		_, err = minio.Connect(minioConf)
+	var minioResource *dockertest.Resource
+	waitContainerAllReady.Add(1)
+	go func(wg *sync.WaitGroup) {
+		defer wg.Done()
+		// minio
+		minioOptions := &dockertest.RunOptions{
+			Repository: "minio/minio",
+			Tag:        "RELEASE.2021-11-24T23-19-33Z",
+			Cmd:        []string{"server", "/data"},
+			Env: []string{
+				"MINIO_ROOT_USER=" + minioConf.AccessKey,
+				"MINIO_ROOT_PASSWORD=" + minioConf.AccessPassword,
+			},
+		}
+		minioResource, err = pool.RunWithOptions(minioOptions)
 		if err != nil {
-			return err
+			log.Fatalf("Could not start minioResource: %s", err)
 		}
-		log.Println("minio ready")
-		return nil
-	}); err != nil {
-		log.Fatalf("Could not connect to minio docker: %s", err)
-	}
+		minioConf.Addresses = []string{
+			fmt.Sprintf("localhost:%s", minioResource.GetPort("9000/tcp"))}
+		if err := pool.Retry(func() error {
+			_, err = minio.Connect(minioConf)
+			if err != nil {
+				return err
+			}
+			log.Println("minio ready")
+			return nil
+		}); err != nil {
+			log.Fatalf("Could not connect to minio docker: %s", err)
+		}
+	}(&waitContainerAllReady)
 
-	// mongodb
-	mongoResource, err := pool.RunWithOptions(&dockertest.RunOptions{
-		Repository: "mongo",
-		Tag:        "5.0.5",
-		Env: []string{
-			"MONGO_INITDB_ROOT_USERNAME=" + mongoConf.User,
-			"MONGO_INITDB_ROOT_PASSWORD=" + mongoConf.Password},
-	}, func(config *docker.HostConfig) {
-		// set AutoRemove to true so that stopped container goes away by itself
-		config.AutoRemove = true
-	})
-	if err != nil {
-		log.Fatalf("Could not start mongoResource: %s", err)
-	}
-
-	mongoConf.Addresses = []string{
-		fmt.Sprintf("localhost:%s", mongoResource.GetPort("27017/tcp"))}
-
-	err = pool.Retry(func() error {
-		var err error
-		_, err = mongodb.InitClient(mongoConf)
+	var mongoResource *dockertest.Resource
+	waitContainerAllReady.Add(1)
+	go func(wg *sync.WaitGroup) {
+		defer wg.Done()
+		// mongodb
+		mongoResource, err = pool.RunWithOptions(&dockertest.RunOptions{
+			Repository: "mongo",
+			Tag:        "5.0.5",
+			Env: []string{
+				"MONGO_INITDB_ROOT_USERNAME=" + mongoConf.User,
+				"MONGO_INITDB_ROOT_PASSWORD=" + mongoConf.Password},
+		}, func(config *docker.HostConfig) {
+			// set AutoRemove to true so that stopped container goes away by itself
+			config.AutoRemove = true
+		})
 		if err != nil {
-			return err
+			log.Fatalf("Could not start mongoResource: %s", err)
 		}
-		log.Println("mongo ready")
-		return nil
-	})
-	if err != nil {
-		log.Fatalf("Could not connect to mongo docker: %s", err)
-	}
 
-	// rabbitMQ
-	rabbitResource, err := pool.RunWithOptions(&dockertest.RunOptions{
-		Repository: "rabbitmq",
-		Tag:        "3.9.11-alpine",
-		Env: []string{
-			"RABBITMQ_DEFAULT_USER=" + rabbitConf.User,
-			"RABBITMQ_DEFAULT_PASS=" + rabbitConf.Password,
-		},
-	}, func(config *docker.HostConfig) {
-		config.AutoRemove = true
-		config.RestartPolicy = docker.RestartPolicy{Name: "no"}
-	})
-	if err != nil {
-		log.Fatalf("Could not start rabbitResource: %s", err)
-	}
+		mongoConf.Addresses = []string{
+			fmt.Sprintf("localhost:%s", mongoResource.GetPort("27017/tcp"))}
 
-	rabbitConf.Host = []string{
-		fmt.Sprintf("localhost:%s", rabbitResource.GetPort("5672/tcp"))}
-
-	err = pool.Retry(func() error {
-		var err error
-		_, err = rabbit.InitChannel(rabbitConf)
+		err = pool.Retry(func() error {
+			var err error
+			_, err = mongodb.InitClient(mongoConf)
+			if err != nil {
+				return err
+			}
+			log.Println("mongo ready")
+			return nil
+		})
 		if err != nil {
-			return err
+			log.Fatalf("Could not connect to mongo docker: %s", err)
 		}
-		log.Println("rabbit ready")
-		return nil
-	})
+	}(&waitContainerAllReady)
 
-	if err != nil {
-		log.Fatalf("Could not connect to rabbit docker: %s", err)
-	}
+	var rabbitResource *dockertest.Resource
+	waitContainerAllReady.Add(1)
+	go func(wg *sync.WaitGroup) {
+		defer wg.Done()
+		// rabbitMQ
+		rabbitResource, err = pool.RunWithOptions(&dockertest.RunOptions{
+			Repository: "rabbitmq",
+			Tag:        "3.9.11-alpine",
+			Env: []string{
+				"RABBITMQ_DEFAULT_USER=" + rabbitConf.User,
+				"RABBITMQ_DEFAULT_PASS=" + rabbitConf.Password,
+			},
+		}, func(config *docker.HostConfig) {
+			config.AutoRemove = true
+			config.RestartPolicy = docker.RestartPolicy{Name: "no"}
+		})
+		if err != nil {
+			log.Fatalf("Could not start rabbitResource: %s", err)
+		}
+
+		rabbitConf.Host = []string{
+			fmt.Sprintf("localhost:%s", rabbitResource.GetPort("5672/tcp"))}
+
+		err = pool.Retry(func() error {
+			var err error
+			_, err = rabbit.InitChannel(rabbitConf)
+			if err != nil {
+				return err
+			}
+			log.Println("rabbit ready")
+			return nil
+		})
+
+		if err != nil {
+			log.Fatalf("Could not connect to rabbit docker: %s", err)
+		}
+	}(&waitContainerAllReady)
+
+	waitContainerAllReady.Wait()
 
 	// start bloc server
 	go func() {

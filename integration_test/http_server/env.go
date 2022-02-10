@@ -80,8 +80,8 @@ var (
 	allPermissionUser = aggregate.User{ID: value_object.NewUUID()}
 	fakeAggFunction   = aggregate.Function{
 		Name:         "two add",
-		GroupName:    "test",
-		ProviderName: "test",
+		GroupName:    "server",
+		ProviderName: "server",
 		Description:  "",
 		Ipts: ipt.IptSlice{
 			{
