@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/fBloc/bloc-server/interfaces/web"
+	"github.com/fBloc/bloc-server/value_object"
 	"github.com/julienschmidt/httprouter"
 )
 
@@ -20,7 +21,19 @@ func PersistFuncRunOptField(w http.ResponseWriter, r *http.Request, _ httprouter
 		"received persist function run opt filed.function_run_record_id: %s",
 		req.FunctionRunRecordID)
 
-	// TODO 检测req.FunctionRunRecordID是否有效
+	amount, err := fRRService.FunctionRunRecords.Count(
+		*value_object.NewRepositoryFilter().AddEqual("id", req.FunctionRunRecordID))
+	if err != nil {
+		web.WriteInternalServerErrorResp(
+			&w, err, "find corresponding function_run_record error")
+		return
+	}
+	if amount != 1 {
+		web.WriteBadRequestDataResp(
+			&w, "this function_run_record_id find no record")
+		return
+	}
+
 	uploadByte, _ := json.Marshal(req.Data)
 	ossKey := req.FunctionRunRecordID.String() + "_" + req.OptKey
 	err = objectStorage.Set(ossKey, uploadByte)
@@ -35,8 +48,11 @@ func PersistFuncRunOptField(w http.ResponseWriter, r *http.Request, _ httprouter
 	}
 
 	optInRune := []rune(string(uploadByte))
-	// TODO 配置化截断长度
-	minLength := 51
+	minLength := req.BriefCutLength
+	if minLength <= 0 {
+		minLength = 51
+	}
+
 	if len(optInRune) < minLength {
 		minLength = len(optInRune)
 	}

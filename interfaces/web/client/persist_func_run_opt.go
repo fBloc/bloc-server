@@ -15,6 +15,7 @@ type PersistFuncRunOptFieldHttpReq struct {
 	FunctionRunRecordID value_object.UUID `json:"function_run_record_id"`
 	OptKey              string            `json:"opt_key"`
 	Data                interface{}       `json:"data"`
+	BriefCutLength      int               `json:"brief_cut_length"`
 }
 
 type PersistFuncRunOptFieldHttpResp struct {
