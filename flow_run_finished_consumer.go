@@ -5,7 +5,7 @@ import (
 	"github.com/fBloc/bloc-server/value_object"
 )
 
-// FlowTaskConsumer 接收到flow完成的任务，若是arr_flow，继续发布下一层的arr_flow的任务
+// FlowTaskFinishedConsumer receive flow run finished event
 func (blocApp *BlocApp) FlowTaskFinishedConsumer() {
 	event.InjectMq(blocApp.GetOrCreateEventMQ())
 	logger := blocApp.GetOrCreateScheduleLogger()
@@ -21,23 +21,25 @@ func (blocApp *BlocApp) FlowTaskFinishedConsumer() {
 
 	for flowRunFinishedEvent := range flowRunFinishedEventChan {
 		flowRunRecordStr := flowRunFinishedEvent.Identity()
+		logTag := map[string]string{"flow_run_record_id": flowRunRecordStr}
+
 		logger.Infof(
-			map[string]string{"flow_run_record_id": flowRunRecordStr},
+			logTag,
 			"FlowRunFinishedConsumer flow_run_record__id %s finished", flowRunRecordStr)
 		flowRunRecordUuid, err := value_object.ParseToUUID(flowRunRecordStr)
 		if err != nil {
-			// TODO 不应该panic
-			panic(err)
+			logger.Errorf(
+				logTag, "cannot parse identity:%s to uuid! error:%v",
+				flowRunRecordStr, err)
+			continue
 		}
 		flowRunIns, err := flowRunRepo.GetByID(flowRunRecordUuid)
 		if err != nil {
-			// TODO
-			panic(err)
+			logger.Errorf(logTag, "flow_run_record_id find no record!")
+			continue
 		}
 
 		// 更新此flow_run_record的状态为成功
 		flowRunRepo.Suc(flowRunIns.ID)
-
-		// TODO 如果是arrangement出发的，需要发布下游的flow任务
 	}
 }
