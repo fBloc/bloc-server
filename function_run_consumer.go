@@ -248,8 +248,24 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 			funcRunRecordUuid, functionIns.Ipts,
 			functionRecordIns.Ipts, objectStorage)
 		if err != nil {
-			// TODO 修改为更为合适的处理
-			panic(err)
+			logger.Errorf(
+				map[string]string{
+					"flow_run_record_id":     functionRecordIns.FlowRunRecordID.String(),
+					"function_run_record_id": functionRunRecordIDStr},
+				"persist ipt failed. error: %v", err)
+			err := flowRunRecordRepo.Fail(
+				flowRunRecordIns.ID,
+				fmt.Sprintf(
+					"persist function-%s's ipt failed. error: %v", functionIns.Name, err),
+			)
+			if err != nil {
+				logger.Errorf(
+					map[string]string{
+						"flow_run_record_id":     functionRecordIns.FlowRunRecordID.String(),
+						"function_run_record_id": functionRunRecordIDStr},
+					"persist flow_run_record fail. error: %v", err)
+			}
+			continue
 		}
 
 		// > ipt装配完成，先保存输入
