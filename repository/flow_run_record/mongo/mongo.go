@@ -310,7 +310,7 @@ func (mr *MongoRepository) Start(id value_object.UUID) error {
 	return mr.mongoCollection.PatchByID(
 		id,
 		mongodb.NewUpdater().
-			AddSet("status", value_object.InQueue).
+			AddSet("status", value_object.Running).
 			AddSet("start_time", time.Now()))
 }
 

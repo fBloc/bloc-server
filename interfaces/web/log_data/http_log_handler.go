@@ -3,10 +3,10 @@ package log_data
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/fBloc/bloc-server/infrastructure/log"
 	"github.com/fBloc/bloc-server/interfaces/web"
-	"github.com/fBloc/bloc-server/internal/json_date"
 	"github.com/fBloc/bloc-server/value_object"
 	"github.com/julienschmidt/httprouter"
 	"github.com/pkg/errors"
@@ -23,13 +23,8 @@ func PullLog(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		web.WriteBadRequestDataResp(&w, "log_type not valid")
 		return
 	}
-	if req.StartTime.IsZero() {
-		web.WriteBadRequestDataResp(
-			&w, "start_time cannot be nil")
-		return
-	}
 	if req.EndTime.IsZero() {
-		req.EndTime = json_date.Now()
+		req.EndTime = time.Now()
 	}
 
 	var logger *log.Logger
@@ -47,7 +42,7 @@ func PullLog(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	}
 
 	logStrSlice, err := logger.PullLogBetweenTime(
-		map[string]string{}, req.StartTime.Time, req.EndTime.Time)
+		map[string]string{}, req.StartTime, req.EndTime)
 	if err != nil {
 		web.WriteInternalServerErrorResp(&w, err, "PullLogBetweenTime failed")
 		return

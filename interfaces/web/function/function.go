@@ -57,6 +57,19 @@ type Function struct {
 	Opt           []*opt.Opt        `json:"opt"`
 }
 
+func (f *Function) ToAggregate() *aggregate.Function {
+	return &aggregate.Function{
+		ID:            f.ID,
+		Name:          f.Name,
+		GroupName:     f.GroupName,
+		ProviderName:  f.ProviderName,
+		LastAliveTime: f.LastAliveTime,
+		Description:   f.Description,
+		Ipts:          f.Ipt,
+		Opts:          f.Opt,
+	}
+}
+
 func newFunctionFromAgg(aggF *aggregate.Function) *Function {
 	if aggF.IsZero() {
 		return nil
@@ -73,8 +86,8 @@ func newFunctionFromAgg(aggF *aggregate.Function) *Function {
 }
 
 type GroupFunctions struct {
-	GroupName string     `json:"group_name"`
-	Functions []Function `json:"functions"`
+	GroupName string      `json:"group_name"`
+	Functions []*Function `json:"functions"`
 }
 
 func newGroupedFunctionsFromAggFunctions(
@@ -92,7 +105,7 @@ func newGroupedFunctionsFromAggFunctions(
 			}
 		}
 		groupNameMapGroup[f.GroupName].Functions = append(
-			groupNameMapGroup[f.GroupName].Functions, *f)
+			groupNameMapGroup[f.GroupName].Functions, f)
 	}
 	ret := make([]GroupFunctions, 0, len(groupNameMapGroup))
 	for _, groupFuncs := range groupNameMapGroup {

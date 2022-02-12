@@ -10,7 +10,7 @@ import (
 )
 
 func ReportProgress(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	var req progressReportHttpReq
+	var req ProgressReportHttpReq
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		web.WriteBadRequestDataResp(&w, err.Error())

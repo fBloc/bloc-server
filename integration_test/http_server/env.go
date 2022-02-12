@@ -116,7 +116,7 @@ var (
 
 var aggFuncAddFlowFunctionID = value_object.NewUUID().String()
 var aggFuncAdd = &aggregate.Function{
-	Name:         "two add",
+	Name:         "add",
 	GroupName:    "math operation",
 	ProviderName: "test",
 	Description:  "test function",
@@ -129,7 +129,7 @@ var aggFuncAdd = &aggregate.Function{
 				{
 					ValueType:       value_type.IntValueType,
 					FormControlType: value_object.InputFormControl,
-					Hint:            "加数",
+					Hint:            "addends",
 					DefaultValue:    0,
 					AllowMulti:      true,
 				},
@@ -143,12 +143,6 @@ var aggFuncAdd = &aggregate.Function{
 			ValueType:   value_type.IntValueType,
 			IsArray:     false,
 		},
-		{
-			Key:         "describe",
-			Description: "diff value type opt 4 test",
-			ValueType:   value_type.StringValueType,
-			IsArray:     false,
-		},
 	},
 	ProcessStages:           []string{"parsing ipt", "finished parse ipt & start do the math", "finished"},
 	ReadUserIDs:             []value_object.UUID{readeUser.ID, allPermissionUser.ID},
@@ -158,34 +152,20 @@ var aggFuncAdd = &aggregate.Function{
 
 var aggFuncMultiplyFlowFunctionID = value_object.NewUUID().String()
 var aggFuncMultiply = &aggregate.Function{
-	Name:         "two multiply",
+	Name:         "multiply",
 	GroupName:    "math operation",
 	ProviderName: "test",
 	Description:  "test function",
 	Ipts: ipt.IptSlice{
 		{
-			Key:     "multiplier",
-			Display: "multiplier",
+			Key:     "to_multiply_ints",
+			Display: "to_multiply_ints",
 			Must:    true,
 			Components: []*ipt.IptComponent{
 				{
 					ValueType:       value_type.IntValueType,
 					FormControlType: value_object.InputFormControl,
-					Hint:            "乘数",
-					DefaultValue:    0,
-					AllowMulti:      true,
-				},
-			},
-		},
-		{
-			Key:     "multiplicand",
-			Display: "multiplicand",
-			Must:    true,
-			Components: []*ipt.IptComponent{
-				{
-					ValueType:       value_type.IntValueType,
-					FormControlType: value_object.InputFormControl,
-					Hint:            "被乘数",
+					Hint:            "multipliers",
 					DefaultValue:    0,
 					AllowMulti:      true,
 				},
@@ -251,14 +231,6 @@ func getFakeAggFlow() *aggregate.Flow {
 							ValueType:      value_type.IntValueType,
 							FlowFunctionID: aggFuncAddFlowFunctionID,
 							Key:            "sum",
-						},
-					},
-					{
-						{
-							Blank:     false,
-							IptWay:    value_object.UserIpt,
-							ValueType: value_type.IntValueType,
-							Value:     10,
 						},
 					},
 				},

@@ -5,7 +5,6 @@ import (
 
 	"github.com/fBloc/bloc-server/aggregate"
 	"github.com/fBloc/bloc-server/infrastructure/log_collect_backend"
-	"github.com/fBloc/bloc-server/internal/json_date"
 	"github.com/fBloc/bloc-server/services/function_run_record"
 	"github.com/fBloc/bloc-server/value_object"
 	"github.com/spf13/cast"
@@ -39,8 +38,8 @@ type FunctionRunRecord struct {
 	FunctionID                  value_object.UUID      `json:"function_id"`
 	FlowFunctionID              string                 `json:"flow_function_id"`
 	FlowRunRecordID             value_object.UUID      `json:"flow_run_record_id"`
-	Start                       json_date.JsonDate     `json:"start"`
-	End                         json_date.JsonDate     `json:"end"`
+	Start                       time.Time              `json:"start"`
+	End                         time.Time              `json:"end"`
 	Suc                         bool                   `json:"suc"`
 	InterceptBelowFunctionRun   bool                   `json:"intercept_below_function_run"`
 	Canceled                    bool                   `json:"canceled,omitempty"`
@@ -91,8 +90,8 @@ func fromAgg(
 		FunctionID:                  aggFRR.FunctionID,
 		FlowFunctionID:              aggFRR.FlowFunctionID,
 		FlowRunRecordID:             aggFRR.FlowRunRecordID,
-		Start:                       json_date.New(aggFRR.Start),
-		End:                         json_date.New(aggFRR.End),
+		Start:                       aggFRR.Start,
+		End:                         aggFRR.End,
 		Suc:                         aggFRR.Suc,
 		InterceptBelowFunctionRun:   aggFRR.InterceptBelowFunctionRun,
 		Canceled:                    aggFRR.Canceled,

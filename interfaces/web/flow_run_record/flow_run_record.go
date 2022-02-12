@@ -1,6 +1,8 @@
 package flow_run_record
 
 import (
+	"time"
+
 	"github.com/fBloc/bloc-server/aggregate"
 	"github.com/fBloc/bloc-server/services/flow_run_record"
 	"github.com/fBloc/bloc-server/value_object"
@@ -26,9 +28,9 @@ type FlowFunctionRecord struct {
 	TriggerKey                   string                               `json:"trigger_key"`
 	TriggerSource                value_object.FlowTriggeredSourceType `json:"trigger_source"`
 	TriggerUserName              string                               `json:"trigger_user_name"`
-	TriggerTime                  value_object.JsonDate                `json:"trigger_time"`
-	StartTime                    value_object.JsonDate                `json:"start_time"`
-	EndTime                      value_object.JsonDate                `json:"end_time"`
+	TriggerTime                  time.Time                            `json:"trigger_time"`
+	StartTime                    time.Time                            `json:"start_time"`
+	EndTime                      time.Time                            `json:"end_time"`
 	Status                       value_object.RunState                `json:"status"`
 	ErrorMsg                     string                               `json:"error_msg"`
 	RetriedAmount                uint16                               `json:"retried_amount"`
@@ -54,9 +56,9 @@ func fromAgg(
 		TriggerType:                  aggFRR.TriggerType,
 		TriggerKey:                   aggFRR.TriggerKey,
 		TriggerSource:                aggFRR.TriggerSource,
-		TriggerTime:                  value_object.NewJsonDate(aggFRR.TriggerTime),
-		StartTime:                    value_object.NewJsonDate(aggFRR.StartTime),
-		EndTime:                      value_object.NewJsonDate(aggFRR.EndTime),
+		TriggerTime:                  aggFRR.TriggerTime,
+		StartTime:                    aggFRR.StartTime,
+		EndTime:                      aggFRR.EndTime,
 		Status:                       aggFRR.Status,
 		ErrorMsg:                     aggFRR.ErrorMsg,
 		RetriedAmount:                aggFRR.RetriedAmount,

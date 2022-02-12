@@ -22,6 +22,7 @@ require (
 	github.com/brianvoe/gofakeit/v6 v6.14.3 // indirect
 	github.com/cenkalti/backoff/v4 v4.1.2 // indirect
 	github.com/containerd/continuity v0.2.2 // indirect
+	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/deepmap/oapi-codegen v1.8.2 // indirect
 	github.com/docker/cli v20.10.12+incompatible // indirect
 	github.com/docker/docker v20.10.12+incompatible // indirect
