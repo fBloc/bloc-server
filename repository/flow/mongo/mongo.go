@@ -62,6 +62,7 @@ type mongoFlow struct {
 	ID                            value_object.UUID             `bson:"id"`
 	Name                          string                        `bson:"name"`
 	IsDraft                       bool                          `bson:"is_draft"`
+	Deleted                       bool                          `bson:"deleted"`
 	Version                       uint                          `bson:"version"`
 	OriginID                      value_object.UUID             `bson:"origin_id,omitempty"`
 	Newest                        bool                          `bson:"newest"`
@@ -199,7 +200,7 @@ func (mr *MongoRepository) GetByID(id value_object.UUID) (*aggregate.Flow, error
 	if id.IsNil() {
 		return nil, errors.New("must have id")
 	}
-	return mr.get(mongodb.NewFilter().AddEqual("id", id))
+	return mr.get(mongodb.NewFilter().AddEqual("id", id).AddEqual("deleted", false))
 }
 
 func (mr *MongoRepository) GetByIDStr(id string) (*aggregate.Flow, error) {
@@ -217,14 +218,14 @@ func (mr *MongoRepository) GetOnlineByOriginID(originID value_object.UUID) (*agg
 	if originID.IsNil() {
 		return nil, errors.New("must have origin_id")
 	}
-	return mr.get(mongodb.NewFilter().AddEqual("origin_id", originID).AddEqual("is_draft", false))
+	return mr.get(mongodb.NewFilter().AddEqual("origin_id", originID).AddEqual("is_draft", false).AddEqual("deleted", false))
 }
 
 func (mr *MongoRepository) GetLatestByOriginID(originID value_object.UUID) (*aggregate.Flow, error) {
 	if originID.IsNil() {
 		return nil, errors.New("must have origin_id")
 	}
-	return mr.get(mongodb.NewFilter().AddEqual("origin_id", originID))
+	return mr.get(mongodb.NewFilter().AddEqual("origin_id", originID).AddEqual("deleted", false))
 }
 
 func (mr *MongoRepository) GetOnlineByOriginIDStr(originID string) (*aggregate.Flow, error) {
@@ -242,11 +243,11 @@ func (mr *MongoRepository) GetDraftByOriginID(originID value_object.UUID) (*aggr
 	if originID.IsNil() {
 		return nil, errors.New("must have origin_id")
 	}
-	return mr.get(mongodb.NewFilter().AddEqual("origin_id", originID).AddEqual("is_draft", true))
+	return mr.get(mongodb.NewFilter().AddEqual("origin_id", originID).AddEqual("is_draft", true).AddEqual("deleted", false))
 }
 
 func (mr *MongoRepository) FilterOnline(user *aggregate.User, nameContains string) ([]aggregate.Flow, error) {
-	filter := mongodb.NewFilter().AddEqual("is_draft", false).AddEqual("newest", true)
+	filter := mongodb.NewFilter().AddEqual("is_draft", false).AddEqual("newest", true).AddEqual("deleted", false)
 	if !user.IsZero() && !user.IsSuper {
 		filter.AddEqual("read_user_ids", user.ID)
 	}
@@ -267,7 +268,7 @@ func (mr *MongoRepository) FilterOnline(user *aggregate.User, nameContains strin
 }
 
 func (mr *MongoRepository) FilterCrontabFlows() ([]aggregate.Flow, error) {
-	filter := mongodb.NewFilter().AddEqual("is_draft", false).AddEqual("newest", true).AddExist("crontab")
+	filter := mongodb.NewFilter().AddEqual("is_draft", false).AddEqual("newest", true).AddExist("crontab").AddEqual("deleted", false)
 
 	var flows []mongoFlow
 	err := mr.mongoCollection.Filter(filter, &filter_options.FilterOption{}, &flows)
@@ -282,7 +283,7 @@ func (mr *MongoRepository) FilterCrontabFlows() ([]aggregate.Flow, error) {
 }
 
 func (mr *MongoRepository) FilterDraft(userID value_object.UUID, nameContains string) ([]aggregate.Flow, error) {
-	filter := mongodb.NewFilter().AddEqual("is_draft", true)
+	filter := mongodb.NewFilter().AddEqual("is_draft", true).AddEqual("deleted", false)
 	if !userID.IsNil() {
 		filter.AddEqual("read_user_ids", userID)
 	}
@@ -569,16 +570,22 @@ func (mr *MongoRepository) CreateOnlineFromDraft(
 }
 
 func (mr *MongoRepository) DeleteByID(id value_object.UUID) (int64, error) {
-	return mr.mongoCollection.DeleteByID(id)
+	updater := mongodb.NewUpdater().AddSet("deleted", true)
+	err := mr.mongoCollection.PatchByID(id, updater)
+	if err == nil {
+		return 1, nil
+	}
+	return 0, err
 }
 
 func (mr *MongoRepository) DeleteByOriginID(originID value_object.UUID) (int64, error) {
-	return mr.mongoCollection.Delete(mongodb.NewFilter().AddEqual("origin_id", originID))
+	return mr.mongoCollection.Patch(
+		mongodb.NewFilter().AddEqual("origin_id", originID),
+		mongodb.NewUpdater().AddSet("deleted", true))
 }
 
 func (mr *MongoRepository) DeleteDraftByOriginID(originID value_object.UUID) (int64, error) {
-	return mr.mongoCollection.Delete(
-		mongodb.NewFilter().
-			AddEqual("is_draft", true).
-			AddEqual("origin_id", originID))
+	return mr.mongoCollection.Patch(
+		mongodb.NewFilter().AddEqual("origin_id", originID).AddEqual("is_draft", true),
+		mongodb.NewUpdater().AddSet("deleted", true))
 }

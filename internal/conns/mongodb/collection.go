@@ -201,12 +201,13 @@ func (c *Collection) FindOneOrInsert(
 
 // PatchByID partially update a doc, only update ipt fields
 func (c *Collection) PatchByID(id value_object.UUID, mSetter *MongoUpdater) error {
-	return c.Patch(NewFilter().AddEqual("id", id), mSetter)
+	_, err := c.Patch(NewFilter().AddEqual("id", id), mSetter)
+	return err
 }
 
-func (c *Collection) Patch(mFilter *MongoFilter, mSetter *MongoUpdater) error {
-	_, err := c.collection.UpdateMany(context.TODO(), mFilter.filter, mSetter.finalStatement())
-	return err
+func (c *Collection) Patch(mFilter *MongoFilter, mSetter *MongoUpdater) (int64, error) {
+	patchResult, err := c.collection.UpdateMany(context.TODO(), mFilter.filter, mSetter.finalStatement())
+	return patchResult.ModifiedCount, err
 }
 
 // UpdateByID require full doc, replace all except id

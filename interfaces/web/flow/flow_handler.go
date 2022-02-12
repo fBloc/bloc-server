@@ -287,12 +287,14 @@ func DeleteFlowByOriginID(w http.ResponseWriter, r *http.Request, ps httprouter.
 		return
 	}
 
-	// TODO：应该检查此originID的在线flow是不是还在被arrangement引用，如果是的话不能删除
+	// this is fake delete.
+	// it will only mark the flow as deleted and no longer can be seen in frontend
+	// actually delete nothing of it
 	deleteCount, err := fService.Flow.DeleteByOriginID(uuOriginID)
 	if err != nil {
 		web.WriteInternalServerErrorResp(&w, err, "delete failed")
 		return
 	}
-	// TODO：不应该只删除flow就完事了，对应的flowRunRecord、fucntionRunRecord ... 也应该删除
+
 	web.WriteDeleteSucResp(&w, deleteCount)
 }

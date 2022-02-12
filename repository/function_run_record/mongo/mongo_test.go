@@ -35,8 +35,9 @@ func (mOSI *mockObjectStorageImplement) Set(key string, data []byte) error {
 	return nil
 }
 
-func (mOSI *mockObjectStorageImplement) Get(key string) ([]byte, error) {
-	return mOSI.keyMapData[key], nil
+func (mOSI *mockObjectStorageImplement) Get(key string) (bool, []byte, error) {
+	data, ok := mOSI.keyMapData[key]
+	return ok, data, nil
 }
 
 var _ object_storage.ObjectStorage = &mockObjectStorageImplement{}

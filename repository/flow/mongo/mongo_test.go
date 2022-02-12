@@ -477,6 +477,11 @@ func TestOnline(t *testing.T) {
 			deleteAmount, err := epo.DeleteByID(onlineFlow.ID)
 			So(err, ShouldBeNil)
 			So(deleteAmount, ShouldEqual, 1)
+
+			// after delete. there should no such flow
+			f, err := epo.GetByID(onlineFlow.ID)
+			So(err, ShouldBeNil)
+			So(f.IsZero(), ShouldBeTrue)
 		})
 
 		Reset(func() {
