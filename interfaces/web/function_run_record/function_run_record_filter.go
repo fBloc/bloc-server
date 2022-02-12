@@ -61,10 +61,9 @@ func BuildFromWebRequestParams(
 				}
 				filterOp.SetOffset(intVal)
 			} else if filterInGetPath == web.FilterInGetPathSort {
-				// TODO 这里不应该写死 asc/desc
-				if strings.EqualFold(val, "asc") {
+				if strings.EqualFold(val, value_object.Asc.String()) {
 					filterOp.SetAsc()
-				} else if strings.EqualFold(val, "desc") {
+				} else if strings.EqualFold(val, value_object.Desc.String()) {
 					filterOp.SetDesc()
 				}
 			} else {
