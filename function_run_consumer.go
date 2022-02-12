@@ -197,7 +197,13 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 					if upstreamFuncRunRecordIns.IsZero() {
 						funcRunRecordRepo.SaveFail(
 							functionRecordIns.ID,
-							"ipt value get from upstream connection failed") // TODO 记录
+							"ipt value get from upstream connection failed")
+						logger.Errorf(
+							map[string]string{
+								"flow_run_record_id":     functionRecordIns.FlowRunRecordID.String(),
+								"function_run_record_id": functionRunRecordIDStr},
+							"ipt value get from upstream connection failed. find no valid corresponding functionRunRecordIns.paramIndex: %d, componentIndex: %d",
+							paramIndex, componentIndex)
 						functionRecordIns.Ipts[paramIndex][componentIndex] = "not valid"
 						continue
 					}
@@ -208,8 +214,8 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 						functionRecordIns.Ipts[paramIndex][componentIndex] = "not valid"
 						continue
 					}
-					tmp, err := objectStorage.Get(optValue.(string))
-					if err != nil {
+					isKeyExist, tmp, err := objectStorage.Get(optValue.(string))
+					if !isKeyExist || err != nil {
 						funcRunRecordRepo.SaveFail(
 							functionRecordIns.ID,
 							"ipt value get from upstream connection failed")

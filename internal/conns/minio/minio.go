@@ -119,7 +119,7 @@ func (con *MinioCon) Set(key string, byteData []byte) (err error) {
 	return errors.Wrap(err, "save to object storage error:")
 }
 
-func (con *MinioCon) Get(key string) ([]byte, error) {
+func (con *MinioCon) Get(key string) (bool, []byte, error) {
 	// have one more change to switch client to get
 	for i := 0; i < 2; i++ {
 		reader, err := con.client.GetObject(
@@ -127,7 +127,7 @@ func (con *MinioCon) Get(key string) ([]byte, error) {
 		if err != nil {
 			err = con.switchToAValidClient()
 			if err != nil {
-				return []byte{}, errors.Wrap(err, "no valid client")
+				return true, []byte{}, errors.Wrap(err, "no valid client")
 			} else {
 				continue
 			}
@@ -135,10 +135,14 @@ func (con *MinioCon) Get(key string) ([]byte, error) {
 		defer reader.Close()
 
 		stat, err := reader.Stat()
+		if stat.LastModified.IsZero() { // this feature can tell the key is not exist
+			return false, nil, nil
+		}
+
 		if err != nil {
 			err = con.switchToAValidClient()
 			if err != nil {
-				return []byte{}, errors.Wrap(err, "no valid client")
+				return true, []byte{}, errors.Wrap(err, "no valid client")
 			} else {
 				continue
 			}
@@ -146,9 +150,9 @@ func (con *MinioCon) Get(key string) ([]byte, error) {
 
 		data := make([]byte, stat.Size)
 		reader.Read(data)
-		return data, nil
+		return true, data, nil
 	}
-	return nil, errors.New("get failed")
+	return true, nil, errors.New("get failed")
 }
 
 // GetPartial current no use

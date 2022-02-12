@@ -34,6 +34,6 @@ func (oSMR *ObjectStorageMinioRepository) Set(key string, byteData []byte) error
 	return oSMR.conn.Set(key, byteData)
 }
 
-func (oSMR *ObjectStorageMinioRepository) Get(key string) ([]byte, error) {
+func (oSMR *ObjectStorageMinioRepository) Get(key string) (bool, []byte, error) {
 	return oSMR.conn.Get(key)
 }

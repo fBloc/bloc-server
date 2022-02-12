@@ -49,15 +49,18 @@ func TestMinio(t *testing.T) {
 		err = conn.Set(key, valByte)
 		So(err, ShouldBeNil)
 
-		getedByte, err := conn.Get(key)
+		keyExist, getedByte, err := conn.Get(key)
 		So(err, ShouldBeNil)
+		So(keyExist, ShouldBeTrue)
 		var getedData string
 		err = json.Unmarshal(getedByte, &getedData)
 		So(err, ShouldBeNil)
 		So(getedData, ShouldEqual, value)
-	})
 
-	// TODO maybe test more data types???
+		keyExist, _, err = conn.Get(key + "miss")
+		So(err, ShouldBeNil)
+		So(keyExist, ShouldBeFalse)
+	})
 }
 
 func TestMain(m *testing.M) {

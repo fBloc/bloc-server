@@ -15,8 +15,12 @@ func GetValueByKeyReturnString(w http.ResponseWriter, r *http.Request, ps httpro
 		return
 	}
 
-	dataBytes, err := objectStorage.Get(key)
-	if err != nil { // TODO this error may be caused by key not exist
+	keyExist, dataBytes, err := objectStorage.Get(key)
+	if !keyExist {
+		web.WriteBadRequestDataResp(&w, "key not exist")
+		return
+	}
+	if err != nil {
 		web.WriteInternalServerErrorResp(&w, err, "visit object storage infrastructure failed")
 		return
 	}
@@ -32,8 +36,12 @@ func GetValueByKeyReturnByte(w http.ResponseWriter, r *http.Request, ps httprout
 		return
 	}
 
-	dataBytes, err := objectStorage.Get(key)
-	if err != nil { // TODO this error may be caused by key not exist
+	keyExist, dataBytes, err := objectStorage.Get(key)
+	if !keyExist {
+		web.WriteBadRequestDataResp(&w, "key not exist")
+		return
+	}
+	if err != nil {
 		web.WriteInternalServerErrorResp(&w, err, "visit object storage infrastructure failed")
 		return
 	}
