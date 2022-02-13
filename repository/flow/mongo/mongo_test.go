@@ -427,11 +427,6 @@ func TestOnline(t *testing.T) {
 			So(f.Name, ShouldEqual, newName)
 		})
 
-		Convey("ReplaceByID", func() {
-			err := epo.ReplaceByID(onlineFlow.ID, &fakeAggregateFlow)
-			So(err, ShouldBeNil)
-		})
-
 		Convey("OfflineByID", func() {
 			f, _ := epo.GetByID(onlineFlow.ID)
 			So(f.IsDraft, ShouldBeFalse)
@@ -451,6 +446,10 @@ func TestOnline(t *testing.T) {
 			)
 			So(err, ShouldBeNil)
 			So(draftFlow.IsZero(), ShouldBeFalse)
+		})
+
+		Reset(func() {
+			epo.DeleteByOriginID(onlineFlow.OriginID)
 		})
 	})
 

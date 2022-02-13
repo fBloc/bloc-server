@@ -58,108 +58,14 @@ type mongoFlowFunction struct {
 	ParamIpts                 [][]mongoIptComponentConfig `bson:"param_ipts"` // 第一层对应一个ipt，第二层对应ipt内的component
 }
 
-type mongoFlow struct {
-	ID                            value_object.UUID             `bson:"id"`
-	Name                          string                        `bson:"name"`
-	IsDraft                       bool                          `bson:"is_draft"`
-	Deleted                       bool                          `bson:"deleted"`
-	Version                       uint                          `bson:"version"`
-	OriginID                      value_object.UUID             `bson:"origin_id,omitempty"`
-	Newest                        bool                          `bson:"newest"`
-	CreateUserID                  value_object.UUID             `bson:"create_user_id"`
-	CreateTime                    time.Time                     `bson:"create_time"`
-	Position                      interface{}                   `bson:"position"`
-	FlowFunctionIDMapFlowFunction map[string]*mongoFlowFunction `bson:"flowFunctionID_map_flowFunction"`
-	Crontab                       *crontab.CrontabRepresent     `bson:"crontab,omitempty"`
-	TriggerKey                    string                        `bson:"trigger_key,omitempty"`
-	TimeoutInSeconds              uint32                        `bson:"timeout_in_seconds,omitempty"`
-	RetryAmount                   uint16                        `bson:"retry_amount,omitempty"`
-	RetryIntervalInSecond         uint16                        `bson:"retry_interval_in_second,omitempty"`
-	AllowParallelRun              bool                          `bson:"allow_parallel_run,omitempty"`
-	ReadUserIDs                   []value_object.UUID           `bson:"read_user_ids"`
-	WriteUserIDs                  []value_object.UUID           `bson:"write_user_ids"`
-	ExecuteUserIDs                []value_object.UUID           `bson:"execute_user_ids"`
-	DeleteUserIDs                 []value_object.UUID           `bson:"delete_user_ids"`
-	AssignPermissionUserIDs       []value_object.UUID           `bson:"assign_permission_user_ids"`
-}
+type mongoFlowFunctionIDMapFlowFunction map[string]*mongoFlowFunction
 
-func (m mongoFlow) ToAggregate() *aggregate.Flow {
-	resp := aggregate.Flow{
-		ID:                      m.ID,
-		Name:                    m.Name,
-		IsDraft:                 m.IsDraft,
-		Version:                 m.Version,
-		OriginID:                m.OriginID,
-		Newest:                  m.Newest,
-		CreateUserID:            m.CreateUserID,
-		CreateTime:              m.CreateTime,
-		Position:                m.Position,
-		Crontab:                 m.Crontab,
-		TriggerKey:              m.TriggerKey,
-		TimeoutInSeconds:        m.TimeoutInSeconds,
-		RetryAmount:             m.RetryAmount,
-		RetryIntervalInSecond:   m.RetryIntervalInSecond,
-		AllowParallelRun:        m.AllowParallelRun,
-		ReadUserIDs:             m.ReadUserIDs,
-		WriteUserIDs:            m.WriteUserIDs,
-		ExecuteUserIDs:          m.ExecuteUserIDs,
-		DeleteUserIDs:           m.DeleteUserIDs,
-		AssignPermissionUserIDs: m.AssignPermissionUserIDs,
-	}
-	funcs := make(map[string]*aggregate.FlowFunction, len(m.FlowFunctionIDMapFlowFunction))
-	for flowFuncID, flowFunc := range m.FlowFunctionIDMapFlowFunction {
-		tmp := aggregate.FlowFunction{
-			FunctionID:                flowFunc.FunctionID,
-			Note:                      flowFunc.Note,
-			Position:                  flowFunc.Position,
-			UpstreamFlowFunctionIDs:   flowFunc.UpstreamFlowFunctionIDs,
-			DownstreamFlowFunctionIDs: flowFunc.DownstreamFlowFunctionIDs,
-		}
-		tmp.ParamIpts = make([][]aggregate.IptComponentConfig, len(flowFunc.ParamIpts))
-		for i, ipt := range flowFunc.ParamIpts {
-			tmp.ParamIpts[i] = make([]aggregate.IptComponentConfig, len(ipt))
-			for j, component := range ipt {
-				tmp.ParamIpts[i][j] = aggregate.IptComponentConfig{
-					Blank:          component.Blank,
-					IptWay:         component.IptWay,
-					ValueType:      component.ValueType,
-					Value:          component.Value,
-					FlowFunctionID: component.FlowFunctionID,
-					Key:            component.Key,
-				}
-			}
-		}
-		funcs[flowFuncID] = &tmp
-	}
-	resp.FlowFunctionIDMapFlowFunction = funcs
-	return &resp
-}
+func fromAggFlowFunctionIDMapFlowFunction(
+	aggflowFunctionIDMapFlowFunction map[string]*aggregate.FlowFunction,
+) *mongoFlowFunctionIDMapFlowFunction {
+	funcs := make(mongoFlowFunctionIDMapFlowFunction, len(aggflowFunctionIDMapFlowFunction))
 
-func NewFromFlow(f *aggregate.Flow) *mongoFlow {
-	resp := mongoFlow{
-		ID:                      f.ID,
-		Name:                    f.Name,
-		IsDraft:                 f.IsDraft,
-		Version:                 f.Version,
-		OriginID:                f.OriginID,
-		Newest:                  f.Newest,
-		CreateUserID:            f.CreateUserID,
-		CreateTime:              f.CreateTime,
-		Crontab:                 f.Crontab,
-		Position:                f.Position,
-		TriggerKey:              f.TriggerKey,
-		TimeoutInSeconds:        f.TimeoutInSeconds,
-		RetryAmount:             f.RetryAmount,
-		RetryIntervalInSecond:   f.RetryIntervalInSecond,
-		AllowParallelRun:        f.AllowParallelRun,
-		ReadUserIDs:             f.ReadUserIDs,
-		WriteUserIDs:            f.WriteUserIDs,
-		ExecuteUserIDs:          f.ExecuteUserIDs,
-		DeleteUserIDs:           f.DeleteUserIDs,
-		AssignPermissionUserIDs: f.AssignPermissionUserIDs,
-	}
-	funcs := make(map[string]*mongoFlowFunction, len(f.FlowFunctionIDMapFlowFunction))
-	for flowFuncID, flowFunc := range f.FlowFunctionIDMapFlowFunction {
+	for flowFuncID, flowFunc := range aggflowFunctionIDMapFlowFunction {
 		tmp := mongoFlowFunction{
 			FunctionID:                flowFunc.FunctionID,
 			Note:                      flowFunc.Note,
@@ -183,7 +89,115 @@ func NewFromFlow(f *aggregate.Flow) *mongoFlow {
 		}
 		funcs[flowFuncID] = &tmp
 	}
-	resp.FlowFunctionIDMapFlowFunction = funcs
+	return &funcs
+}
+
+func (mF mongoFlowFunctionIDMapFlowFunction) toAggFlowFunctionIDMapFlowFunction() map[string]*aggregate.FlowFunction {
+	funcs := make(map[string]*aggregate.FlowFunction, len(mF))
+	for flowFuncID, flowFunc := range mF {
+		tmp := aggregate.FlowFunction{
+			FunctionID:                flowFunc.FunctionID,
+			Note:                      flowFunc.Note,
+			Position:                  flowFunc.Position,
+			UpstreamFlowFunctionIDs:   flowFunc.UpstreamFlowFunctionIDs,
+			DownstreamFlowFunctionIDs: flowFunc.DownstreamFlowFunctionIDs,
+		}
+		tmp.ParamIpts = make([][]aggregate.IptComponentConfig, len(flowFunc.ParamIpts))
+		for i, ipt := range flowFunc.ParamIpts {
+			tmp.ParamIpts[i] = make([]aggregate.IptComponentConfig, len(ipt))
+			for j, component := range ipt {
+				tmp.ParamIpts[i][j] = aggregate.IptComponentConfig{
+					Blank:          component.Blank,
+					IptWay:         component.IptWay,
+					ValueType:      component.ValueType,
+					Value:          component.Value,
+					FlowFunctionID: component.FlowFunctionID,
+					Key:            component.Key,
+				}
+			}
+		}
+		funcs[flowFuncID] = &tmp
+	}
+	return funcs
+}
+
+type mongoFlow struct {
+	ID                            value_object.UUID                  `bson:"id"`
+	Name                          string                             `bson:"name"`
+	IsDraft                       bool                               `bson:"is_draft"`
+	Deleted                       bool                               `bson:"deleted"`
+	Version                       uint                               `bson:"version"`
+	OriginID                      value_object.UUID                  `bson:"origin_id,omitempty"`
+	Newest                        bool                               `bson:"newest"`
+	CreateUserID                  value_object.UUID                  `bson:"create_user_id"`
+	CreateTime                    time.Time                          `bson:"create_time"`
+	Position                      interface{}                        `bson:"position"`
+	FlowFunctionIDMapFlowFunction mongoFlowFunctionIDMapFlowFunction `bson:"flowFunctionID_map_flowFunction"`
+	Crontab                       *crontab.CrontabRepresent          `bson:"crontab,omitempty"`
+	TriggerKey                    string                             `bson:"trigger_key,omitempty"`
+	TimeoutInSeconds              uint32                             `bson:"timeout_in_seconds,omitempty"`
+	RetryAmount                   uint16                             `bson:"retry_amount,omitempty"`
+	RetryIntervalInSecond         uint16                             `bson:"retry_interval_in_second,omitempty"`
+	AllowParallelRun              bool                               `bson:"allow_parallel_run,omitempty"`
+	ReadUserIDs                   []value_object.UUID                `bson:"read_user_ids"`
+	WriteUserIDs                  []value_object.UUID                `bson:"write_user_ids"`
+	ExecuteUserIDs                []value_object.UUID                `bson:"execute_user_ids"`
+	DeleteUserIDs                 []value_object.UUID                `bson:"delete_user_ids"`
+	AssignPermissionUserIDs       []value_object.UUID                `bson:"assign_permission_user_ids"`
+}
+
+func (m mongoFlow) ToAggregate() *aggregate.Flow {
+	resp := aggregate.Flow{
+		ID:                            m.ID,
+		Name:                          m.Name,
+		IsDraft:                       m.IsDraft,
+		Deleted:                       m.Deleted,
+		Version:                       m.Version,
+		OriginID:                      m.OriginID,
+		Newest:                        m.Newest,
+		CreateUserID:                  m.CreateUserID,
+		CreateTime:                    m.CreateTime,
+		Position:                      m.Position,
+		Crontab:                       m.Crontab,
+		TriggerKey:                    m.TriggerKey,
+		TimeoutInSeconds:              m.TimeoutInSeconds,
+		RetryAmount:                   m.RetryAmount,
+		RetryIntervalInSecond:         m.RetryIntervalInSecond,
+		AllowParallelRun:              m.AllowParallelRun,
+		ReadUserIDs:                   m.ReadUserIDs,
+		WriteUserIDs:                  m.WriteUserIDs,
+		ExecuteUserIDs:                m.ExecuteUserIDs,
+		DeleteUserIDs:                 m.DeleteUserIDs,
+		AssignPermissionUserIDs:       m.AssignPermissionUserIDs,
+		FlowFunctionIDMapFlowFunction: m.FlowFunctionIDMapFlowFunction.toAggFlowFunctionIDMapFlowFunction(),
+	}
+	return &resp
+}
+
+func NewFromFlow(f *aggregate.Flow) *mongoFlow {
+	resp := mongoFlow{
+		ID:                            f.ID,
+		Name:                          f.Name,
+		IsDraft:                       f.IsDraft,
+		Version:                       f.Version,
+		OriginID:                      f.OriginID,
+		Newest:                        f.Newest,
+		CreateUserID:                  f.CreateUserID,
+		CreateTime:                    f.CreateTime,
+		Crontab:                       f.Crontab,
+		Position:                      f.Position,
+		TriggerKey:                    f.TriggerKey,
+		TimeoutInSeconds:              f.TimeoutInSeconds,
+		RetryAmount:                   f.RetryAmount,
+		RetryIntervalInSecond:         f.RetryIntervalInSecond,
+		AllowParallelRun:              f.AllowParallelRun,
+		ReadUserIDs:                   f.ReadUserIDs,
+		WriteUserIDs:                  f.WriteUserIDs,
+		ExecuteUserIDs:                f.ExecuteUserIDs,
+		DeleteUserIDs:                 f.DeleteUserIDs,
+		AssignPermissionUserIDs:       f.AssignPermissionUserIDs,
+		FlowFunctionIDMapFlowFunction: *fromAggFlowFunctionIDMapFlowFunction(f.FlowFunctionIDMapFlowFunction),
+	}
 	return &resp
 }
 
@@ -353,9 +367,20 @@ func (mr *MongoRepository) PatchAllowParallelRun(id value_object.UUID, allowPara
 	return mr.mongoCollection.PatchByID(id, updater)
 }
 
-// PatchTriggerKey 更新crontab配置
+// PatchTriggerKey 更新触发的key
 func (mr *MongoRepository) PatchTriggerKey(id value_object.UUID, key string) error {
 	updater := mongodb.NewUpdater().AddSet("trigger_key", key)
+	return mr.mongoCollection.PatchByID(id, updater)
+}
+
+// PatchFlowFunctionIDMapFlowFunction 更新function构成
+func (mr *MongoRepository) PatchFlowFunctionIDMapFlowFunction(
+	id value_object.UUID,
+	flowFunctionIDMapFlowFunction map[string]*aggregate.FlowFunction,
+) error {
+	updater := mongodb.NewUpdater().AddSet(
+		"flowFunctionID_map_flowFunction",
+		fromAggFlowFunctionIDMapFlowFunction(flowFunctionIDMapFlowFunction))
 	return mr.mongoCollection.PatchByID(id, updater)
 }
 
@@ -370,7 +395,13 @@ func (mr *MongoRepository) ReplaceByID(id value_object.UUID, aggFlow *aggregate.
 		return errors.New("id cannot be nil")
 	}
 	mFlow := NewFromFlow(aggFlow)
-	return mr.mongoCollection.ReplaceByID(id, *mFlow)
+
+	mongoID, err := mr.mongoCollection.GetMongoID(id)
+	if err != nil {
+		return err
+	}
+
+	return mr.mongoCollection.ReplaceByID(mongoID, *mFlow)
 }
 
 func (mr *MongoRepository) userOperation(
@@ -570,22 +601,19 @@ func (mr *MongoRepository) CreateOnlineFromDraft(
 }
 
 func (mr *MongoRepository) DeleteByID(id value_object.UUID) (int64, error) {
-	updater := mongodb.NewUpdater().AddSet("deleted", true)
-	err := mr.mongoCollection.PatchByID(id, updater)
-	if err == nil {
-		return 1, nil
-	}
-	return 0, err
+	return mr.mongoCollection.Patch(
+		mongodb.NewFilter().AddEqual("id", id).AddEqual("deleted", false),
+		mongodb.NewUpdater().AddSet("deleted", true))
 }
 
 func (mr *MongoRepository) DeleteByOriginID(originID value_object.UUID) (int64, error) {
 	return mr.mongoCollection.Patch(
-		mongodb.NewFilter().AddEqual("origin_id", originID),
+		mongodb.NewFilter().AddEqual("origin_id", originID).AddEqual("deleted", false),
 		mongodb.NewUpdater().AddSet("deleted", true))
 }
 
 func (mr *MongoRepository) DeleteDraftByOriginID(originID value_object.UUID) (int64, error) {
 	return mr.mongoCollection.Patch(
-		mongodb.NewFilter().AddEqual("origin_id", originID).AddEqual("is_draft", true),
+		mongodb.NewFilter().AddEqual("origin_id", originID).AddEqual("is_draft", true).AddEqual("deleted", false),
 		mongodb.NewUpdater().AddSet("deleted", true))
 }

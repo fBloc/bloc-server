@@ -2,6 +2,7 @@ package flow
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/fBloc/bloc-server/interfaces/web"
@@ -208,49 +209,93 @@ func SetExecuteControlAttributes(w http.ResponseWriter, r *http.Request, _ httpr
 		web.WritePermissionNotEnough(&w, "need execute permission to update")
 	}
 
-	// > 开始更新相应字段
-	var changedFieldAmount uint8
+	logTag := map[string]string{
+		"user_name": reqUser.Name,
+		"flow_id":   reqFlow.ID.String()}
+
 	// >> 更新crontab
 	if !reqFlow.Crontab.Equal(flowIns.Crontab) {
-		changedFieldAmount++
-		flowIns.Crontab = reqFlow.Crontab
+		err := fService.Flow.PatchCrontab(
+			reqFlow.ID, *reqFlow.Crontab)
+		baseLogMsg := fmt.Sprintf(
+			"change flow's crontab from:%s to:%s",
+			flowIns.Crontab.String(), reqFlow.Crontab.String())
+
+		if err != nil {
+			fService.Logger.Errorf(logTag, "%s. error: %v", baseLogMsg, err)
+			web.WriteInternalServerErrorResp(&w, err, "update crontab failed")
+			return
+		}
+		fService.Logger.Infof(logTag, baseLogMsg)
 	}
 
 	// >> 更新trigger_key
 	if reqFlow.TriggerKey != flowIns.TriggerKey {
-		changedFieldAmount++
-		flowIns.TriggerKey = reqFlow.TriggerKey
+		err := fService.Flow.PatchTriggerKey(
+			reqFlow.ID, reqFlow.TriggerKey)
+		baseLogMsg := fmt.Sprintf(
+			"change flow's trigger_key from:%s to:%s",
+			flowIns.TriggerKey, reqFlow.TriggerKey)
+
+		if err != nil {
+			fService.Logger.Errorf(logTag, "%s. error: %v", baseLogMsg, err)
+			web.WriteInternalServerErrorResp(&w, err, "update trigger_key failed")
+			return
+		}
+		fService.Logger.Infof(logTag, baseLogMsg)
 	}
 
 	// >> 更新超时设置
 	if reqFlow.TimeoutInSeconds != flowIns.TimeoutInSeconds {
-		changedFieldAmount++
-		flowIns.TimeoutInSeconds = reqFlow.TimeoutInSeconds
+		err := fService.Flow.PatchTimeout(
+			reqFlow.ID, reqFlow.TimeoutInSeconds)
+		baseLogMsg := fmt.Sprintf(
+			"change flow's timeout from:%d to:%d",
+			flowIns.TimeoutInSeconds, reqFlow.TimeoutInSeconds)
+
+		if err != nil {
+			fService.Logger.Errorf(logTag, "%s. error: %v", baseLogMsg, err)
+			web.WriteInternalServerErrorResp(&w, err, "update timeout failed")
+			return
+		}
+		fService.Logger.Infof(logTag, baseLogMsg)
 	}
+
 	// >> 更新重试策略
 	if reqFlow.RetryAmount != flowIns.RetryAmount ||
 		reqFlow.RetryIntervalInSecond != flowIns.RetryIntervalInSecond {
-		changedFieldAmount++
 		if reqFlow.RetryAmount > 0 && reqFlow.RetryIntervalInSecond <= 0 {
 			// 对于设置了重试次数的，重试间隔不能设置为0，暂时默认给个1秒
 			reqFlow.RetryIntervalInSecond = 1
 		}
-		flowIns.RetryAmount = reqFlow.RetryAmount
-		flowIns.RetryIntervalInSecond = reqFlow.RetryIntervalInSecond
+
+		err := fService.Flow.PatchRetryStrategy(
+			reqFlow.ID, reqFlow.RetryAmount, reqFlow.RetryIntervalInSecond)
+		baseLogMsg := fmt.Sprintf(
+			"change flow's retry_strategy from:%d-%ds to:%d-%ds",
+			flowIns.RetryAmount, flowIns.RetryIntervalInSecond,
+			reqFlow.RetryAmount, reqFlow.RetryIntervalInSecond)
+		if err != nil {
+			fService.Logger.Errorf(logTag, "%s. error: %v", baseLogMsg, err)
+			web.WriteInternalServerErrorResp(&w, err, "update retry_strategy failed")
+			return
+		}
+		fService.Logger.Infof(logTag, baseLogMsg)
 	}
 
 	// >> 更新是否支持在运行的时候也发布
 	if reqFlow.AllowParallelRun != flowIns.AllowParallelRun {
-		changedFieldAmount++
-		flowIns.AllowParallelRun = reqFlow.AllowParallelRun
-	}
-
-	if changedFieldAmount > 0 {
-		err = fService.Flow.ReplaceByID(reqFlow.ID, flowIns)
+		err := fService.Flow.PatchAllowParallelRun(
+			reqFlow.ID, reqFlow.AllowParallelRun)
+		baseLogMsg := fmt.Sprintf(
+			"change flow's allow_parallel_run from:%t to:%t",
+			flowIns.AllowParallelRun, reqFlow.AllowParallelRun)
 		if err != nil {
-			web.WriteInternalServerErrorResp(&w, err, "update failed")
+			fService.Logger.Errorf(logTag, "%s. error: %v", baseLogMsg, err)
+			web.WriteInternalServerErrorResp(&w, err, "update allow_parallel_run failed")
 			return
 		}
+		fService.Logger.Infof(logTag, baseLogMsg)
 	}
 
 	web.WritePlainSucOkResp(&w)

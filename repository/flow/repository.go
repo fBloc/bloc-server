@@ -45,6 +45,10 @@ type FlowRepository interface {
 	PatchRetryStrategy(id value_object.UUID, amount, intervalInSecond uint16) error
 	PatchTriggerKey(id value_object.UUID, key string) error
 	PatchTimeout(id value_object.UUID, tOS uint32) error
+	PatchFlowFunctionIDMapFlowFunction(
+		id value_object.UUID,
+		flowFunctionIDMapFlowFunction map[string]*aggregate.FlowFunction,
+	) error
 	// replace
 	ReplaceByID(id value_object.UUID, aggFlow *aggregate.Flow) error
 

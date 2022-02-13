@@ -27,6 +27,7 @@ var conf = &MongoConfig{
 type testData struct {
 	ID   value_object.UUID `bson:"id"`
 	Name string            `bson:"name"`
+	Age  int               `bson:"age"`
 }
 
 var test = testData{ID: value_object.NewUUID(), Name: gofakeit.Name()}
@@ -145,6 +146,37 @@ func TestMongo(t *testing.T) {
 			collec.GetByID(test.ID, &resp)
 			So(resp.Name, ShouldNotEqual, test.Name)
 			So(resp.Name, ShouldEqual, newName)
+		})
+
+		Convey("insert one doc and replace", func() {
+			var resp testData
+
+			_, err := collec.InsertOne(test)
+			So(err, ShouldBeNil)
+
+			collec.GetByID(test.ID, &resp)
+			So(resp.Name, ShouldEqual, test.Name)
+			So(resp.Age, ShouldEqual, 0)
+
+			// do replace
+			newTest := testData{
+				ID:   test.ID,
+				Name: gofakeit.Name(),
+				Age:  24,
+			}
+			mID, err := collec.GetMongoID(newTest.ID)
+			So(err, ShouldBeNil)
+
+			collec.ReplaceByID(mID, newTest)
+
+			// donnot create new doc
+			amount, _ := collec.Count(NewFilter())
+			So(amount, ShouldEqual, 1)
+
+			// age do changed
+			collec.GetByID(test.ID, &resp)
+			So(resp.Name, ShouldEqual, newTest.Name)
+			So(resp.Age, ShouldEqual, newTest.Age)
 		})
 
 		Convey("FindOneOrInsert", func() {

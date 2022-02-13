@@ -210,11 +210,27 @@ func (c *Collection) Patch(mFilter *MongoFilter, mSetter *MongoUpdater) (int64, 
 	return patchResult.ModifiedCount, err
 }
 
-// UpdateByID require full doc, replace all except id
-func (c *Collection) ReplaceByID(id value_object.UUID, insertData interface{}) error {
-	_, err := c.collection.ReplaceOne(
+func (c *Collection) GetMongoID(id value_object.UUID) (primitive.ObjectID, error) {
+	var theDoc bson.M
+	err := c.collection.FindOne(
 		context.TODO(),
 		NewFilter().AddEqual("id", id).filter,
+		options.FindOne().SetProjection(bson.M{"_id": 1})).Decode(&theDoc)
+	if err != nil {
+		return primitive.NilObjectID, err
+	}
+	oID, ok := theDoc["_id"].(primitive.ObjectID)
+	if !ok {
+		return primitive.NilObjectID, errors.New("not valid objectID")
+	}
+	return oID, nil
+}
+
+// UpdateByID require full doc, replace all except _id
+func (c *Collection) ReplaceByID(id primitive.ObjectID, insertData interface{}) error {
+	_, err := c.collection.ReplaceOne(
+		context.TODO(),
+		NewFilter().AddEqual("_id", id).filter,
 		insertData)
 	return err
 }

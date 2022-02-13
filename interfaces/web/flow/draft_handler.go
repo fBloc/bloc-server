@@ -277,13 +277,34 @@ func UpdateDraft(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		web.WritePermissionNotEnough(&w, "need write permission to update")
 	}
 
+	logTag := map[string]string{
+		"user_name":     reqUser.Name,
+		"draft_flow_id": reqFlow.ID.String()}
+
 	// > 开始更新相应字段
-	if reqFlow.Name != "" {
-		flowIns.Name = reqFlow.Name
+	if reqFlow.Name != "" && reqFlow.Name != flowIns.Name {
+		err := fService.Flow.PatchName(reqFlow.ID, reqFlow.Name)
+		baseLogMsg := fmt.Sprintf(
+			"change draft flow's name from:%s to:%s",
+			flowIns.Name, reqFlow.Name)
+
+		if err != nil {
+			fService.Logger.Errorf(logTag, "%s. error: %v", baseLogMsg, err)
+			web.WriteInternalServerErrorResp(&w, err, "update name failed")
+			return
+		}
+		fService.Logger.Infof(logTag, baseLogMsg)
 	}
 
 	if reqFlow.Position != nil {
-		flowIns.Position = reqFlow.Position
+		err := fService.Flow.PatchPosition(reqFlow.ID, reqFlow.Position)
+		baseLogMsg := fmt.Sprintf("change draft flow's position")
+		if err != nil {
+			fService.Logger.Errorf(logTag, "%s. error: %v", baseLogMsg, err)
+			web.WriteInternalServerErrorResp(&w, err, "update position failed")
+			return
+		}
+		fService.Logger.Infof(logTag, baseLogMsg)
 	}
 
 	// 若是修改节点构成，需要再次进行**粗略的**有效性检测（草稿不需要太严格的检验）
@@ -293,20 +314,18 @@ func UpdateDraft(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 			web.WriteBadRequestDataResp(&w, "Lack start bloc")
 			return
 		}
-		flowIns.FlowFunctionIDMapFlowFunction = reqFlow.getAggregateFlowFunctionIDMapFlowFunction()
+		err := fService.Flow.PatchFlowFunctionIDMapFlowFunction(
+			reqFlow.ID, reqFlow.getAggregateFlowFunctionIDMapFlowFunction())
+		baseLogMsg := fmt.Sprintf(
+			"change draft flow's FlowFunctionIDMapFlowFunction: %v",
+			reqFlow.FlowFunctionIDMapFlowFunction)
+		if err != nil {
+			fService.Logger.Errorf(logTag, "%s. error: %v", baseLogMsg, err)
+			web.WriteInternalServerErrorResp(&w, err, "update function composition failed")
+			return
+		}
+		fService.Logger.Infof(logTag, baseLogMsg)
 	}
-
-	// > 更新
-	err = fService.Flow.ReplaceByID(reqFlow.ID, flowIns)
-	if err != nil {
-		web.WriteInternalServerErrorResp(&w, err, "update failed")
-		return
-	}
-	fService.Logger.Infof(
-		map[string]string{
-			"user_name":     reqUser.Name,
-			"draft_flow_id": reqFlow.ID.String()},
-		"user %s updated draft flow %s", reqUser.Name, reqFlow.ID.String())
 
 	web.WritePlainSucOkResp(&w)
 }

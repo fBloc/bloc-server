@@ -152,6 +152,7 @@ type Flow struct {
 	ID                            value_object.UUID
 	Name                          string
 	IsDraft                       bool
+	Deleted                       bool
 	Version                       uint
 	OriginID                      value_object.UUID
 	Newest                        bool
