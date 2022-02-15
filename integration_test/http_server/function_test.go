@@ -118,6 +118,19 @@ func TestFunctionPermission(t *testing.T) {
 			So(permissionResp.Code, ShouldEqual, http.StatusOK)
 			So(permissionResp.Data.Read, ShouldBeFalse)
 
+			// check the user can really not get the function
+			functionResp := struct {
+				web.RespMsg
+				Data []function.GroupFunctions `json:"data"`
+			}{}
+			_, err = http_util.Get(
+				thisUserLoginedHeader,
+				serverAddress+"/api/v1/function",
+				http_util.BlankGetParam, &functionResp)
+			So(err, ShouldBeNil)
+			So(functionResp.Code, ShouldEqual, http.StatusOK)
+			So(len(functionResp.Data), ShouldEqual, 0)
+
 			// add read permission for that user
 			addRead := function.PermissionReq{
 				PermissionType: function.Read,
@@ -146,6 +159,18 @@ func TestFunctionPermission(t *testing.T) {
 			So(permissionResp.Data.Read, ShouldBeTrue)
 			So(permissionResp.Data.Execute, ShouldBeFalse)
 			So(permissionResp.Data.AssignPermission, ShouldBeFalse)
+
+			_, err = http_util.Get(
+				superuserHeader(),
+				serverAddress+"/api/v1/function",
+				http_util.BlankGetParam,
+				&functionResp)
+			So(err, ShouldBeNil)
+			So(functionResp.Code, ShouldEqual, http.StatusOK)
+			So(len(functionResp.Data), ShouldEqual, 1)
+			So(functionResp.Data[0].GroupName, ShouldEqual, fakeAggFunction.GroupName)
+			So(functionResp.Data[0].Functions[0].ID, ShouldEqual, fakeAggFunction.ID)
+			So(functionResp.Data[0].Functions[0].Name, ShouldEqual, fakeAggFunction.Name)
 
 			Convey("delete a user for read", func() {
 				// delete that user of read permission

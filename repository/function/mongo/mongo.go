@@ -126,6 +126,26 @@ func (mr *MongoRepository) All() ([]*aggregate.Function, error) {
 	return ret, nil
 }
 
+func (mr *MongoRepository) UserReadAbleAll(
+	user *aggregate.User,
+) ([]*aggregate.Function, error) {
+	if user.IsZero() {
+		return nil, errors.New("ipt user is nil")
+	}
+	var m []mongoFunction
+	err := mr.mongoCollection.Filter(
+		mongodb.NewFilter().AddEqual("read_user_ids", user.ID),
+		nil, &m)
+	if err != nil {
+		return nil, err
+	}
+	ret := make([]*aggregate.Function, len(m))
+	for i, j := range m {
+		ret[i] = j.ToAggregate()
+	}
+	return ret, nil
+}
+
 func (mr *MongoRepository) IDMapFunctionAll() (map[value_object.UUID]*aggregate.Function, error) {
 	var m []mongoFunction
 	err := mr.mongoCollection.Filter(nil, nil, &m)
