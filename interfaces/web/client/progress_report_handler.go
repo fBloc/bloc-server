@@ -19,7 +19,7 @@ func ReportProgress(w http.ResponseWriter, r *http.Request, _ httprouter.Params)
 
 	funcRunRecordUUID, err := value_object.ParseToUUID(req.FunctionRunRecordID)
 	if err != nil {
-		web.WriteBadRequestDataResp(&w, "parse function_id to uuid failed:", err.Error())
+		web.WriteBadRequestDataResp(&w, "parse function_id to uuid failed: %v", err)
 		return
 	}
 
@@ -47,7 +47,7 @@ func ReportProgress(w http.ResponseWriter, r *http.Request, _ httprouter.Params)
 	}
 	fRRService.Logger.Infof(
 		map[string]string{"function_run_record_id": req.FunctionRunRecordID},
-		`received function run high readable progress report.function_run_record_id: %s. progress: %d, msg: %s, index: %d`,
+		`received function run high readable progress report.function_run_record_id: %s. progress: %f, msg: %s, index: %d`,
 		req.FunctionRunRecordID, req.FuncRunProgress.Progress,
 		req.FuncRunProgress.Msg, req.FuncRunProgress.ProcessStageIndex)
 

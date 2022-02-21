@@ -46,7 +46,7 @@ func (mC *MongoConfig) IsReplicaSet() bool {
 
 func (mC MongoConfig) Equal(anotherMC MongoConfig) bool {
 	if mC.Db != anotherMC.Db ||
-		mC.ReplicaSetName != mC.ReplicaSetName ||
+		mC.ReplicaSetName != anotherMC.ReplicaSetName ||
 		mC.User != anotherMC.User ||
 		mC.Password != anotherMC.Password {
 		return false

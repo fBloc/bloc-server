@@ -12,7 +12,6 @@ import (
 )
 
 var conn *MinioCon
-var err error
 
 var conf = &MinioConfig{
 	BucketName:     "test",

@@ -55,7 +55,6 @@ var (
 	readeUser         = aggregate.User{ID: value_object.NewUUID()}
 	executeUser       = aggregate.User{ID: value_object.NewUUID()}
 	allPermissionUser = aggregate.User{ID: value_object.NewUUID()}
-	superUser         = aggregate.User{ID: value_object.NewUUID(), IsSuper: true}
 )
 
 var functionAdd = aggregate.Function{

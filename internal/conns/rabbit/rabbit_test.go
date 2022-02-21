@@ -28,6 +28,7 @@ func TestRabbit(t *testing.T) {
 	exist := make(chan struct{})
 
 	respChan := make(chan []byte)
+	var receivedMsg string
 	err = channel.Pull(
 		exchangeName, routingKey, queueNAme, true, respChan,
 	)
@@ -37,9 +38,7 @@ func TestRabbit(t *testing.T) {
 
 	go func() {
 		for i := range respChan {
-			if string(i) != msg {
-				t.Fatalf("received msg not right, expect: %s, received: %s", msg, string(i))
-			}
+			receivedMsg = string(i)
 			exist <- struct{}{}
 			return
 		}
@@ -51,6 +50,9 @@ func TestRabbit(t *testing.T) {
 	}
 
 	<-exist
+	if receivedMsg != msg {
+		t.Fatalf("received msg from rabbit expect: %s, but: %s", msg, receivedMsg)
+	}
 }
 
 func TestMain(m *testing.M) {
@@ -61,7 +63,7 @@ func TestMain(m *testing.M) {
 
 	resource, err := pool.RunWithOptions(&dockertest.RunOptions{
 		Repository: "rabbitmq",
-		Tag:        "3.9.11-management",
+		Tag:        "3.9.11-alpine",
 		Env: []string{
 			// username and password for mongodb superuser
 			"RABBITMQ_DEFAULT_USER=" + conf.User,

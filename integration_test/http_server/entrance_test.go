@@ -222,7 +222,6 @@ func TestMain(m *testing.M) {
 		log.Fatalf("login to get token error:" + err.Error())
 	}
 	superUserToken = superUserLoginResp.Data.Token.String()
-	superUserID = superUserLoginResp.Data.ID
 
 	// initial a have no permission of anything user
 	addNobody := user.User{

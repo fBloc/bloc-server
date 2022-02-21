@@ -70,9 +70,10 @@ func Connect(
 		conf.Token,
 		influxdb2.DefaultOptions().SetUseGZip(true))
 
-	ctx, _ := context.WithTimeout(
+	ctx, cancel := context.WithTimeout(
 		context.Background(), 2*time.Second,
 	)
+	defer cancel()
 	serverRunning, err := client.Ping(ctx)
 	if !serverRunning || err != nil {
 		return nil, errors.New(

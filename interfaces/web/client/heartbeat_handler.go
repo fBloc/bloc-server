@@ -19,7 +19,7 @@ func ReportFunctionExecuteHeartbeat(w http.ResponseWriter, r *http.Request, _ ht
 
 	funcRunRecordUUID, err := value_object.ParseToUUID(req.FunctionRunRecordID)
 	if err != nil {
-		web.WriteBadRequestDataResp(&w, "parse function_id to uuid failed:", err.Error())
+		web.WriteBadRequestDataResp(&w, "parse function_id to uuid failed: %v", err)
 		return
 	}
 

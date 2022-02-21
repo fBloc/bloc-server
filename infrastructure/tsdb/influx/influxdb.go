@@ -39,7 +39,8 @@ func NewClient(conf InfluxDBConfig) *Client {
 	}
 	once.Do(initClientFunc)
 
-	ctx, _ := context.WithTimeout(context.TODO(), 2*time.Second)
+	ctx, cancel := context.WithTimeout(context.TODO(), 2*time.Second)
+	defer cancel()
 	serverAlive, err := client.Ping(ctx) // Ping just check server alive. not check auth
 	if !serverAlive || err != nil {
 		panic("ping influxDB server failed.err:" + err.Error())

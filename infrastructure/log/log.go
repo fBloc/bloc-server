@@ -9,15 +9,8 @@ import (
 	"github.com/fBloc/bloc-server/value_object"
 )
 
-type msg struct {
-	Level value_object.LogLevel `json:"level"`
-	Data  string                `json:"data"`
-	Time  time.Time             `json:"time"`
-}
-
 type Logger struct {
 	name       string
-	data       []*msg
 	logBackend log_collect_backend.LogBackEnd
 	sync.Mutex
 }

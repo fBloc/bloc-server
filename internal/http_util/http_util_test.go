@@ -40,6 +40,7 @@ func TestHttpUtil(t *testing.T) {
 							byteData, err := json.Marshal(i)
 							c.So(err, ShouldBeNil)
 							_, err = w.Write(byteData)
+							c.So(err, ShouldBeNil)
 							return
 						}
 					}
@@ -73,6 +74,7 @@ func TestHttpUtil(t *testing.T) {
 							byteData, err := json.Marshal(i)
 							c.So(err, ShouldBeNil)
 							_, err = w.Write(byteData)
+							c.So(err, ShouldBeNil)
 							return
 						}
 					}
@@ -109,6 +111,7 @@ func TestHttpUtil(t *testing.T) {
 							byteData, err := json.Marshal(i)
 							c.So(err, ShouldBeNil)
 							_, err = w.Write(byteData)
+							c.So(err, ShouldBeNil)
 							return
 						}
 					}

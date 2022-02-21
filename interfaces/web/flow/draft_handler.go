@@ -298,7 +298,7 @@ func UpdateDraft(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 
 	if reqFlow.Position != nil {
 		err := fService.Flow.PatchPosition(reqFlow.ID, reqFlow.Position)
-		baseLogMsg := fmt.Sprintf("change draft flow's position")
+		baseLogMsg := "change draft flow's position"
 		if err != nil {
 			fService.Logger.Errorf(logTag, "%s. error: %v", baseLogMsg, err)
 			web.WriteInternalServerErrorResp(&w, err, "update position failed")

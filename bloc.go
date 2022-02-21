@@ -212,7 +212,6 @@ type BlocApp struct {
 	configBuilder                  *ConfigBuilder
 	httpServerLogger               *log.Logger
 	consumerLogger                 *log.Logger
-	logBackEnd                     log_collect_backend.LogBackEnd
 	userRepository                 user_repository.UserRepository
 	flowRepository                 flow_repository.FlowRepository
 	functionRepository             function_repository.FunctionRepository

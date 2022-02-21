@@ -53,7 +53,6 @@ var (
 	serverAddress = fmt.Sprintf("%s:%d", serverHost, serverPort)
 
 	superUserToken string
-	superUserID    value_object.UUID
 
 	nobodyName      = gofakeit.Name()
 	nobodyRawPasswd = gofakeit.Password(false, false, false, false, false, 16)
