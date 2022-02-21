@@ -519,7 +519,7 @@ func (mr *MongoRepository) CreateDraftFromScratch(
 	return &aggFlow, nil
 }
 
-// TODO this functions's ipt param is strange. should be the exist flow is better
+// CreateDraftFromExistFlow compare to CreateDraftFromScratch, plus field `originID` of the exist flow
 func (mr *MongoRepository) CreateDraftFromExistFlow(
 	name string,
 	createUserID, originID value_object.UUID,
