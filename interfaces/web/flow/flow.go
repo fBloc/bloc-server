@@ -449,7 +449,6 @@ func fromAggWithLatestRunOfCertainArrangement(
 	if err != nil {
 		retFlow.LatestRun = &LatestRun{ErrorMsg: "visit latest run failed: " + err.Error()}
 	} else {
-		// TODO 需要返回其下各个function的运行状态吗？
 		retFlow.LatestRun = newLatestRunFromAgg(latestFlowRunRecord)
 	}
 	return retFlow

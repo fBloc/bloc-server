@@ -15,6 +15,7 @@ type MongoConfig struct {
 	User           string
 	Password       string
 	ReplicaSetName string
+	AuthSource     string
 }
 
 func (mC *MongoConfig) ConnectionUrl() string {
@@ -24,12 +25,27 @@ func (mC *MongoConfig) ConnectionUrl() string {
 	}
 
 	url += strings.Join(mC.Addresses, ",")
+	// if mC.Db != "" {
+	// 	url += "/" + mC.Db
+	// }
 
-	// TODO handle authSource param
-
+	var getQueries []string
 	if mC.ReplicaSetName != "" {
-		url += "&replicaSet=" + mC.ReplicaSetName
+		getQueries = append(
+			getQueries,
+			"replicaSet="+util.UrlEncode(mC.ReplicaSetName))
 	}
+
+	if mC.AuthSource != "" {
+		getQueries = append(
+			getQueries,
+			"authSource="+util.UrlEncode(mC.AuthSource))
+	}
+
+	if len(getQueries) > 0 {
+		url += "?" + strings.Join(getQueries, "&")
+	}
+
 	return url
 }
 

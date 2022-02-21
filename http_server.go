@@ -30,7 +30,6 @@ func (blocApp *BlocApp) RunHttpServer() {
 	router := httprouter.New()
 
 	httpLogger := blocApp.GetOrCreateHttpLogger()
-	// TODO 放这里合适吗？
 	event.InjectMq(blocApp.GetOrCreateEventMQ())
 
 	uCacheService, err := user_cache.NewUserCacheService(

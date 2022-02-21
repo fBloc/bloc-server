@@ -120,7 +120,7 @@ func (confbder *ConfigBuilder) SetRabbitConfig(
 func (confbder *ConfigBuilder) SetMongoConfig(
 	user, password string,
 	addresses []string,
-	defaultDB, replicaSetName string,
+	defaultDB, replicaSetName, authSource string,
 ) *ConfigBuilder {
 	confbder.mongoConf = &mongodb.MongoConfig{
 		User:           user,
@@ -128,6 +128,7 @@ func (confbder *ConfigBuilder) SetMongoConfig(
 		Addresses:      addresses,
 		Db:             defaultDB,
 		ReplicaSetName: replicaSetName,
+		AuthSource:     authSource,
 	}
 	return confbder
 }

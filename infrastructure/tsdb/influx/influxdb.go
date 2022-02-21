@@ -63,7 +63,6 @@ type BucketClient struct {
 func (c *Client) NewBucketClient(bucket string) *BucketClient {
 	// writeApi需要每个org-bucket对用一个
 	writeApi := c.client.WriteAPI(c.organization, bucket)
-	// TODO check valid
 
 	return &BucketClient{
 		bucketName: bucket,
@@ -80,7 +79,6 @@ func (bC *BucketClient) Write(
 ) {
 	p := influxdb2.NewPoint(measurement, tags, fields, occurTime)
 	bC.writeApi.WritePoint(p)
-	// TODO:
 	// WriteAPI can set SetWriteFailedCallback
 	// as this write is async, need to handle fai!
 }

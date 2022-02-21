@@ -175,7 +175,7 @@ func TestMain(m *testing.M) {
 				rabbitConf.User, rabbitConf.Password, rabbitConf.Host, "").
 			SetMongoConfig(
 				mongoConf.User, mongoConf.Password, mongoConf.Addresses,
-				appName, "").
+				appName, "", "").
 			SetMinioConfig(
 				appName, minioConf.Addresses, minioConf.AccessKey, minioConf.AccessPassword).
 			SetInfluxDBConfig(

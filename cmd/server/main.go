@@ -65,7 +65,7 @@ func main() {
 			rabbitUser, rabbitPasswd, strings.Split(rabbitHost, ","), rabbitQuery.Get("vhost")).
 		SetMongoConfig(
 			mongoUser, mongoPasswd, strings.Split(mongoAddress, ","),
-			opts.AppName, mongoQuery.Get("replicaSet")).
+			opts.AppName, mongoQuery.Get("replicaSet"), mongoQuery.Get("authSource")).
 		SetMinioConfig(
 			opts.AppName, strings.Split(minioHost, ","), minioUser, minioPasswd).
 		SetInfluxDBConfig(
