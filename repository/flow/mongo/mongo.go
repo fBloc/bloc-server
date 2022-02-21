@@ -12,6 +12,7 @@ import (
 	"github.com/fBloc/bloc-server/pkg/value_type"
 	"github.com/fBloc/bloc-server/repository/flow"
 	"github.com/fBloc/bloc-server/value_object"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"github.com/pkg/errors"
 )
@@ -106,14 +107,21 @@ func (mF mongoFlowFunctionIDMapFlowFunction) toAggFlowFunctionIDMapFlowFunction(
 		for i, ipt := range flowFunc.ParamIpts {
 			tmp.ParamIpts[i] = make([]aggregate.IptComponentConfig, len(ipt))
 			for j, component := range ipt {
-				tmp.ParamIpts[i][j] = aggregate.IptComponentConfig{
+				iptComponentConfig := aggregate.IptComponentConfig{
 					Blank:          component.Blank,
 					IptWay:         component.IptWay,
 					ValueType:      component.ValueType,
-					Value:          component.Value,
 					FlowFunctionID: component.FlowFunctionID,
 					Key:            component.Key,
 				}
+				// for the specific mongo data type primitive.A not influence outside world.
+				// do trans it here
+				if pa, ok := component.Value.(primitive.A); ok {
+					iptComponentConfig.Value = []interface{}(pa)
+				} else {
+					iptComponentConfig.Value = component.Value
+				}
+				tmp.ParamIpts[i][j] = iptComponentConfig
 			}
 		}
 		funcs[flowFuncID] = &tmp

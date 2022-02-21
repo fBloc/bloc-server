@@ -2,11 +2,11 @@ package value_type
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"reflect"
 
 	"github.com/spf13/cast"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // ValueType 此控件输入值的类型
@@ -28,37 +28,38 @@ func CheckValueTypeValueValid(valueType ValueType, value interface{}) bool {
 	}()
 
 	if valueType == IntValueType {
-		return ValidIntValueType(value)
+		return validIntValueType(value)
 	} else if valueType == FloatValueType {
-		return ValidFloatValueType(value)
+		return validFloatValueType(value)
 	} else if valueType == StringValueType {
-		return ValidStringValueType(value)
+		return validStringValueType(value)
 	} else if valueType == BoolValueType {
-		return ValidBoolValueType(value)
+		return validBoolValueType(value)
 	} else if valueType == JsonValueType {
-		return ValidJsonValueType(value)
+		return validJsonValueType(value)
 	}
 	return false
 }
 
-func ValidIntValueType(val interface{}) bool {
+func validIntValueType(val interface{}) bool {
 	var err error
 	rt := reflect.TypeOf(val)
 	switch rt.Kind() {
 	case reflect.Slice:
-		if pa, ok := val.(primitive.A); ok {
-			valueMSI := []interface{}(pa)
-			_, err = cast.ToIntSliceE(valueMSI)
-		} else {
-			_, err = cast.ToIntSliceE(val)
-		}
+		_, err = cast.ToIntSliceE(val)
+	case reflect.String:
+		err = errors.New("need int get string")
+	case reflect.Bool:
+		err = errors.New("need int get bool")
+	case reflect.Map:
+		err = errors.New("need int get map")
 	default:
 		_, err = cast.ToIntE(val)
 	}
 	return err == nil
 }
 
-func ValidFloatValueType(val interface{}) bool {
+func validFloatValueType(val interface{}) bool {
 	var err error
 	rt := reflect.TypeOf(val)
 	switch rt.Kind() {
@@ -71,47 +72,59 @@ func ValidFloatValueType(val interface{}) bool {
 				break
 			}
 		}
+	case reflect.String:
+		err = errors.New("need float get string")
+	case reflect.Bool:
+		err = errors.New("need float get bool")
+	case reflect.Map:
+		err = errors.New("need float get map")
 	default:
 		_, err = cast.ToFloat64E(val)
 	}
 	return err == nil
 }
 
-func ValidStringValueType(val interface{}) bool {
+func validStringValueType(val interface{}) bool {
 	var err error
 	rt := reflect.TypeOf(val)
 	switch rt.Kind() {
 	case reflect.Slice:
-		if pa, ok := val.(primitive.A); ok {
-			valueMSI := []interface{}(pa)
-			_, err = cast.ToStringSliceE(valueMSI)
-		} else {
-			_, err = cast.ToStringSliceE(val)
-		}
+		_, err = cast.ToStringSliceE(val)
+	case reflect.Float64:
+		err = errors.New("need string get float64")
+	case reflect.Int:
+		err = errors.New("need string get int")
+	case reflect.Bool:
+		err = errors.New("need string get bool")
+	case reflect.Map:
+		err = errors.New("need string get map")
 	default:
 		_, err = cast.ToStringE(val)
 	}
 	return err == nil
 }
 
-func ValidBoolValueType(val interface{}) bool {
+func validBoolValueType(val interface{}) bool {
 	var err error
 	rt := reflect.TypeOf(val)
 	switch rt.Kind() {
 	case reflect.Slice:
-		if pa, ok := val.(primitive.A); ok {
-			valueMSI := []interface{}(pa)
-			_, err = cast.ToBoolSliceE(valueMSI)
-		} else {
-			_, err = cast.ToBoolSliceE(val)
-		}
+		_, err = cast.ToBoolSliceE(val)
+	case reflect.Float64:
+		err = errors.New("need bool get float64")
+	case reflect.Int:
+		err = errors.New("need bool get int")
+	case reflect.Map:
+		err = errors.New("need bool get map")
+	case reflect.String:
+		err = errors.New("need bool get string")
 	default:
 		_, err = cast.ToBoolE(val)
 	}
 	return err == nil
 }
 
-func ValidJsonValueType(val interface{}) bool {
+func validJsonValueType(val interface{}) bool {
 	valStr, ok := val.(string)
 	if !ok {
 		return false
