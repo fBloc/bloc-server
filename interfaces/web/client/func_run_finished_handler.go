@@ -76,7 +76,7 @@ func FunctionRunFinished(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 		flowFunction := flowIns.FlowFunctionIDMapFlowFunction[fRRIns.FlowFunctionID]
 		if !req.InterceptBelowFunctionRun { // 成功运行完成且不拦截
 			if len(flowFunction.DownstreamFlowFunctionIDs) > 0 { // 若有下游待运行的function节点
-				// 创建并发布下游节点
+				// 创建并发布下游function节点
 				for _, downStreamFlowFunctionID := range flowFunction.DownstreamFlowFunctionIDs {
 					downStreamFlowFunction := flowIns.FlowFunctionIDMapFlowFunction[downStreamFlowFunctionID]
 					downStreamFunctionIns := reported.idMapFunc[downStreamFlowFunction.FunctionID]
@@ -99,10 +99,20 @@ func FunctionRunFinished(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 					if err != nil {
 						consumerLogger.Errorf(
 							map[string]string{"flow_run_record_id": flowRunRecordIns.ID.String()},
-							`flowRunRecordRepo.AddFlowFuncIDMapFuncRunRecordID error: %v.
-							flow_run_record_id:%s`,
-							flowRunRecordIns.ID.String(), err)
-						// TODO 咋办？
+							`flowRunRecordRepo.AddFlowFuncIDMapFuncRunRecordID error: %v.flow_run_record_id:%s`,
+							flowRunRecordIns.ID.String(), err,
+						)
+						err := flowRunRecordService.FlowRunRecord.Fail(
+							flowRunRecordIns.ID,
+							fmt.Sprintf(
+								"failed because of AddFlowFuncIDMapFuncRunRecordID to repository error: %v",
+								err))
+						if err != nil {
+							consumerLogger.Errorf(
+								map[string]string{"flow_run_record_id": flowRunRecordIns.ID.String()},
+								"FlowRunRecord.Fail to repository failed")
+							break
+						}
 					}
 					flowRunRecordIns.FlowFuncIDMapFuncRunRecordID[downStreamFlowFunctionID] = downStreamFunctionRunRecord.ID
 				}
