@@ -82,7 +82,7 @@ func BuildCrontab(iptString string) *CrontabRepresent {
 
 // 分钟  小时    dayofmonth   month    dayofweek
 func (cr *CrontabRepresent) TimeMatched(theTime time.Time) bool {
-	if cr.schedule == nil { // TODO 这里是不是不对？？
+	if cr.IsZero() {
 		return false
 	}
 	// 当前此crontab配置是否应该立即运行

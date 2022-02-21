@@ -55,6 +55,14 @@ func TestCrontabBuild(t *testing.T) {
 	})
 }
 
+func TestIsZero(t *testing.T) {
+	blankCr := BuildCrontab("")
+	Convey("should be nil", t, func() {
+		So(blankCr.IsZero(), ShouldBeTrue)
+		So(blankCr.TimeMatched(time.Now()), ShouldBeFalse)
+	})
+}
+
 func TestCrontabRunMatch(t *testing.T) {
 	crontabstrMapNowShouldRun := map[string]bool{
 		"* * * * *":   true,

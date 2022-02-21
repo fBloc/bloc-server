@@ -63,8 +63,18 @@ func aggFlowToWebFlow(aggF *aggregate.Flow) *flow.Flow {
 }
 
 func TestNeedLogin(t *testing.T) {
-	SkipConvey("need login to do all operations", t, func() {
-		// TODO
+	Convey("need login to do all operations", t, func() {
+		resp := struct {
+			web.RespMsg
+			Data []*flow.Flow `json:"data"`
+		}{}
+		_, err := http_util.Get(
+			notExistUserHeader(),
+			serverAddress+"/api/v1/draft_flow",
+			http_util.BlankGetParam, &resp)
+		So(err, ShouldBeNil)
+		So(resp.Code, ShouldEqual, http.StatusUnauthorized)
+		So(len(resp.Data), ShouldEqual, 0)
 	})
 }
 
