@@ -55,10 +55,12 @@ func doRequest(
 
 	for retriedAmount := 0; retriedAmount < 3; retriedAmount++ {
 		httpResp, err := httpClient.Do(req)
+		if httpResp != nil {
+			defer httpResp.Body.Close()
+		}
 		if err != nil {
 			continue
 		}
-		defer httpResp.Body.Close()
 		body, _ := ioutil.ReadAll(httpResp.Body)
 		err = json.Unmarshal(body, respStructPointer)
 
