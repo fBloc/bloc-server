@@ -138,3 +138,11 @@ func TestMain(m *testing.M) {
 
 	os.Exit(code)
 }
+
+func TestCreateIndexes(t *testing.T) {
+	Convey("create index", t, func() {
+		indexes := mongoDBIndexes()
+		err := epo.mongoCollection.CreateIndex(indexes)
+		So(err, ShouldBeNil)
+	})
+}

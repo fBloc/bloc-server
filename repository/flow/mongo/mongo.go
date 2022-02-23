@@ -38,6 +38,10 @@ func New(
 	if err != nil {
 		return nil, err
 	}
+
+	indexes := mongoDBIndexes()
+	collection.CreateIndex(indexes)
+
 	return &MongoRepository{mongoCollection: collection}, nil
 }
 

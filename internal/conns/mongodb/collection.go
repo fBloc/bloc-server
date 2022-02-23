@@ -199,6 +199,15 @@ func (c *Collection) FindOneOrInsert(
 	return
 }
 
+// CreateIndex create index into mongo collection
+func (c *Collection) CreateIndex(models []mongo.IndexModel) error {
+	if len(models) <= 0 {
+		return nil
+	}
+	_, err := c.collection.Indexes().CreateMany(context.TODO(), models)
+	return err
+}
+
 // PatchByID partially update a doc, only update ipt fields
 func (c *Collection) PatchByID(id value_object.UUID, mSetter *MongoUpdater) error {
 	_, err := c.Patch(NewFilter().AddEqual("id", id), mSetter)
