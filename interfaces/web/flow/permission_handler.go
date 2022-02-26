@@ -4,39 +4,49 @@ import (
 	"net/http"
 
 	"github.com/fBloc/bloc-server/interfaces/web"
-	"github.com/fBloc/bloc-server/interfaces/web/req_context"
 	"github.com/fBloc/bloc-server/value_object"
 
 	"github.com/julienschmidt/httprouter"
 )
 
 func GetPermission(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	flowID := r.URL.Query().Get("flow_id")
+	logTags := web.GetTraceAboutFields(r.Context())
+	logTags["business"] = "get permission of flow"
 
-	if flowID == "" {
-		web.WriteBadRequestDataResp(&w, "get param must contain flow_id")
+	reqUser, suc := web.GetReqUserFromContext(r.Context())
+	if !suc {
+		fService.Logger.Errorf(
+			logTags,
+			"failed to get user from context which should be setted by middleware!")
+		web.WriteInternalServerErrorResp(&w, r, nil,
+			"get requser from context failed")
 		return
 	}
+	logTags["user_name"] = reqUser.Name
+
+	flowID := r.URL.Query().Get("flow_id")
+	if flowID == "" {
+		fService.Logger.Warningf(logTags, "lack get param flow_id")
+		web.WriteBadRequestDataResp(&w, r, "get param must contain flow_id")
+		return
+	}
+	logTags["flow_id"] = flowID
 	flowUUID, err := value_object.ParseToUUID(flowID)
 	if err != nil {
-		web.WriteBadRequestDataResp(&w, "parse flow_id to uuid failed")
+		fService.Logger.Warningf(logTags, "parse flow_id to uuid failed: %v", err)
+		web.WriteBadRequestDataResp(&w, r, "parse flow_id to uuid failed")
 		return
 	}
 
 	aggF, err := fService.Flow.GetByID(flowUUID)
 	if err != nil {
-		web.WriteInternalServerErrorResp(&w, err, "get flow by flow_id error")
+		fService.Logger.Errorf(logTags, "get flow by id failed: %v", err)
+		web.WriteInternalServerErrorResp(&w, r, err, "get flow by flow_id error")
 		return
 	}
 	if aggF.IsZero() {
-		web.WriteBadRequestDataResp(&w, "flow_id find no flow")
-		return
-	}
-
-	reqUser, suc := req_context.GetReqUserFromContext(r.Context())
-	if !suc {
-		web.WriteInternalServerErrorResp(&w, nil,
-			"get requser from context failed")
+		fService.Logger.Warningf(logTags, "get flow by id match no record")
+		web.WriteBadRequestDataResp(&w, r, "flow_id find no flow")
 		return
 	}
 
@@ -47,12 +57,29 @@ func GetPermission(w http.ResponseWriter, r *http.Request, _ httprouter.Params) 
 		Delete:           aggF.UserCanDelete(reqUser),
 		AssignPermission: aggF.UserCanAssignPermission(reqUser),
 	}
-	web.WriteSucResp(&w, permsResp)
+
+	fService.Logger.Infof(logTags, "finished")
+	web.WriteSucResp(&w, r, permsResp)
 }
 
 func AddUserPermission(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	logTags := web.GetTraceAboutFields(r.Context())
+	logTags["business"] = "get permission of flow"
+
+	reqUser, suc := web.GetReqUserFromContext(r.Context())
+	if !suc {
+		fService.Logger.Errorf(
+			logTags,
+			"failed to get user from context which should be setted by middleware!")
+		web.WriteInternalServerErrorResp(&w, r, nil,
+			"get requser from context failed")
+		return
+	}
+	logTags["user_name"] = reqUser.Name
+
 	req := BuildPermissionReqAndCheck(&w, r, r.Body)
 	if req == nil {
+		fService.Logger.Warningf(logTags, "build req failed")
 		return
 	}
 
@@ -70,15 +97,23 @@ func AddUserPermission(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 		err = fService.Flow.AddAssigner(req.FlowID, req.UserID)
 	}
 	if err != nil {
-		web.WriteInternalServerErrorResp(&w, err, "add permission failed")
+		fService.Logger.Errorf(logTags, "add permission failed: %v", err)
+		web.WriteInternalServerErrorResp(&w, r, err, "add permission failed")
 		return
 	}
-	web.WritePlainSucOkResp(&w)
+	fService.Logger.Infof(
+		logTags, "suc add permission: %s", req.PermissionType.String())
+	web.WritePlainSucOkResp(&w, r)
 }
 
 func DeleteUserPermission(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	logTags := web.GetTraceAboutFields(r.Context())
+	logTags["business"] = "delete permission of flow"
+
 	req := BuildPermissionReqAndCheck(&w, r, r.Body)
 	if req == nil {
+		fService.Logger.Warningf(
+			logTags, "build req from body failed")
 		return
 	}
 
@@ -96,8 +131,14 @@ func DeleteUserPermission(w http.ResponseWriter, r *http.Request, ps httprouter.
 		err = fService.Flow.RemoveAssigner(req.FlowID, req.UserID)
 	}
 	if err != nil {
-		web.WriteInternalServerErrorResp(&w, err, "remove user permission failed")
+		fService.Logger.Errorf(
+			logTags,
+			"remove user permission failed: %v", err)
+		web.WriteInternalServerErrorResp(&w, r, err, "remove user permission failed")
 		return
 	}
-	web.WritePlainSucOkResp(&w)
+
+	fService.Logger.Infof(
+		logTags, "suc remove permission: %s", req.PermissionType.String())
+	web.WritePlainSucOkResp(&w, r)
 }

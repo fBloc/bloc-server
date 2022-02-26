@@ -32,12 +32,12 @@ func InjectFlowRunRecordService(
 	flowRunRecordService = f
 }
 
-var consumerLogger *log.Logger
+var scheduleLogger *log.Logger
 
-func InjectConsumerLogger(
+func InjectScheduleLogger(
 	l *log.Logger,
 ) {
-	consumerLogger = l
+	scheduleLogger = l
 }
 
 type FuncRunFinishedHttpReq struct {

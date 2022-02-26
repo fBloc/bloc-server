@@ -2,6 +2,7 @@ package client
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/fBloc/bloc-server/interfaces/web"
@@ -10,46 +11,59 @@ import (
 )
 
 func ReportProgress(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	logTags := web.GetTraceAboutFields(r.Context())
+	logTags["business"] = "report function run progress"
+
 	var req ProgressReportHttpReq
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
-		web.WriteBadRequestDataResp(&w, err.Error())
+		scheduleLogger.Warningf(logTags, "unmarshal body failed: %v", err)
+		web.WriteBadRequestDataResp(&w, r, err.Error())
 		return
 	}
 
 	funcRunRecordUUID, err := value_object.ParseToUUID(req.FunctionRunRecordID)
 	if err != nil {
-		web.WriteBadRequestDataResp(&w, "parse function_id to uuid failed: %v", err)
+		msg := fmt.Sprintf("parse function_id to uuid failed: %v", err)
+		scheduleLogger.Warningf(logTags, msg)
+		web.WriteBadRequestDataResp(&w, r, msg)
 		return
 	}
+	logTags["function_id"] = req.FunctionRunRecordID
 
 	fRRIns, err := fRRService.FunctionRunRecords.GetByID(funcRunRecordUUID)
 	if err != nil {
-		web.WriteInternalServerErrorResp(&w, err, "find function_run_record_ins by it's id failed")
+		scheduleLogger.Errorf(logTags,
+			"find function_run_record_ins by id failed: %v", err)
+		web.WriteInternalServerErrorResp(&w, r, err, "find function_run_record_ins by id failed")
 		return
 	}
 	if fRRIns.IsZero() {
-		web.WriteBadRequestDataResp(&w, "find no function_run_record_ins by this function_id")
+		scheduleLogger.Warningf(logTags, "find no record")
+		web.WriteBadRequestDataResp(&w, r, "find no function_run_record_ins by this function_id")
 		return
 	}
 
 	if req.FuncRunProgress.Progress > 0 {
+		scheduleLogger.Infof(logTags,
+			"progress from %g to %g", fRRIns.Progress, req.FuncRunProgress.Progress)
 		fRRService.FunctionRunRecords.PatchProgress(
 			funcRunRecordUUID, req.FuncRunProgress.Progress)
 	}
 	if req.FuncRunProgress.Msg != "" {
+		scheduleLogger.Infof(logTags,
+			"add progress_msg: %s", req.FuncRunProgress.Msg)
 		fRRService.FunctionRunRecords.PatchProgressMsg(
 			funcRunRecordUUID, req.FuncRunProgress.Msg)
 	}
 	if req.FuncRunProgress.ProcessStageIndex > 0 {
+		scheduleLogger.Infof(logTags,
+			"progress index from %d to %d",
+			fRRIns.ProcessStageIndex, req.FuncRunProgress.ProcessStageIndex)
 		fRRService.FunctionRunRecords.PatchStageIndex(
 			funcRunRecordUUID, req.FuncRunProgress.ProcessStageIndex)
 	}
-	fRRService.Logger.Infof(
-		map[string]string{"function_run_record_id": req.FunctionRunRecordID},
-		`received function run high readable progress report.function_run_record_id: %s. progress: %f, msg: %s, index: %d`,
-		req.FunctionRunRecordID, req.FuncRunProgress.Progress,
-		req.FuncRunProgress.Msg, req.FuncRunProgress.ProcessStageIndex)
 
-	web.WritePlainSucOkResp(&w)
+	scheduleLogger.Infof(logTags, "finished")
+	web.WritePlainSucOkResp(&w, r)
 }

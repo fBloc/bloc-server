@@ -15,7 +15,7 @@ import (
 type UserConfiguration func(us *UserService) error
 
 type UserService struct {
-	logger *log.Logger
+	Logger *log.Logger
 	user   user.UserRepository
 }
 
@@ -55,7 +55,7 @@ func WithMongoUserRepository(
 
 func WithLogger(logger *log.Logger) UserConfiguration {
 	return func(us *UserService) error {
-		us.logger = logger
+		us.Logger = logger
 		return nil
 	}
 }

@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/fBloc/bloc-server/interfaces/web"
-	"github.com/fBloc/bloc-server/interfaces/web/req_context"
 	"github.com/fBloc/bloc-server/value_object"
 
 	"github.com/julienschmidt/httprouter"
@@ -14,112 +13,146 @@ import (
 
 // GetFlowByID 需要特别注意的是，通过id获取的话，就可能是获取到的老版本的flow
 func GetFlowByID(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	flowID := ps.ByName("id")
-	if flowID == "" {
-		web.WriteBadRequestDataResp(&w, "id cannot be nil")
+	logTags := web.GetTraceAboutFields(r.Context())
+	logTags["business"] = "get flow by id"
+
+	reqUser, suc := web.GetReqUserFromContext(r.Context())
+	if !suc {
+		fService.Logger.Errorf(logTags, "failed to get user from context which should be setted by middleware!")
+		web.WriteInternalServerErrorResp(&w, r, nil, "get requser from context failed")
 		return
 	}
+	logTags["user_name"] = reqUser.Name
+
+	flowID := ps.ByName("id")
+	if flowID == "" {
+		fService.Logger.Infof(logTags, "lack id in url path")
+		web.WriteBadRequestDataResp(&w, r, "id cannot be nil")
+		return
+	}
+	logTags["flow_id"] = flowID
 
 	flowIns, err := fService.Flow.GetByIDStr(flowID)
 	if err != nil {
-		web.WriteInternalServerErrorResp(&w, err, "")
+		fService.Logger.Errorf(logTags, "get flow by id error: %v", err)
+		web.WriteInternalServerErrorResp(&w, r, err, "")
 		return
 	}
 	if flowIns.IsZero() {
-		web.WriteSucResp(&w, nil)
+		fService.Logger.Warningf(logTags, "get flow by id match no record")
+		web.WriteSucResp(&w, r, nil)
 		return
 	}
 
 	var retFlow *Flow
 	// 因为用户可能是新用户，没有加到老版本flow权限中
 	// 但是能发起此请求的、一定是有新版本权限的，老版本依然有对应权限
-	reqUser, suc := req_context.GetReqUserFromContext(r.Context())
-	if !suc {
-		web.WriteInternalServerErrorResp(&w, nil,
-			"get requser from context failed")
-		return
-	}
 	retFlow = fromAggWithLatestRunFunctionView(flowIns, reqUser)
 
 	if !flowIns.Newest { // 老版本的话，只返回read权限(别的操作都不该有了)
+		fService.Logger.Infof(logTags, "old version flow")
 		retFlow = fromAggWithoutUserPermission(flowIns)
 		retFlow.Write = false
 		retFlow.Execute = false
 		retFlow.Delete = false
 		retFlow.AssignPermission = false
 	}
-	web.WriteSucResp(&w, retFlow)
+
+	fService.Logger.Infof(logTags, "finished")
+	web.WriteSucResp(&w, r, retFlow)
 }
 
 func GetFlowByCertainFlowRunRecord(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	flowRunRecordIDStr := ps.ByName("flow_run_record_id")
-	if flowRunRecordIDStr == "" {
-		web.WriteBadRequestDataResp(&w, "flow_run_record_id cannot be nil")
+	logTags := web.GetTraceAboutFields(r.Context())
+	logTags["business"] = "get flow by flow_run_record id"
+
+	reqUser, suc := web.GetReqUserFromContext(r.Context())
+	if !suc {
+		fService.Logger.Errorf(
+			logTags, "failed to get user from context which should be setted by middleware!")
+		web.WriteInternalServerErrorResp(&w, r, nil, "get requser from context failed")
 		return
 	}
+	logTags["user_name"] = reqUser.Name
+
+	flowRunRecordIDStr := ps.ByName("flow_run_record_id")
+	if flowRunRecordIDStr == "" {
+		fService.Logger.Warningf(logTags, "lack flow_run_record_id in url path")
+		web.WriteBadRequestDataResp(&w, r, "flow_run_record_id cannot be nil")
+		return
+	}
+	logTags["flow_run_record_id"] = flowRunRecordIDStr
 
 	flowRunRecordUUID, err := value_object.ParseToUUID(flowRunRecordIDStr)
 	if err != nil {
+		fService.Logger.Warningf(
+			logTags, "parse flow_run_record_id to uuid failed: %v", err)
 		web.WriteBadRequestDataResp(
-			&w,
-			"parse flowRunRecordIDStr(%s) to uuid failed",
+			&w, r, "parse flowRunRecordIDStr(%s) to uuid failed",
 			flowRunRecordIDStr)
 		return
 	}
 
 	aggFlowRunRecord, err := fService.FlowRunRecord.GetByID(flowRunRecordUUID)
 	if err != nil {
-		web.WriteInternalServerErrorResp(&w, err, "fetch FlowRunRecord ins failed")
+		web.WriteInternalServerErrorResp(&w, r, err, "fetch FlowRunRecord ins failed")
 		return
 	}
 
 	flowIns, err := fService.Flow.GetByID(aggFlowRunRecord.FlowID)
 	if err != nil {
-		web.WriteInternalServerErrorResp(&w, err, "get flow by id failed")
+		fService.Logger.Errorf(logTags, "get by id failed: %v", err)
+		web.WriteInternalServerErrorResp(&w, r, err, "get flow by id failed")
 		return
 	}
 	if flowIns.IsZero() {
+		fService.Logger.Warningf(logTags, "get by id match no record")
 		web.WriteInternalServerErrorResp(
-			&w, err,
+			&w, r, err,
 			"get no flow by this flow_id(%s)", aggFlowRunRecord.FlowID.String())
 		return
 	}
 
-	reqUser, suc := req_context.GetReqUserFromContext(r.Context())
-	if !suc {
-		web.WriteInternalServerErrorResp(&w, nil,
-			"get requser from context failed")
-		return
-	}
 	retFlow := fromAggWithCertainRunFunctionView(flowIns, aggFlowRunRecord, reqUser)
 	if !flowIns.Newest { // 老版本的话，只返回read权限(别的操作都不该有了)
+		fService.Logger.Infof(logTags, "old version flow")
 		retFlow = fromAggWithoutUserPermission(flowIns)
 		retFlow.Write = false
 		retFlow.Execute = false
 		retFlow.Delete = false
 		retFlow.AssignPermission = false
 	}
-	web.WriteSucResp(&w, retFlow)
+
+	fService.Logger.Infof(logTags, "finished")
+	web.WriteSucResp(&w, r, retFlow)
 }
 
 // GetFlowByOriginID 通过origin_id精确查询
 func GetFlowByOriginID(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	logTags := web.GetTraceAboutFields(r.Context())
+	logTags["business"] = "get flow by origin_id"
+
+	reqUser, suc := web.GetReqUserFromContext(r.Context())
+	if !suc {
+		fService.Logger.Errorf(
+			logTags, "failed to get user from context which should be setted by middleware!")
+		web.WriteInternalServerErrorResp(&w, r, nil, "get requser from context failed")
+		return
+	}
+	logTags["user_name"] = reqUser.Name
+
 	originID := ps.ByName("origin_id")
 	arrFlowID := r.URL.Query().Get("arrangement_flow_id") // 获取特定arrangement下的flow最近一次运行记录
 
 	flowIns, err := fService.Flow.GetOnlineByOriginIDStr(originID)
 	if err != nil {
-		web.WriteInternalServerErrorResp(&w, err, "get latest flow by origin_id failed")
+		fService.Logger.Errorf(logTags, "get flow by origin_id error: %v", err)
+		web.WriteInternalServerErrorResp(&w, r, err, "get latest flow by origin_id failed")
 		return
 	}
 	if flowIns.IsZero() {
-		web.WriteSucResp(&w, nil)
-		return
-	}
-	reqUser, suc := req_context.GetReqUserFromContext(r.Context())
-	if !suc {
-		web.WriteInternalServerErrorResp(&w, nil,
-			"get requser from context failed")
+		fService.Logger.Infof(logTags, "match no record")
+		web.WriteSucResp(&w, r, nil)
 		return
 	}
 
@@ -131,21 +164,28 @@ func GetFlowByOriginID(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 	}
 
 	if !retFlow.Read {
-		web.WritePermissionNotEnough(&w, "user have no read permission on this flow")
+		fService.Logger.Infof(logTags, "have no read permission")
+		web.WritePermissionNotEnough(&w, r, "user have no read permission on this flow")
 		return
 	}
 
-	web.WriteSucResp(&w, retFlow)
+	fService.Logger.Infof(logTags, "finished")
+	web.WriteSucResp(&w, r, retFlow)
 }
 
 // FilterFlow 获取flow
 func FilterFlow(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	reqUser, suc := req_context.GetReqUserFromContext(r.Context())
+	logTags := web.GetTraceAboutFields(r.Context())
+	logTags["business"] = "filter flow"
+
+	reqUser, suc := web.GetReqUserFromContext(r.Context())
 	if !suc {
-		web.WriteInternalServerErrorResp(&w, nil,
-			"get requser from context failed")
+		fService.Logger.Errorf(
+			logTags, "failed to get user from context which should be setted by middleware!")
+		web.WriteInternalServerErrorResp(&w, r, nil, "get requser from context failed")
 		return
 	}
+	logTags["user_name"] = reqUser.Name
 
 	flowID := r.URL.Query().Get("id")
 	// 若flowID存在的话表示是精确查找
@@ -153,65 +193,77 @@ func FilterFlow(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		// 通过ID查询并返回flow
 		agg, err := fService.Flow.GetByIDStr(flowID)
 		if err != nil {
-			web.WriteInternalServerErrorResp(&w, err, "")
+			fService.Logger.Errorf(logTags, "get by id failed: %v", err)
+			web.WriteInternalServerErrorResp(&w, r, err, "")
 			return
 		}
 		ret := fromAggWithLatestRunFlowView(agg, reqUser)
-		web.WriteSucResp(&w, ret)
+
+		fService.Logger.Infof(logTags, "finished")
+		web.WriteSucResp(&w, r, ret)
 		return
 	}
 
 	// 否则是过滤查找
 	aggSlice, err := fService.Flow.FilterOnline(reqUser, r.URL.Query().Get("name__contains"))
 	if err != nil {
-		web.WriteInternalServerErrorResp(&w, err, "visit repository failed")
+		fService.Logger.Errorf(logTags, "filter failed: %v", err)
+		web.WriteInternalServerErrorResp(&w, r, err, "visit repository failed")
 		return
 	}
 	ret := fromAggSliceWithLatestRun(aggSlice, reqUser)
 
-	web.WriteSucResp(&w, ret)
+	fService.Logger.Infof(logTags, "finished")
+	web.WriteSucResp(&w, r, ret)
 }
 
 // Patch 用户前端保存创建/更新的flow的运行配置
 func SetExecuteControlAttributes(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	logTags := web.GetTraceAboutFields(r.Context())
+	logTags["business"] = "set flow's execute control attribute"
+
+	reqUser, suc := web.GetReqUserFromContext(r.Context())
+	if !suc {
+		fService.Logger.Errorf(logTags, "failed to get user from context which should be setted by middleware!")
+		web.WriteInternalServerErrorResp(&w, r, nil, "get requser from context failed")
+		return
+	}
+	logTags["user_name"] = reqUser.Name
+
 	var reqFlow Flow
 	err := json.NewDecoder(r.Body).Decode(&reqFlow)
 	if err != nil {
-		web.WriteBadRequestDataResp(&w, err.Error())
+		fService.Logger.Warningf(
+			logTags, "json unmarshal req body to flow failed: %v", err)
+		web.WriteBadRequestDataResp(&w, r, err.Error())
 		return
 	}
 
 	// > id不能为空
 	if reqFlow.ID.IsNil() {
-		web.WriteBadRequestDataResp(&w, "must have id field")
+		fService.Logger.Warningf(logTags, "lack flow_id")
+		web.WriteBadRequestDataResp(&w, r, "must have id field")
 		return
 	}
+	logTags["flow_id"] = reqFlow.ID.String()
 
 	flowIns, err := fService.Flow.GetByID(reqFlow.ID)
 	if err != nil {
-		web.WriteInternalServerErrorResp(&w, err, "get flow by id failed")
+		fService.Logger.Errorf(logTags, "get flow by id failed: %v", err)
+		web.WriteInternalServerErrorResp(&w, r, err, "get flow by id failed")
 		return
 	}
 	if flowIns.IsZero() {
-		web.WriteBadRequestDataResp(&w, "find no flow by this id")
+		fService.Logger.Warningf(logTags, "get flow by id match no record")
+		web.WriteBadRequestDataResp(&w, r, "find no flow by this id")
 		return
 	}
 
 	// > 检测当前用户是否有update此flow的权限
-	reqUser, suc := req_context.GetReqUserFromContext(r.Context())
-	if !suc {
-		web.WriteInternalServerErrorResp(&w, nil,
-			"get requser from context failed")
-		return
-	}
-
 	if !flowIns.UserCanExecute(reqUser) {
-		web.WritePermissionNotEnough(&w, "need execute permission to update")
+		fService.Logger.Warningf(logTags, "user lack execute permission")
+		web.WritePermissionNotEnough(&w, r, "need execute permission to update")
 	}
-
-	logTag := map[string]string{
-		"user_name": reqUser.Name,
-		"flow_id":   reqFlow.ID.String()}
 
 	// >> 更新crontab
 	if !reqFlow.Crontab.Equal(flowIns.Crontab) {
@@ -222,11 +274,11 @@ func SetExecuteControlAttributes(w http.ResponseWriter, r *http.Request, _ httpr
 			flowIns.Crontab.String(), reqFlow.Crontab.String())
 
 		if err != nil {
-			fService.Logger.Errorf(logTag, "%s. error: %v", baseLogMsg, err)
-			web.WriteInternalServerErrorResp(&w, err, "update crontab failed")
+			fService.Logger.Errorf(logTags, "%s. error: %v", baseLogMsg, err)
+			web.WriteInternalServerErrorResp(&w, r, err, "update crontab failed")
 			return
 		}
-		fService.Logger.Infof(logTag, baseLogMsg)
+		fService.Logger.Infof(logTags, baseLogMsg)
 	}
 
 	// >> 更新trigger_key
@@ -238,11 +290,11 @@ func SetExecuteControlAttributes(w http.ResponseWriter, r *http.Request, _ httpr
 			flowIns.TriggerKey, reqFlow.TriggerKey)
 
 		if err != nil {
-			fService.Logger.Errorf(logTag, "%s. error: %v", baseLogMsg, err)
-			web.WriteInternalServerErrorResp(&w, err, "update trigger_key failed")
+			fService.Logger.Errorf(logTags, "%s. error: %v", baseLogMsg, err)
+			web.WriteInternalServerErrorResp(&w, r, err, "update trigger_key failed")
 			return
 		}
-		fService.Logger.Infof(logTag, baseLogMsg)
+		fService.Logger.Infof(logTags, baseLogMsg)
 	}
 
 	// >> 更新超时设置
@@ -254,11 +306,11 @@ func SetExecuteControlAttributes(w http.ResponseWriter, r *http.Request, _ httpr
 			flowIns.TimeoutInSeconds, reqFlow.TimeoutInSeconds)
 
 		if err != nil {
-			fService.Logger.Errorf(logTag, "%s. error: %v", baseLogMsg, err)
-			web.WriteInternalServerErrorResp(&w, err, "update timeout failed")
+			fService.Logger.Errorf(logTags, "%s. error: %v", baseLogMsg, err)
+			web.WriteInternalServerErrorResp(&w, r, err, "update timeout failed")
 			return
 		}
-		fService.Logger.Infof(logTag, baseLogMsg)
+		fService.Logger.Infof(logTags, baseLogMsg)
 	}
 
 	// >> 更新重试策略
@@ -276,11 +328,11 @@ func SetExecuteControlAttributes(w http.ResponseWriter, r *http.Request, _ httpr
 			flowIns.RetryAmount, flowIns.RetryIntervalInSecond,
 			reqFlow.RetryAmount, reqFlow.RetryIntervalInSecond)
 		if err != nil {
-			fService.Logger.Errorf(logTag, "%s. error: %v", baseLogMsg, err)
-			web.WriteInternalServerErrorResp(&w, err, "update retry_strategy failed")
+			fService.Logger.Errorf(logTags, "%s. error: %v", baseLogMsg, err)
+			web.WriteInternalServerErrorResp(&w, r, err, "update retry_strategy failed")
 			return
 		}
-		fService.Logger.Infof(logTag, baseLogMsg)
+		fService.Logger.Infof(logTags, baseLogMsg)
 	}
 
 	// >> 更新是否支持在运行的时候也发布
@@ -291,44 +343,55 @@ func SetExecuteControlAttributes(w http.ResponseWriter, r *http.Request, _ httpr
 			"change flow's allow_parallel_run from:%t to:%t",
 			flowIns.AllowParallelRun, reqFlow.AllowParallelRun)
 		if err != nil {
-			fService.Logger.Errorf(logTag, "%s. error: %v", baseLogMsg, err)
-			web.WriteInternalServerErrorResp(&w, err, "update allow_parallel_run failed")
+			fService.Logger.Errorf(logTags, "%s. error: %v", baseLogMsg, err)
+			web.WriteInternalServerErrorResp(&w, r, err, "update allow_parallel_run failed")
 			return
 		}
-		fService.Logger.Infof(logTag, baseLogMsg)
+		fService.Logger.Infof(logTags, baseLogMsg)
 	}
 
-	web.WritePlainSucOkResp(&w)
+	fService.Logger.Infof(logTags, "finished")
+	web.WritePlainSucOkResp(&w, r)
 }
 
 // DeleteFlowByOriginID 只有delete user能够删除flow，通过originID全部删除
 func DeleteFlowByOriginID(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	originID := ps.ByName("origin_id")
-	if originID == "" {
-		web.WriteBadRequestDataResp(&w, "origin_id param must exist")
-	}
-	uuOriginID, err := value_object.ParseToUUID(originID)
-	if err != nil {
-		web.WriteBadRequestDataResp(&w,
-			"parse origin_id to uuid failed: %v", err)
-		return
-	}
+	logTags := web.GetTraceAboutFields(r.Context())
+	logTags["business"] = "delete flow by origin_id"
 
-	reqUser, suc := req_context.GetReqUserFromContext(r.Context())
+	reqUser, suc := web.GetReqUserFromContext(r.Context())
 	if !suc {
-		web.WriteInternalServerErrorResp(&w, nil,
+		fService.Logger.Errorf(logTags, "failed to get user from context which should be setted by middleware!")
+		web.WriteInternalServerErrorResp(&w, r, nil,
 			"get requser from context failed")
 		return
 	}
+	logTags["user_name"] = reqUser.Name
+
+	originID := ps.ByName("origin_id")
+	if originID == "" {
+		fService.Logger.Warningf(logTags, "lack origin_id url path")
+		web.WriteBadRequestDataResp(&w, r, "origin_id param must exist")
+	}
+	uuOriginID, err := value_object.ParseToUUID(originID)
+	if err != nil {
+		fService.Logger.Warningf(logTags, "parse origin_id to uuid failed: %v", err)
+		web.WriteBadRequestDataResp(&w, r, "parse origin_id to uuid failed: %v", err)
+		return
+	}
+	logTags["origin_id"] = originID
 
 	aggFlow, err := fService.Flow.GetOnlineByOriginID(uuOriginID)
 	if err != nil {
-		web.WriteInternalServerErrorResp(&w, nil,
+		fService.Logger.Errorf(logTags, "get flow from origin_id failed: %v", err)
+		web.WriteInternalServerErrorResp(&w, r, nil,
 			"get flow from origin_id failed")
 		return
 	}
+
 	if !aggFlow.UserCanDelete(reqUser) {
-		web.WritePermissionNotEnough(&w, "need delete permission")
+		fService.Logger.Errorf(logTags, "user donnot have delete permission")
+		web.WritePermissionNotEnough(&w, r, "need delete permission")
 		return
 	}
 
@@ -337,9 +400,11 @@ func DeleteFlowByOriginID(w http.ResponseWriter, r *http.Request, ps httprouter.
 	// actually delete nothing of it
 	deleteCount, err := fService.Flow.DeleteByOriginID(uuOriginID)
 	if err != nil {
-		web.WriteInternalServerErrorResp(&w, err, "delete failed")
+		fService.Logger.Errorf(logTags, "delete failed: %v", err)
+		web.WriteInternalServerErrorResp(&w, r, err, "delete failed")
 		return
 	}
 
-	web.WriteDeleteSucResp(&w, deleteCount)
+	fService.Logger.Infof(logTags, "finished with delete amount: %d", deleteCount)
+	web.WriteDeleteSucResp(&w, r, deleteCount)
 }

@@ -43,11 +43,11 @@ func LoginAuth(h httprouter.Handle) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		user, err := getUserFromService(r.Header.Get("token"))
 		if err != nil {
-			web.WriteInternalServerErrorResp(&w, err, "")
+			web.WriteInternalServerErrorResp(&w, r, err, "")
 			return
 		}
 		if user == nil {
-			web.WriteNeedLogin(&w)
+			web.WriteNeedLogin(&w, r)
 			return
 		}
 
@@ -61,15 +61,15 @@ func SuperuserAuth(h httprouter.Handle) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		user, err := getUserFromService(r.Header.Get("token"))
 		if err != nil {
-			web.WriteInternalServerErrorResp(&w, err, "")
+			web.WriteInternalServerErrorResp(&w, r, err, "")
 			return
 		}
 		if user == nil {
-			web.WriteNeedLogin(&w)
+			web.WriteNeedLogin(&w, r)
 			return
 		}
 		if !user.IsSuper {
-			web.WriteNeedSuperUser(&w)
+			web.WriteNeedSuperUser(&w, r)
 			return
 		}
 

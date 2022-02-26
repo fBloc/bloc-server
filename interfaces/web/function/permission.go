@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/fBloc/bloc-server/interfaces/web"
-	"github.com/fBloc/bloc-server/interfaces/web/req_context"
 	"github.com/fBloc/bloc-server/value_object"
 )
 
@@ -37,37 +36,37 @@ func buildPermissionReqAndCheck(
 	var req PermissionReq
 	err := json.NewDecoder(body).Decode(&req)
 	if err != nil {
-		web.WriteBadRequestDataResp(w, "not valid json data："+err.Error())
+		web.WriteBadRequestDataResp(w, r, "not valid json data: %v", err)
 		return nil
 	}
 	if req.FunctionID.IsNil() {
-		web.WriteBadRequestDataResp(w, "must have function_id")
+		web.WriteBadRequestDataResp(w, r, "must have function_id")
 		return nil
 	}
 	if !req.PermissionType.IsValid() {
-		web.WriteBadRequestDataResp(w, "permission_type not valid")
+		web.WriteBadRequestDataResp(w, r, "permission_type not valid")
 		return nil
 	}
 
 	aggF, err := fService.Function.GetByID(req.FunctionID)
 	if err != nil {
-		web.WriteInternalServerErrorResp(w, err, "get function by id error")
+		web.WriteInternalServerErrorResp(w, r, err, "get function by id error")
 		return nil
 	}
 	if aggF.IsZero() {
-		web.WriteBadRequestDataResp(w, "function_id find no function")
+		web.WriteBadRequestDataResp(w, r, "function_id find no function")
 		return nil
 	}
 
 	// 检查当前用户是否对此function有操作添加用户的权限
-	reqUser, suc := req_context.GetReqUserFromContext(r.Context())
+	reqUser, suc := web.GetReqUserFromContext(r.Context())
 	if !suc {
-		web.WriteInternalServerErrorResp(w, nil,
+		web.WriteInternalServerErrorResp(w, r, nil,
 			"get requser from context failed")
 		return nil
 	}
 	if !aggF.UserCanAssignPermission(reqUser) && !reqUser.IsSuper {
-		web.WritePermissionNotEnough(w, "need assign_permission permission")
+		web.WritePermissionNotEnough(w, r, "need assign_permission permission")
 		return nil
 	}
 	return &req

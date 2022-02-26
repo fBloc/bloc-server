@@ -4,37 +4,52 @@ import (
 	"net/http"
 
 	"github.com/fBloc/bloc-server/interfaces/web"
-	"github.com/fBloc/bloc-server/interfaces/web/req_context"
 	"github.com/fBloc/bloc-server/value_object"
 
 	"github.com/julienschmidt/httprouter"
 )
 
 func GetPermissionByFunctionID(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	logTags := web.GetTraceAboutFields(r.Context())
+	logTags["business"] = "get permission of function"
+
+	reqUser, suc := web.GetReqUserFromContext(r.Context())
+	if !suc {
+		fService.Logger.Errorf(logTags, "failed to get user from context which should be setted by middleware!")
+		web.WriteInternalServerErrorResp(&w, r, nil,
+			"get requser from context failed")
+		return
+	}
+	logTags["user_name"] = reqUser.Name
+
 	functionID := r.URL.Query().Get("function_id")
 	if functionID == "" {
-		web.WriteBadRequestDataResp(&w, "get param must contain function_id")
+		fService.Logger.Warningf(
+			logTags, "get param miss function_id")
+		web.WriteBadRequestDataResp(&w, r, "get param must contain function_id")
 		return
 	}
+	logTags["function_id"] = functionID
+
 	functionUUID, err := value_object.ParseToUUID(functionID)
 	if err != nil {
-		web.WriteBadRequestDataResp(&w, "parse function_id to uuid failed")
-		return
-	}
-	aggF, err := fService.Function.GetByID(functionUUID)
-	if err != nil {
-		web.WriteInternalServerErrorResp(&w, err, "get function by function_id error")
-		return
-	}
-	if aggF.IsZero() {
-		web.WriteBadRequestDataResp(&w, "function_id find no function")
+		fService.Logger.Warningf(
+			logTags, "parse function_id to uuid failed: %v", err)
+		web.WriteBadRequestDataResp(&w, r, "parse function_id to uuid failed")
 		return
 	}
 
-	reqUser, suc := req_context.GetReqUserFromContext(r.Context())
-	if !suc {
-		web.WriteInternalServerErrorResp(&w, nil,
-			"get requser from context failed")
+	aggF, err := fService.Function.GetByID(functionUUID)
+	if err != nil {
+		fService.Logger.Errorf(
+			logTags, "visit function by id failed: %v", err)
+		web.WriteInternalServerErrorResp(&w, r, err, "get function by function_id error")
+		return
+	}
+	if aggF.IsZero() {
+		fService.Logger.Warningf(
+			logTags, "visit function by id match no record")
+		web.WriteBadRequestDataResp(&w, r, "function_id find no function")
 		return
 	}
 
@@ -43,14 +58,23 @@ func GetPermissionByFunctionID(w http.ResponseWriter, r *http.Request, _ httprou
 		Execute:          aggF.UserCanExecute(reqUser),
 		AssignPermission: aggF.UserCanAssignPermission(reqUser),
 	}
-	web.WriteSucResp(&w, permsResp)
+
+	fService.Logger.Infof(logTags, "finished")
+	web.WriteSucResp(&w, r, permsResp)
 }
 
 func AddUserPermission(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	logTags := web.GetTraceAboutFields(r.Context())
+	logTags["business"] = "add permission of function"
+
 	req := buildPermissionReqAndCheck(&w, r, r.Body)
 	if req == nil {
+		fService.Logger.Warningf(
+			logTags, "build permission from body failed")
 		return
 	}
+	logTags["user_id"] = req.UserID.String()
+	logTags["function_id"] = req.FunctionID.String()
 
 	// 开始实际更新数据
 	var err error
@@ -62,17 +86,29 @@ func AddUserPermission(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 		err = fService.Function.AddAssigner(req.FunctionID, req.UserID)
 	}
 	if err != nil {
-		web.WriteInternalServerErrorResp(&w, err, "add user permission failed")
+		fService.Logger.Errorf(
+			logTags, "add permission failed: %v", err)
+		web.WriteInternalServerErrorResp(&w, r, err, "add user permission failed")
 		return
 	}
-	web.WritePlainSucOkResp(&w)
+
+	fService.Logger.Infof(
+		logTags, "finished add permission: %v", req.PermissionType)
+	web.WritePlainSucOkResp(&w, r)
 }
 
 func DeleteUserPermission(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	logTags := web.GetTraceAboutFields(r.Context())
+	logTags["business"] = "delete permission of function"
+
 	req := buildPermissionReqAndCheck(&w, r, r.Body)
 	if req == nil {
+		fService.Logger.Warningf(
+			logTags, "build permission from body failed")
 		return
 	}
+	logTags["user_id"] = req.UserID.String()
+	logTags["function_id"] = req.FunctionID.String()
 
 	// 开始实际更新数据
 	var err error
@@ -84,8 +120,13 @@ func DeleteUserPermission(w http.ResponseWriter, r *http.Request, ps httprouter.
 		err = fService.Function.RemoveAssigner(req.FunctionID, req.UserID)
 	}
 	if err != nil {
-		web.WriteInternalServerErrorResp(&w, err, "remove user permission failed")
+		fService.Logger.Errorf(
+			logTags, "remove permission failed: %v", err)
+		web.WriteInternalServerErrorResp(&w, r, err, "remove user permission failed")
 		return
 	}
-	web.WritePlainSucOkResp(&w)
+
+	fService.Logger.Infof(
+		logTags, "finished delete permission: %v", req.PermissionType)
+	web.WritePlainSucOkResp(&w, r)
 }

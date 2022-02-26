@@ -63,17 +63,17 @@ func FromAgg(aggU *aggregate.User) *User {
 	}
 }
 
-func LoginRespFromAgg(w *http.ResponseWriter, aggU *aggregate.User) {
+func LoginRespFromAgg(w *http.ResponseWriter, r *http.Request, aggU *aggregate.User) {
 	tmp := FromAgg(aggU)
 	tmp.Token = aggU.Token // only login should return token!
-	web.WriteSucResp(w, tmp)
+	web.WriteSucResp(w, r, tmp)
 }
 
-func FilterRespFromAggs(w *http.ResponseWriter, aggUs []aggregate.User) {
+func FilterRespFromAggs(w *http.ResponseWriter, r *http.Request, aggUs []aggregate.User) {
 	us := make([]*User, len(aggUs))
 	for i, j := range aggUs {
 		tmp := FromAgg(&j)
 		us[i] = tmp
 	}
-	web.WriteSucResp(w, us)
+	web.WriteSucResp(w, r, us)
 }

@@ -13,7 +13,7 @@ import (
 type FlowRunRecordConfiguration func(fRRS *FlowRunRecordService) error
 
 type FlowRunRecordService struct {
-	logger           *log.Logger
+	Logger           *log.Logger
 	UserCacheService *user_cache.UserCacheService
 	FlowRunRecord    flow_run_record.FlowRunRecordRepository
 }
@@ -42,7 +42,7 @@ func WithUserCacheService(
 
 func WithLogger(logger *log.Logger) FlowRunRecordConfiguration {
 	return func(us *FlowRunRecordService) error {
-		us.logger = logger
+		us.Logger = logger
 		return nil
 	}
 }

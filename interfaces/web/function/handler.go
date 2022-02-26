@@ -5,17 +5,21 @@ import (
 
 	"github.com/fBloc/bloc-server/aggregate"
 	"github.com/fBloc/bloc-server/interfaces/web"
-	"github.com/fBloc/bloc-server/interfaces/web/req_context"
 
 	"github.com/julienschmidt/httprouter"
 )
 
 func All(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	reqUser, suc := req_context.GetReqUserFromContext(r.Context())
+	logTags := web.GetTraceAboutFields(r.Context())
+	logTags["business"] = "filter function"
+
+	reqUser, suc := web.GetReqUserFromContext(r.Context())
 	if !suc {
-		web.WriteInternalServerErrorResp(&w, nil, "get requser from context failed")
+		fService.Logger.Errorf(logTags, "failed to get user from context which should be setted by middleware!")
+		web.WriteInternalServerErrorResp(&w, r, nil, "get requser from context failed")
 		return
 	}
+	logTags["user_name"] = reqUser.Name
 
 	var err error
 	var aggFs []*aggregate.Function
@@ -25,16 +29,18 @@ func All(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		aggFs, err = fService.Function.UserReadAbleAll(reqUser)
 	}
 	if err != nil {
-		web.WriteInternalServerErrorResp(&w, err, "visit repository failed")
+		fService.Logger.Errorf(logTags, "get repository failed: %v", err)
+		web.WriteInternalServerErrorResp(&w, r, err, "visit repository failed")
 		return
 	}
 
 	groupedFuncs, err := newGroupedFunctionsFromAggFunctions(aggFs)
 	if err != nil {
-		web.WriteInternalServerErrorResp(&w, err,
-			"trans to resp failed")
+		fService.Logger.Errorf(logTags, "trans to resp failed: %v", err)
+		web.WriteInternalServerErrorResp(&w, r, err, "trans to resp failed")
 		return
 	}
 
-	web.WriteSucResp(&w, groupedFuncs)
+	fService.Logger.Infof(logTags, "finished with amount: %d", len(aggFs))
+	web.WriteSucResp(&w, r, groupedFuncs)
 }

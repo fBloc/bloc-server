@@ -8,5 +8,5 @@ import (
 )
 
 func HelloBloc(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	web.WriteSucResp(&w, "Welcome aboard! May the Bloc be with you ~_~")
+	web.WriteSucResp(&w, r, "Welcome aboard! May the Bloc be with you ~_~")
 }

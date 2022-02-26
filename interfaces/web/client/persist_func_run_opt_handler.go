@@ -10,27 +10,31 @@ import (
 )
 
 func PersistFuncRunOptField(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	logTags := web.GetTraceAboutFields(r.Context())
+	logTags["business"] = "persist function run opt field"
+
 	var req PersistFuncRunOptFieldHttpReq
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
-		web.WriteBadRequestDataResp(&w, err.Error())
+		scheduleLogger.Warningf(logTags, "unmarshal body failed: %v", err)
+		web.WriteBadRequestDataResp(&w, r, err.Error())
 		return
 	}
-	fRRService.Logger.Infof(
-		map[string]string{"function_run_record_id": req.FunctionRunRecordID.String()},
-		"received persist function run opt filed.function_run_record_id: %s",
-		req.FunctionRunRecordID)
+	logTags["function_run_record_id"] = req.FunctionRunRecordID.String()
+	logTags["opt_key"] = req.OptKey
 
 	amount, err := fRRService.FunctionRunRecords.Count(
 		*value_object.NewRepositoryFilter().AddEqual("id", req.FunctionRunRecordID))
 	if err != nil {
+		scheduleLogger.Errorf(logTags, "find function_run_record failed: %v", err)
 		web.WriteInternalServerErrorResp(
-			&w, err, "find corresponding function_run_record error")
+			&w, r, err, "find corresponding function_run_record error")
 		return
 	}
 	if amount != 1 {
+		scheduleLogger.Warningf(logTags, "find no function_run_record record")
 		web.WriteBadRequestDataResp(
-			&w, "this function_run_record_id find no record")
+			&w, r, "this function_run_record_id find no record")
 		return
 	}
 
@@ -38,10 +42,13 @@ func PersistFuncRunOptField(w http.ResponseWriter, r *http.Request, _ httprouter
 	ossKey := req.FunctionRunRecordID.String() + "_" + req.OptKey
 	err = objectStorage.Set(ossKey, uploadByte)
 	if err != nil {
+		scheduleLogger.Errorf(logTags,
+			"save to object storage failed: %v", err)
 		web.WriteInternalServerErrorResp(
-			&w, err, "save to object storage failed")
+			&w, r, err, "save to object storage failed")
 		return
 	}
+	logTags["object_storage_key"] = ossKey
 
 	resp := PersistFuncRunOptFieldHttpResp{
 		ObjectStorageKey: ossKey,
@@ -57,11 +64,8 @@ func PersistFuncRunOptField(w http.ResponseWriter, r *http.Request, _ httprouter
 		minLength = len(optInRune)
 	}
 	resp.Brief = string(optInRune[:minLength-1])
-	fRRService.Logger.Infof(
-		map[string]string{"function_run_record_id": req.FunctionRunRecordID.String()},
-		`persist function run opt filed.function_run_record_id: %s, key: %s, brief_opt: %s, objectStorage_key:%s`,
-		req.FunctionRunRecordID, req.OptKey,
-		resp.Brief, resp.ObjectStorageKey)
+	logTags["brief"] = resp.Brief
 
-	web.WriteSucResp(&w, resp)
+	scheduleLogger.Infof(logTags, "finished")
+	web.WriteSucResp(&w, r, resp)
 }

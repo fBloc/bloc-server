@@ -66,7 +66,7 @@ func TestHttpUtil(t *testing.T) {
 					var req testData
 					err := json.NewDecoder(r.Body).Decode(&req)
 					if err != nil {
-						web.WriteBadRequestDataResp(&w, err.Error())
+						web.WriteBadRequestDataResp(&w, r, err.Error())
 						return
 					}
 					for _, i := range testDataSlice {

@@ -13,40 +13,51 @@ import (
 )
 
 func PullLog(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	logTags := web.GetTraceAboutFields(r.Context())
+	logTags["business"] = "pull log"
+
 	var req Req
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
-		web.WriteBadRequestDataResp(&w, err.Error())
+		logger.Warningf(logTags,
+			"json unmarshal req body failed: %v", err)
+		web.WriteBadRequestDataResp(&w, r, err.Error())
 		return
 	}
 	if !req.LogType.IsValid() {
-		web.WriteBadRequestDataResp(&w, "log_type not valid")
+		logger.Warningf(logTags, "log_type not valid")
+		web.WriteBadRequestDataResp(&w, r, "log_type not valid")
 		return
 	}
 	if req.EndTime.IsZero() {
 		req.EndTime = time.Now()
 	}
 
-	var logger *log.Logger
+	var thisLog *log.Logger = nil
 	if req.LogType == value_object.HttpServerLog {
-		logger = log.New(value_object.HttpServerLog.String(), logBackend)
+		thisLog = log.New(value_object.HttpServerLog.String(), logBackend)
 	} else if req.LogType == value_object.ScheduleLog {
-		logger = log.New(value_object.ScheduleLog.String(), logBackend)
+		thisLog = log.New(value_object.ScheduleLog.String(), logBackend)
 	} else if req.LogType == value_object.FuncRunRecordLog {
-		web.WriteBadRequestDataResp(&w, "this api not provide function_run_record log search")
-		return
-	}
-	if logger == nil {
-		web.WriteInternalServerErrorResp(&w, errors.New("get logger failed"), "")
+		msg := "this api not provide function_run_record log search"
+		logger.Warningf(logTags, msg)
+		web.WriteBadRequestDataResp(&w, r, msg)
 		return
 	}
 
-	logStrSlice, err := logger.PullLogBetweenTime(
+	if thisLog == nil {
+		logger.Errorf(logTags, "get logger failed")
+		web.WriteInternalServerErrorResp(&w, r, errors.New("get logger failed"), "")
+		return
+	}
+
+	logStrSlice, err := thisLog.PullLogBetweenTime(
 		map[string]string{}, req.StartTime, req.EndTime)
 	if err != nil {
-		web.WriteInternalServerErrorResp(&w, err, "PullLogBetweenTime failed")
+		logger.Errorf(logTags, "pull log failed: %v", err)
+		web.WriteInternalServerErrorResp(&w, r, err, "PullLogBetweenTime failed")
 		return
 	}
 
-	web.WriteSucResp(&w, logStrSlice)
+	web.WriteSucResp(&w, r, logStrSlice)
 }

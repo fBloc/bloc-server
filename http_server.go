@@ -45,7 +45,7 @@ func (blocApp *BlocApp) RunHttpServer() {
 
 	// root, 4 live detection ...
 	{
-		router.GET("/api/v1/bloc", bloc_root.HelloBloc)
+		router.GET("/api/v1/bloc", middleware.WithTrace(bloc_root.HelloBloc))
 	}
 
 	// user
@@ -67,12 +67,12 @@ func (blocApp *BlocApp) RunHttpServer() {
 		}
 
 		// router
-		router.POST("/api/v1/login", user.LoginHandler)
+		router.POST("/api/v1/login", middleware.WithTrace(user.LoginHandler))
 
 		basicPath := "/api/v1/user"
-		router.GET(basicPath, middleware.LoginAuth(user.FilterByName))
-		router.POST(basicPath, middleware.SuperuserAuth(user.AddUser))
-		router.DELETE(basicPath+"/delete_by_id/:id", middleware.SuperuserAuth(user.DeleteUser))
+		router.GET(basicPath, middleware.WithTrace(middleware.LoginAuth(user.FilterByName)))
+		router.POST(basicPath, middleware.WithTrace(middleware.SuperuserAuth(user.AddUser)))
+		router.DELETE(basicPath+"/delete_by_id/:id", middleware.WithTrace(middleware.SuperuserAuth(user.DeleteUser)))
 	}
 
 	// function
@@ -93,14 +93,14 @@ func (blocApp *BlocApp) RunHttpServer() {
 		{
 			// function本身
 			basicPath := "/api/v1/function"
-			router.GET(basicPath, middleware.LoginAuth(function.All))
+			router.GET(basicPath, middleware.WithTrace(middleware.LoginAuth(function.All)))
 		}
 		{
 			// function权限
 			basicPath := "/api/v1/function_permission"
-			router.GET(basicPath, middleware.LoginAuth(function.GetPermissionByFunctionID))
-			router.POST(basicPath+"/add_permission", middleware.LoginAuth(function.AddUserPermission))
-			router.DELETE(basicPath+"/remove_permission", middleware.LoginAuth(function.DeleteUserPermission))
+			router.GET(basicPath, middleware.WithTrace(middleware.LoginAuth(function.GetPermissionByFunctionID)))
+			router.POST(basicPath+"/add_permission", middleware.WithTrace(middleware.LoginAuth(function.AddUserPermission)))
+			router.DELETE(basicPath+"/remove_permission", middleware.WithTrace(middleware.LoginAuth(function.DeleteUserPermission)))
 		}
 	}
 
@@ -125,9 +125,9 @@ func (blocApp *BlocApp) RunHttpServer() {
 
 		// router
 		basicPath := "/api/v1/function_run_record"
-		router.GET(basicPath, middleware.LoginAuth(function_run_record.Filter))
-		router.GET(basicPath+"/get_by_id/:id", middleware.LoginAuth(function_run_record.Get))
-		router.GET(basicPath+"/pull_log_by_id/:function_run_record_id", function_run_record.PullLog)
+		router.GET(basicPath, middleware.WithTrace(middleware.LoginAuth(function_run_record.Filter)))
+		router.GET(basicPath+"/get_by_id/:id", middleware.WithTrace(middleware.LoginAuth(function_run_record.Get)))
+		router.GET(basicPath+"/pull_log_by_id/:function_run_record_id", middleware.WithTrace(function_run_record.PullLog))
 	}
 
 	// flow相关
@@ -165,40 +165,40 @@ func (blocApp *BlocApp) RunHttpServer() {
 		{
 			// draft flow
 			basicPath := "/api/v1/draft_flow"
-			router.GET(basicPath, middleware.LoginAuth(flow.FilterDraftByName))
-			router.GET(basicPath+"/get_by_origin_id/:origin_id", middleware.LoginAuth(flow.GetDraftByOriginID))
-			router.GET(basicPath+"/commit_by_id/:id", middleware.LoginAuth(flow.PubDraft))
-			router.POST(basicPath, middleware.LoginAuth(flow.CreateDraft))
-			router.PATCH(basicPath, middleware.LoginAuth(flow.UpdateDraft))
+			router.GET(basicPath, middleware.WithTrace(middleware.LoginAuth(flow.FilterDraftByName)))
+			router.GET(basicPath+"/get_by_origin_id/:origin_id", middleware.WithTrace(middleware.LoginAuth(flow.GetDraftByOriginID)))
+			router.GET(basicPath+"/commit_by_id/:id", middleware.WithTrace(middleware.LoginAuth(flow.PubDraft)))
+			router.POST(basicPath, middleware.WithTrace(middleware.LoginAuth(flow.CreateDraft)))
+			router.PATCH(basicPath, middleware.WithTrace(middleware.LoginAuth(flow.UpdateDraft)))
 			router.DELETE(
 				basicPath+"/delete_by_origin_id/:origin_id",
-				middleware.LoginAuth(flow.DeleteDraftByOriginID))
+				middleware.WithTrace(middleware.LoginAuth(flow.DeleteDraftByOriginID)))
 		}
 
 		{
 			// online flow
 			basicPath := "/api/v1/flow"
-			router.GET(basicPath, middleware.LoginAuth(flow.FilterFlow))
-			router.GET(basicPath+"/get_by_id/:id", middleware.LoginAuth(flow.GetFlowByID))
-			router.GET(basicPath+"/get_by_flow_run_record_id/:flow_run_record_id", middleware.LoginAuth(flow.GetFlowByCertainFlowRunRecord))
-			router.GET(basicPath+"/get_latestonline_by_origin_id/:origin_id", middleware.LoginAuth(flow.GetFlowByOriginID))
-			router.PATCH(basicPath+"/set_execute_control_attributes", middleware.LoginAuth(flow.SetExecuteControlAttributes))
-			router.DELETE(basicPath+"/delete_by_origin_id/:origin_id", middleware.LoginAuth(flow.DeleteFlowByOriginID))
+			router.GET(basicPath, middleware.WithTrace(middleware.LoginAuth(flow.FilterFlow)))
+			router.GET(basicPath+"/get_by_id/:id", middleware.WithTrace(middleware.LoginAuth(flow.GetFlowByID)))
+			router.GET(basicPath+"/get_by_flow_run_record_id/:flow_run_record_id", middleware.WithTrace(middleware.LoginAuth(flow.GetFlowByCertainFlowRunRecord)))
+			router.GET(basicPath+"/get_latestonline_by_origin_id/:origin_id", middleware.WithTrace(middleware.LoginAuth(flow.GetFlowByOriginID)))
+			router.PATCH(basicPath+"/set_execute_control_attributes", middleware.WithTrace(middleware.LoginAuth(flow.SetExecuteControlAttributes)))
+			router.DELETE(basicPath+"/delete_by_origin_id/:origin_id", middleware.WithTrace(middleware.LoginAuth(flow.DeleteFlowByOriginID)))
 		}
 
 		{
 			// 运行相关
 			basicPath := "/api/v1/flow"
-			router.GET(basicPath+"/run/by_origin_id/:origin_id", middleware.LoginAuth(flow.Run))
-			router.GET(basicPath+"/cancel_run/by_origin_id/:origin_id", middleware.LoginAuth(flow.CancelRun))
+			router.GET(basicPath+"/run/by_origin_id/:origin_id", middleware.WithTrace(middleware.LoginAuth(flow.Run)))
+			router.GET(basicPath+"/cancel_run/by_origin_id/:origin_id", middleware.WithTrace(middleware.LoginAuth(flow.CancelRun)))
 		}
 
 		{
 			// 权限
 			basicPath := "/api/v1/flow_permission"
-			router.GET(basicPath, middleware.LoginAuth(flow.GetPermission))
-			router.POST(basicPath+"/add_permission", middleware.LoginAuth(flow.AddUserPermission))
-			router.DELETE(basicPath+"/remove_permission", middleware.LoginAuth(flow.DeleteUserPermission))
+			router.GET(basicPath, middleware.WithTrace(middleware.LoginAuth(flow.GetPermission)))
+			router.POST(basicPath+"/add_permission", middleware.WithTrace(middleware.LoginAuth(flow.AddUserPermission)))
+			router.DELETE(basicPath+"/remove_permission", middleware.WithTrace(middleware.LoginAuth(flow.DeleteUserPermission)))
 		}
 	}
 
@@ -218,17 +218,16 @@ func (blocApp *BlocApp) RunHttpServer() {
 
 		// router
 		basicPath := "/api/v1/flow_run_record"
-		router.GET(basicPath, middleware.LoginAuth(flow_run_record.Filter))
+		router.GET(basicPath, middleware.WithTrace(middleware.LoginAuth(flow_run_record.Filter)))
 	}
 
 	// object storage
 	{
-		object_storage.InjectObjectStorageImplement(
-			blocApp.GetOrCreateConsumerObjectStorage(),
-		)
+		object_storage.InjectObjectStorageImplement(blocApp.GetOrCreateConsumerObjectStorage())
+		object_storage.InjectLogger(blocApp.GetOrCreateHttpLogger())
 		{
 			basicPath := "/api/v1/object_storage"
-			router.GET(basicPath+"/get_string_value_by_key/:key", object_storage.GetValueByKeyReturnString)
+			router.GET(basicPath+"/get_string_value_by_key/:key", middleware.WithTrace(object_storage.GetValueByKeyReturnString))
 		}
 	}
 
@@ -239,9 +238,10 @@ func (blocApp *BlocApp) RunHttpServer() {
 			panic(err)
 		}
 		log_data.InjectLogCollectBackend(logBackEnd)
+		log_data.InjectLogger(blocApp.GetOrCreateHttpLogger())
 		{
 			basicPath := "/api/v1/log"
-			router.POST(basicPath+"/pull_log_between_time", log_data.PullLog)
+			router.POST(basicPath+"/pull_log_between_time", middleware.WithTrace(log_data.PullLog))
 		}
 	}
 
@@ -294,7 +294,7 @@ func (blocApp *BlocApp) RunHttpServer() {
 		}
 		client.InjectFlowService(flowService)
 
-		client.InjectConsumerLogger(blocApp.GetOrCreateScheduleLogger())
+		client.InjectScheduleLogger(blocApp.GetOrCreateScheduleLogger())
 
 		flowRunRecordService, err := flowRunRecord_service.NewService(
 			flowRunRecord_service.WithLogger(httpLogger),
@@ -313,14 +313,14 @@ func (blocApp *BlocApp) RunHttpServer() {
 
 		basicPath := "/api/v1/client"
 		{
-			router.POST(basicPath+"/register_functions", client.RegisterFunctions)
-			router.POST(basicPath+"/report_log", client.ReportLog)
-			router.POST(basicPath+"/report_progress", client.ReportProgress)
-			router.POST(basicPath+"/persist_certain_function_run_opt_field", client.PersistFuncRunOptField)
-			router.POST(basicPath+"/function_run_finished", client.FunctionRunFinished)
-			router.GET(basicPath+"/get_function_run_record_by_id/:id", function_run_record.Get)
-			router.GET(basicPath+"/check_flowRun_is_canceled_by_flowRunID/:id", client.FlowRunRecordIsCanceled)
-			router.GET(basicPath+"/get_byte_value_by_key/:key", object_storage.GetValueByKeyReturnByte)
+			router.POST(basicPath+"/register_functions", middleware.WithTrace(client.RegisterFunctions))
+			router.POST(basicPath+"/report_log", middleware.WithTrace(client.ReportLog))
+			router.POST(basicPath+"/report_progress", middleware.WithTrace(client.ReportProgress))
+			router.POST(basicPath+"/persist_certain_function_run_opt_field", middleware.WithTrace(client.PersistFuncRunOptField))
+			router.POST(basicPath+"/function_run_finished", middleware.WithTrace(client.FunctionRunFinished))
+			router.GET(basicPath+"/get_function_run_record_by_id/:id", middleware.WithTrace(function_run_record.Get))
+			router.GET(basicPath+"/check_flowRun_is_canceled_by_flowRunID/:id", middleware.WithTrace(client.FlowRunRecordIsCanceled))
+			router.GET(basicPath+"/get_byte_value_by_key/:key", middleware.WithTrace(object_storage.GetValueByKeyReturnByte))
 		}
 	}
 

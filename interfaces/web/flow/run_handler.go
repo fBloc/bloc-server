@@ -6,37 +6,47 @@ import (
 	"github.com/fBloc/bloc-server/aggregate"
 	"github.com/fBloc/bloc-server/event"
 	"github.com/fBloc/bloc-server/interfaces/web"
-	"github.com/fBloc/bloc-server/interfaces/web/req_context"
 
 	"github.com/julienschmidt/httprouter"
 )
 
 func Run(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	logTags := web.GetTraceAboutFields(r.Context())
+	logTags["business"] = "run flow"
+
+	reqUser, suc := web.GetReqUserFromContext(r.Context())
+	if !suc {
+		fService.Logger.Errorf(logTags, "failed to get user from context which should be setted by middleware!")
+		web.WriteInternalServerErrorResp(&w, r, nil, "get requser from context failed")
+		return
+	}
+	logTags["user_name"] = reqUser.Name
+
 	flowOriginID := ps.ByName("origin_id")
 	if flowOriginID == "" {
-		web.WriteBadRequestDataResp(&w, "origin_id cannot be nil")
+		fService.Logger.Infof(logTags, "lack origin_id in url path")
+		web.WriteBadRequestDataResp(&w, r, "origin_id cannot be nil")
 		return
 	}
 
 	// 通过获取对应的flow检测flow_origin_id是否有效
 	flowIns, err := fService.Flow.GetOnlineByOriginIDStr(flowOriginID)
 	if err != nil {
-		web.WriteInternalServerErrorResp(&w, err, "visit flow by origin_id failed")
+		fService.Logger.Errorf(logTags, "get flow by origin_id error: %v", err)
+		web.WriteInternalServerErrorResp(&w, r, err, "visit flow by origin_id failed")
 		return
 	}
 	if flowIns.IsZero() {
-		web.WriteBadRequestDataResp(&w, "origin_id find no flow")
+		fService.Logger.Warningf(logTags, "get flow by origin_id match no record")
+		web.WriteBadRequestDataResp(&w, r, "origin_id find no flow")
 		return
 	}
+	logTags["origin_id"] = flowOriginID
 
 	// 检查用户是否有执行权限
-	reqUser, suc := req_context.GetReqUserFromContext(r.Context())
-	if !suc {
-		web.WriteInternalServerErrorResp(&w, nil, "get requser from context failed")
-		return
-	}
 	if !flowIns.UserCanExecute(reqUser) {
-		web.WritePermissionNotEnough(&w, "need execute permission")
+		fService.Logger.Warningf(logTags, "user lack execute permission")
+		web.WritePermissionNotEnough(&w, r, "need execute permission")
 		return
 	}
 
@@ -44,68 +54,74 @@ func Run(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	aggFlowRunRecord, err := aggregate.NewUserTriggeredFlowRunRecord(flowIns, reqUser)
 	if err != nil {
 		fService.Logger.Errorf(
-			map[string]string{"flow_origin_id": flowOriginID, "user_name": reqUser.Name},
-			"user %s trigger flow run failed. origin_id %s, error: %s",
-			reqUser.Name, flowOriginID, err.Error())
-		web.WriteInternalServerErrorResp(&w, err, "build aggregate flow failed")
+			logTags, "create aggregate flow_run_record failed: %v", err)
+		web.WriteInternalServerErrorResp(&w, r, err, "build aggregate flow failed")
 	}
 
 	err = fService.FlowRunRecord.Create(aggFlowRunRecord)
 	if err != nil {
 		fService.Logger.Errorf(
-			map[string]string{
-				"flow_origin_id": flowOriginID,
-				"user_name":      reqUser.Name},
-			"user %s trigger flow run failed. origin_id %s, error: %s",
-			reqUser.Name, flowOriginID, err.Error())
+			logTags, "persist flow_run_record failed: %v", err)
 		web.WriteInternalServerErrorResp(
-			&w, err,
-			"create flow run record to repository failed")
+			&w, r, err, "create flow run record to repository failed")
 	}
-	fService.Logger.Infof(
-		map[string]string{
-			"flow_origin_id": flowOriginID,
-			"user_name":      reqUser.Name},
-		"user %s triggered flow run. origin_id %s",
-		reqUser.Name, flowOriginID)
-	event.PubEvent(&event.FlowToRun{FlowRunRecordID: aggFlowRunRecord.ID})
+	logTags["flow_run_record_id"] = aggFlowRunRecord.ID.String()
 
-	web.WritePlainSucOkResp(&w)
+	err = event.PubEvent(&event.FlowToRun{FlowRunRecordID: aggFlowRunRecord.ID})
+	if err != nil {
+		fService.Logger.Errorf(logTags, "pub event failed: %v", err)
+		web.WriteInternalServerErrorResp(&w, r, err, "pub event failed")
+	}
+
+	fService.Logger.Infof(logTags, "finished")
+	web.WritePlainSucOkResp(&w, r)
 }
 
 func CancelRun(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	flowOriginID := ps.ByName("origin_id")
-	if flowOriginID == "" {
-		web.WriteBadRequestDataResp(&w, "origin_id cannot be nil")
+	logTags := web.GetTraceAboutFields(r.Context())
+	logTags["business"] = "cancel flow run"
+
+	reqUser, suc := web.GetReqUserFromContext(r.Context())
+	if !suc {
+		fService.Logger.Errorf(logTags, "failed to get user from context which should be setted by middleware!")
+		web.WriteInternalServerErrorResp(&w, r, nil, "get requser from context failed")
 		return
 	}
+	logTags["user_name"] = reqUser.Name
+
+	flowOriginID := ps.ByName("origin_id")
+	if flowOriginID == "" {
+		fService.Logger.Infof(logTags, "lack origin_id in url path")
+		web.WriteBadRequestDataResp(&w, r, "origin_id cannot be nil")
+		return
+	}
+	logTags["origin_id"] = flowOriginID
 
 	// 通过获取对应的flow检测flow_origin_id是否有效
 	flowIns, err := fService.Flow.GetOnlineByOriginIDStr(flowOriginID)
 	if err != nil {
-		web.WriteInternalServerErrorResp(&w, err, "visit flow by origin_id failed")
+		fService.Logger.Errorf(logTags, "get flow by origin_id error: %v", err)
+		web.WriteInternalServerErrorResp(&w, r, err, "visit flow by origin_id failed")
 		return
 	}
 	if flowIns.IsZero() {
-		web.WriteBadRequestDataResp(&w, "origin_id find no flow")
+		fService.Logger.Warningf(logTags, "get flow by origin_id match no record")
+		web.WriteBadRequestDataResp(&w, r, "origin_id find no flow")
 		return
 	}
 
 	// 检查用户是否有执行权限
-	reqUser, suc := req_context.GetReqUserFromContext(r.Context())
-	if !suc {
-		web.WriteInternalServerErrorResp(&w, nil, "get requser from context failed")
-		return
-	}
 	if !flowIns.UserCanExecute(reqUser) {
-		web.WritePermissionNotEnough(&w, "need execute permission")
+		fService.Logger.Warningf(logTags, "user lack execute permission")
+		web.WritePermissionNotEnough(&w, r, "need execute permission")
 		return
 	}
 
 	// 获取全部的运行中任务
 	aggFRRs, err := fService.FlowRunRecord.AllRunRecordOfFlowTriggeredByFlowID(flowIns.ID)
 	if err != nil {
-		web.WriteInternalServerErrorResp(&w, err, "visit run record of this flow failed")
+		fService.Logger.Errorf(logTags, "visit run record of this flow failed")
+		web.WriteInternalServerErrorResp(&w, r, err, "visit run record of this flow failed")
 		return
 	}
 
@@ -114,16 +130,13 @@ func CancelRun(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		// TODO 需要并行吗？
 		err := fService.FlowRunRecord.UserCancel(i.ID, reqUser.ID)
 		if err != nil {
-			web.WriteInternalServerErrorResp(&w, err, "cancel record failed")
+			fService.Logger.Errorf(
+				logTags, "cancel flow_run_record(id:%s) failed: %v", err)
+			web.WriteInternalServerErrorResp(&w, r, err, "cancel record failed")
 			return
 		}
 	}
-	fService.Logger.Infof(
-		map[string]string{
-			"flow_origin_id": flowOriginID,
-			"user_name":      reqUser.Name},
-		"user %s canceld flow run. origin_id %s",
-		reqUser.Name, flowOriginID)
 
-	web.WritePlainSucOkResp(&w)
+	fService.Logger.Infof(logTags, "finished cancel %d task", len(aggFRRs))
+	web.WritePlainSucOkResp(&w, r)
 }
