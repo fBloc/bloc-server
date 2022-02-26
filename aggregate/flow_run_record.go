@@ -1,6 +1,7 @@
 package aggregate
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -29,9 +30,10 @@ type FlowRunRecord struct {
 	TimeoutCanceled              bool
 	Canceled                     bool
 	CancelUserID                 value_object.UUID
+	TraceID                      string
 }
 
-func newFromFlow(f *Flow) *FlowRunRecord {
+func newFromFlow(ctx context.Context, f *Flow) *FlowRunRecord {
 	ret := &FlowRunRecord{
 		ID:            value_object.NewUUID(),
 		FlowID:        f.ID,
@@ -39,25 +41,28 @@ func newFromFlow(f *Flow) *FlowRunRecord {
 		TriggerSource: value_object.FlowTriggerSource,
 		TriggerTime:   time.Now(),
 		Status:        value_object.Created,
+		TraceID:       value_object.GetTraceIDFromContext(ctx),
 	}
 
 	return ret
 }
 
-func NewUserTriggeredFlowRunRecord(f *Flow, triggerUser *User) (*FlowRunRecord, error) {
+func NewUserTriggeredFlowRunRecord(
+	ctx context.Context, f *Flow, triggerUser *User,
+) (*FlowRunRecord, error) {
 	if !f.UserCanExecute(triggerUser) {
 		return nil, fmt.Errorf(
 			"user: %s have no permission to trigger this flow",
 			triggerUser.Name)
 	}
-	rR := newFromFlow(f)
+	rR := newFromFlow(ctx, f)
 	rR.TriggerUserID = triggerUser.ID
 	rR.TriggerType = value_object.Manual
 	return rR, nil
 }
 
-func NewCrontabTriggeredRunRecord(f *Flow) *FlowRunRecord {
-	rR := newFromFlow(f)
+func NewCrontabTriggeredRunRecord(ctx context.Context, f *Flow) *FlowRunRecord {
+	rR := newFromFlow(ctx, f)
 	rR.TriggerType = value_object.Crontab
 	return rR
 }

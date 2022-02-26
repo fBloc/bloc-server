@@ -16,14 +16,14 @@ func WithTrace(h httprouter.Handle) httprouter.Handle {
 		traceID := r.Header.Get(web.RequestContextTraceID)
 		parentSpanID := r.Header.Get(web.RequestContextSpanID)
 
-		spanID := value_object.NewUUID().String()
+		spanID := value_object.NewSpanID()
 		if traceID == "" {
 			traceID = spanID
 		}
 
-		ctx := context.WithValue(r.Context(), web.RequestContextTraceID, traceID)
-		ctx = context.WithValue(ctx, web.RequestContextSpanID, spanID)
-		ctx = context.WithValue(ctx, web.RequestContextParentSpanID, parentSpanID)
+		ctx := context.WithValue(r.Context(), value_object.TraceID, traceID)
+		ctx = context.WithValue(ctx, value_object.SpanID, spanID)
+		ctx = context.WithValue(ctx, value_object.ParentSpanID, parentSpanID)
 		r = r.WithContext(ctx)
 
 		h(w, r, ps)

@@ -63,6 +63,7 @@ type mongoFlowRunRecord struct {
 	TimeoutCanceled              bool                                 `bson:"timeout_canceled,omitempty"`
 	Canceled                     bool                                 `bson:"canceled"`
 	CancelUserID                 value_object.UUID                    `bson:"cancel_user_id"`
+	TraceID                      string                               `bson:"trace_id"`
 }
 
 func (m *mongoFlowRunRecord) IsZero() bool {
@@ -100,6 +101,7 @@ func NewFromAggregate(
 		TimeoutCanceled:              fRR.TimeoutCanceled,
 		Canceled:                     fRR.Canceled,
 		CancelUserID:                 fRR.CancelUserID,
+		TraceID:                      fRR.TraceID,
 	}
 	return &resp
 }
@@ -127,6 +129,7 @@ func (m mongoFlowRunRecord) ToAggregate() *aggregate.FlowRunRecord {
 		TimeoutCanceled:              m.TimeoutCanceled,
 		Canceled:                     m.Canceled,
 		CancelUserID:                 m.CancelUserID,
+		TraceID:                      m.TraceID,
 	}
 	return &resp
 }

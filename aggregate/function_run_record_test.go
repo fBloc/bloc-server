@@ -1,6 +1,7 @@
 package aggregate
 
 import (
+	"context"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -13,7 +14,7 @@ func TestFunctionRunRecordIsZero(t *testing.T) {
 	})
 
 	Convey("IsZero miss", t, func() {
-		flowRunRecord := NewCrontabTriggeredRunRecord(&fakeFlow)
+		flowRunRecord := NewCrontabTriggeredRunRecord(context.TODO(), &fakeFlow)
 		functionRunRecord := NewFunctionRunRecordFromFlowDriven(
 			functionAdd, *flowRunRecord, secondFlowFunctionID)
 		So(functionRunRecord.IsZero(), ShouldBeFalse)
@@ -30,7 +31,7 @@ func TestFunctionRunRecordIsZero(t *testing.T) {
 }
 
 func TestFunctionRunRecord(t *testing.T) {
-	flowRunRecord := NewCrontabTriggeredRunRecord(&fakeFlow)
+	flowRunRecord := NewCrontabTriggeredRunRecord(context.TODO(), &fakeFlow)
 	functionRunRecord := NewFunctionRunRecordFromFlowDriven(
 		functionAdd, *flowRunRecord, secondFlowFunctionID)
 

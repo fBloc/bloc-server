@@ -215,7 +215,7 @@ var (
 )
 
 func TestFunctionRunRecord(t *testing.T) {
-	aggFlowRunRecord := aggregate.NewCrontabTriggeredRunRecord(&fakeAggregateFlow)
+	aggFlowRunRecord := aggregate.NewCrontabTriggeredRunRecord(context.TODO(), &fakeAggregateFlow)
 	aggFunctionRunRecord := aggregate.NewFunctionRunRecordFromFlowDriven(
 		functionAdd, *aggFlowRunRecord, secondFlowFunctionID)
 	err := epo.Create(aggFunctionRunRecord)

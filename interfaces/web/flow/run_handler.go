@@ -51,7 +51,7 @@ func Run(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	}
 
 	// create new run record
-	aggFlowRunRecord, err := aggregate.NewUserTriggeredFlowRunRecord(flowIns, reqUser)
+	aggFlowRunRecord, err := aggregate.NewUserTriggeredFlowRunRecord(r.Context(), flowIns, reqUser)
 	if err != nil {
 		fService.Logger.Errorf(
 			logTags, "create aggregate flow_run_record failed: %v", err)

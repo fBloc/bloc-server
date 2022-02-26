@@ -1,6 +1,7 @@
 package aggregate
 
 import (
+	"context"
 	"testing"
 
 	"github.com/fBloc/bloc-server/value_object"
@@ -17,7 +18,7 @@ func TestFlowRunRecordIsZero(t *testing.T) {
 func TestFlowRunRecordNewUserTriggeredRunRecord(t *testing.T) {
 	Convey("NewUserTriggeredFlowRunRecord not valid user", t, func() {
 		nobody := User{ID: value_object.NewUUID()}
-		flowRR, err := NewUserTriggeredFlowRunRecord(&fakeFlow, &nobody)
+		flowRR, err := NewUserTriggeredFlowRunRecord(context.TODO(), &fakeFlow, &nobody)
 		So(err, ShouldNotBeNil)
 		So(flowRR.IsZero(), ShouldBeTrue)
 	})
@@ -25,7 +26,7 @@ func TestFlowRunRecordNewUserTriggeredRunRecord(t *testing.T) {
 	Convey("NewUserTriggeredFlowRunRecord valid user", t, func() {
 		executer := User{ID: value_object.NewUUID()}
 		fakeFlow.ExecuteUserIDs = []value_object.UUID{executer.ID}
-		flowRunRecord, err := NewUserTriggeredFlowRunRecord(&fakeFlow, &executer)
+		flowRunRecord, err := NewUserTriggeredFlowRunRecord(context.TODO(), &fakeFlow, &executer)
 		So(err, ShouldBeNil)
 		So(flowRunRecord.IsZero(), ShouldBeFalse)
 		So(flowRunRecord.IsZero(), ShouldBeFalse)
@@ -34,7 +35,7 @@ func TestFlowRunRecordNewUserTriggeredRunRecord(t *testing.T) {
 
 func TestFlowRunRecordNewCrontabTriggeredRunRecord(t *testing.T) {
 	Convey("NewCrontabTriggeredRunRecord", t, func() {
-		flowRunRecord := NewCrontabTriggeredRunRecord(&fakeFlow)
+		flowRunRecord := NewCrontabTriggeredRunRecord(context.TODO(), &fakeFlow)
 		So(flowRunRecord.IsZero(), ShouldBeFalse)
 	})
 }

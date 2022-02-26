@@ -195,7 +195,9 @@ var (
 )
 
 func TestCreate(t *testing.T) {
-	flowRR, err := aggregate.NewUserTriggeredFlowRunRecord(&fakeAggregateFlow, &executeUser)
+	traceID := value_object.NewTraceID()
+	ctx := value_object.SetTraceIDToContext(traceID)
+	flowRR, err := aggregate.NewUserTriggeredFlowRunRecord(ctx, &fakeAggregateFlow, &executeUser)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -213,6 +215,7 @@ func TestCreate(t *testing.T) {
 			fRR, err := epo.GetByID(flowRR.ID)
 			So(err, ShouldBeNil)
 			So(fRR.IsZero(), ShouldBeFalse)
+			So(fRR.TraceID, ShouldEqual, traceID)
 		})
 
 		Convey("GetLatestByFlowOriginID", func() {
