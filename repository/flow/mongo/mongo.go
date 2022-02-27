@@ -303,6 +303,9 @@ func (mr *MongoRepository) FilterCrontabFlows() ([]aggregate.Flow, error) {
 	}
 	ret := make([]aggregate.Flow, 0, len(flows))
 	for _, i := range flows {
+		if !i.Crontab.IsValid() {
+			continue
+		}
 		ret = append(ret, *i.ToAggregate())
 	}
 	return ret, err

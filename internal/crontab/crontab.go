@@ -85,6 +85,10 @@ func (cr *CrontabRepresent) TimeMatched(theTime time.Time) bool {
 	if cr.IsZero() {
 		return false
 	}
+	if cr.schedule == nil {
+		cr.schedule = BuildCrontab(cr.CrontabStr).schedule
+	}
+
 	// 当前此crontab配置是否应该立即运行
 	m, _ := time.ParseDuration("-1m")
 	nextRunTime := cr.schedule.Next(time.Now().Add(m))
