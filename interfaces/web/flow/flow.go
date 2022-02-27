@@ -31,9 +31,9 @@ type LatestRun struct {
 	TriggerKey                   string                               `json:"trigger_key"`
 	TriggerSource                value_object.FlowTriggeredSourceType `json:"trigger_source"`
 	TriggerUserName              string                               `json:"trigger_user_name"`
-	TriggerTime                  value_object.JsonDate                `json:"trigger_time"`
-	StartTime                    value_object.JsonDate                `json:"start_time"`
-	EndTime                      value_object.JsonDate                `json:"end_time"`
+	TriggerTime                  time.Time                            `json:"trigger_time"`
+	StartTime                    time.Time                            `json:"start_time"`
+	EndTime                      time.Time                            `json:"end_time"`
 	Status                       value_object.RunState                `json:"status"`
 	ErrorMsg                     string                               `json:"error_msg"`
 	RetriedAmount                uint16                               `json:"retried_amount"`
@@ -54,9 +54,9 @@ func newLatestRunFromAgg(flowRunRecord *aggregate.FlowRunRecord) *LatestRun {
 		TriggerType:                  flowRunRecord.TriggerType,
 		TriggerKey:                   flowRunRecord.TriggerKey,
 		TriggerSource:                flowRunRecord.TriggerSource,
-		TriggerTime:                  value_object.NewJsonDate(flowRunRecord.TriggerTime),
-		StartTime:                    value_object.NewJsonDate(flowRunRecord.StartTime),
-		EndTime:                      value_object.NewJsonDate(flowRunRecord.EndTime),
+		TriggerTime:                  flowRunRecord.TriggerTime,
+		StartTime:                    flowRunRecord.StartTime,
+		EndTime:                      flowRunRecord.EndTime,
 		Status:                       flowRunRecord.Status,
 		ErrorMsg:                     flowRunRecord.ErrorMsg,
 		RetriedAmount:                flowRunRecord.RetriedAmount,
