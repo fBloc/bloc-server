@@ -14,10 +14,10 @@ var (
 )
 
 type Req struct {
-	LogType             value_object.LogType `json:"log_type"`
-	StartTime           time.Time            `json:"start_time"`
-	EndTime             time.Time            `json:"end_time"`
-	FunctionRunRecordID value_object.UUID    `json:"function_run_record_id"`
+	LogType    value_object.LogType `json:"log_type"`
+	TagFilters map[string]string    `json:"tag_filter"`
+	StartTime  time.Time            `json:"start_time"`
+	EndTime    time.Time            `json:"end_time"`
 }
 
 func InjectLogCollectBackend(l log_collect_backend.LogBackEnd) {

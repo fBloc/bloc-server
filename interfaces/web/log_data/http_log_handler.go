@@ -24,11 +24,6 @@ func PullLog(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		web.WriteBadRequestDataResp(&w, r, err.Error())
 		return
 	}
-	if !req.LogType.IsValid() {
-		logger.Warningf(logTags, "log_type not valid")
-		web.WriteBadRequestDataResp(&w, r, "log_type not valid")
-		return
-	}
 	if req.EndTime.IsZero() {
 		req.EndTime = time.Now()
 	}
@@ -43,6 +38,10 @@ func PullLog(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		logger.Warningf(logTags, msg)
 		web.WriteBadRequestDataResp(&w, r, msg)
 		return
+	} else {
+		// when logType is blank, it means only use tag_filter to filter out log
+		// typical use case is get certain trace_id's log. {"trace_id": "xxx"} ...
+		thisLog = log.New("", logBackend)
 	}
 
 	if thisLog == nil {
@@ -52,7 +51,7 @@ func PullLog(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	}
 
 	logStrSlice, err := thisLog.PullLogBetweenTime(
-		map[string]string{}, req.StartTime, req.EndTime)
+		req.TagFilters, req.StartTime, req.EndTime)
 	if err != nil {
 		logger.Errorf(logTags, "pull log failed: %v", err)
 		web.WriteInternalServerErrorResp(&w, r, err, "PullLogBetweenTime failed")

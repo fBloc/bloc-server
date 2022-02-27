@@ -65,7 +65,7 @@ func (blocApp *BlocApp) CrontabWatcher() {
 				if err != nil {
 					logger.Errorf(logTags, "pub flow to run event failed: %v", err)
 				} else {
-					logger.Infof(logTags, "suc")
+					logger.Infof(logTags, "suc pub flow_run_record. id: %s", flowRunRecord.ID.String())
 				}
 			}(flowIns, now)
 		}

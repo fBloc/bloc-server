@@ -62,10 +62,13 @@ func (bC *BucketClient) Write(
 func buildFilterString(
 	bucket, measurement string, tagFilterMap map[string]string, start, end time.Time,
 ) string {
-	filters := []string{fmt.Sprintf(`r._measurement == "%s"`, measurement)}
+	filters := []string{}
+	if measurement != "" {
+		filters = append(filters,
+			fmt.Sprintf(`r._measurement == "%s"`, measurement))
+	}
 	for tagK, tagV := range tagFilterMap {
-		filters = append(
-			filters,
+		filters = append(filters,
 			fmt.Sprintf(`r.%s == "%s"`, tagK, tagV))
 	}
 

@@ -68,7 +68,10 @@ func Connect(
 	client := influxdb2.NewClientWithOptions(
 		conf.Address,
 		conf.Token,
-		influxdb2.DefaultOptions().SetUseGZip(true))
+		influxdb2.DefaultOptions().
+			SetUseGZip(true).
+			SetPrecision(time.Nanosecond),
+	)
 
 	ctx, cancel := context.WithTimeout(
 		context.Background(), 2*time.Second,
