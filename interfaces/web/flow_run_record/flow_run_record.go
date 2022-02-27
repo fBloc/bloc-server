@@ -37,6 +37,7 @@ type FlowFunctionRecord struct {
 	TimeoutCanceled              bool                                 `json:"timeout_canceled"`
 	Canceled                     bool                                 `json:"canceled"`
 	CancelUserName               string                               `json:"cancel_user_name"`
+	TraceID                      string                               `json:"trace_id"`
 }
 
 func fromAgg(
@@ -64,6 +65,7 @@ func fromAgg(
 		RetriedAmount:                aggFRR.RetriedAmount,
 		TimeoutCanceled:              aggFRR.TimeoutCanceled,
 		Canceled:                     aggFRR.Canceled,
+		TraceID:                      aggFRR.TraceID,
 	}
 	if aggFRR.CancelUserID.IsNil() && aggFRR.TriggerUserID.IsNil() {
 		return retFlow

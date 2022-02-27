@@ -53,6 +53,7 @@ type FunctionRunRecord struct {
 	ProcessStageIndex           int                    `json:"process_stage_index,omitempty"`
 	FunctionProviderName        string                 `json:"function_provider_name"`
 	ShouldBeCanceledAt          time.Time              `json:"should_be_canceled_at,omitempty"`
+	TraceID                     string                 `json:"trace_id"`
 }
 
 func fromAgg(
@@ -105,6 +106,7 @@ func fromAgg(
 		ProcessStageIndex:           aggFRR.ProcessStageIndex,
 		FunctionProviderName:        aggFRR.FunctionProviderName,
 		ShouldBeCanceledAt:          aggFRR.ShouldBeCanceledAt,
+		TraceID:                     aggFRR.TraceID,
 	}
 	return retFlow
 }
