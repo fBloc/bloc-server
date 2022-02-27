@@ -16,7 +16,7 @@ func TestFunctionRunRecordIsZero(t *testing.T) {
 	Convey("IsZero miss", t, func() {
 		flowRunRecord := NewCrontabTriggeredRunRecord(context.TODO(), &fakeFlow)
 		functionRunRecord := NewFunctionRunRecordFromFlowDriven(
-			functionAdd, *flowRunRecord, secondFlowFunctionID)
+			context.TODO(), functionAdd, *flowRunRecord, secondFlowFunctionID)
 		So(functionRunRecord.IsZero(), ShouldBeFalse)
 	})
 
@@ -33,7 +33,7 @@ func TestFunctionRunRecordIsZero(t *testing.T) {
 func TestFunctionRunRecord(t *testing.T) {
 	flowRunRecord := NewCrontabTriggeredRunRecord(context.TODO(), &fakeFlow)
 	functionRunRecord := NewFunctionRunRecordFromFlowDriven(
-		functionAdd, *flowRunRecord, secondFlowFunctionID)
+		context.TODO(), functionAdd, *flowRunRecord, secondFlowFunctionID)
 
 	Convey("initial FunctionRunRecord attrs check", t, func() {
 		So(functionRunRecord.UsedSeconds(), ShouldBeGreaterThan, 0)

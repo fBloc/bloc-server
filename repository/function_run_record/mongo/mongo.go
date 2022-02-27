@@ -77,6 +77,7 @@ type mongoFunctionRunRecord struct {
 	ProcessStageIndex         int                             `bson:"process_stage_index"`
 	FunctionProviderName      string                          `bson:"provider_name"`
 	ShouldBeCanceledAt        time.Time                       `bson:"sb_canceled_at"`
+	TraceID                   string                          `bson:"trace_id"`
 }
 
 func NewFromAggregate(fRR *aggregate.FunctionRunRecord) *mongoFunctionRunRecord {
@@ -104,6 +105,7 @@ func NewFromAggregate(fRR *aggregate.FunctionRunRecord) *mongoFunctionRunRecord 
 		ProcessStageIndex:         fRR.ProcessStageIndex,
 		FunctionProviderName:      fRR.FunctionProviderName,
 		ShouldBeCanceledAt:        fRR.ShouldBeCanceledAt,
+		TraceID:                   fRR.TraceID,
 	}
 	if fRR.ProgressMsg == nil {
 		// mongo's $push not support push to nil! so this must be initial as []string{}
@@ -150,6 +152,7 @@ func (m mongoFunctionRunRecord) ToAggregate() *aggregate.FunctionRunRecord {
 		ProcessStageIndex:         m.ProcessStageIndex,
 		FunctionProviderName:      m.FunctionProviderName,
 		ShouldBeCanceledAt:        m.ShouldBeCanceledAt,
+		TraceID:                   m.TraceID,
 	}
 	resp.IptBriefAndObskey = make([][]aggregate.IptBriefAndKey, len(m.IptBriefAndObskey))
 	for i, param := range m.IptBriefAndObskey {

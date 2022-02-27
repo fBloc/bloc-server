@@ -1,6 +1,7 @@
 package aggregate
 
 import (
+	"context"
 	"time"
 
 	"github.com/fBloc/bloc-server/pkg/value_type"
@@ -41,9 +42,11 @@ type FunctionRunRecord struct {
 	ProgressMsg               []string
 	ProcessStages             []string
 	ProcessStageIndex         int
+	TraceID                   string
 }
 
 func NewFunctionRunRecordFromFlowDriven(
+	ctx context.Context,
 	functionIns Function,
 	flowRunRecordIns FlowRunRecord,
 	flowFunctionID string,
@@ -58,6 +61,7 @@ func NewFunctionRunRecordFromFlowDriven(
 		Start:                time.Now(),
 		ProcessStages:        functionIns.ProcessStages,
 		FunctionProviderName: functionIns.ProviderName,
+		TraceID:              value_object.GetTraceIDFromContext(ctx),
 	}
 }
 

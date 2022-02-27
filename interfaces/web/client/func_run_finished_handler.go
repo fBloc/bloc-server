@@ -71,6 +71,7 @@ func FunctionRunFinished(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 		web.WriteBadRequestDataResp(&w, r, "find no flow_run_record_ins")
 		return
 	}
+	traceCtx := value_object.SetTraceIDToContext(flowRunRecordIns.TraceID)
 	logTags["flow_run_record_id"] = fRRIns.FlowRunRecordID.String()
 
 	functionIns := reported.idMapFunc[fRRIns.FunctionID]
@@ -110,8 +111,7 @@ func FunctionRunFinished(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 					downStreamFunctionIns := reported.idMapFunc[downStreamFlowFunction.FunctionID]
 
 					downStreamFunctionRunRecord := aggregate.NewFunctionRunRecordFromFlowDriven(
-						downStreamFunctionIns, *flowRunRecordIns, downStreamFlowFunctionID)
-
+						traceCtx, downStreamFunctionIns, *flowRunRecordIns, downStreamFlowFunctionID)
 					downStreamFunctionRunRecordMsg := fmt.Sprintf(
 						`function_id: %s, function_run_record_id: %s.`,
 						downStreamFunctionRunRecord.FunctionID.String(), downStreamFunctionRunRecord.ID.String())

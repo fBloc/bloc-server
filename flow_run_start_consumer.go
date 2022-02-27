@@ -24,95 +24,76 @@ func (blocApp *BlocApp) FlowTaskStartConsumer() {
 
 	for flowToRunEvent := range flowToRunEventChan {
 		flowRunRecordStr := flowToRunEvent.Identity()
-		logger.Infof(
-			map[string]string{"flow_run_record_id": flowRunRecordStr},
+		logTags := map[string]string{"flow_run_record_id": flowRunRecordStr}
+		logger.Infof(logTags,
 			"get flow run start record id %s", flowRunRecordStr)
+
 		flowRunRecordUuid, err := value_object.ParseToUUID(flowRunRecordStr)
 		if err != nil {
-			logger.Errorf(
-				map[string]string{"flow_run_record_id": flowRunRecordStr},
-				"parse flow_run_record_id to uuid failed: %s", flowRunRecordStr)
+			logger.Errorf(logTags, "parse to uuid failed: $v", err)
 			continue
 		}
+
 		flowRunIns, err := flowRunRepo.GetByID(flowRunRecordUuid)
 		if err != nil {
-			logger.Errorf(
-				map[string]string{"flow_run_record_id": flowRunRecordStr},
-				"get flow_run_record by id. flow_run_record_id: %s", flowRunRecordStr)
+			logger.Errorf(logTags, "get flow_run_record by id failed: %v", err)
 			continue
 		}
 		if flowRunIns.Canceled {
+			logger.Infof(logTags, "flow already canceled")
 			continue
 		}
 
 		flowIns, err := flowRepo.GetByID(flowRunIns.FlowID)
 		if err != nil {
-			logger.Errorf(
-				map[string]string{
-					"flow_run_record_id": flowRunRecordStr,
-					"flow_id":            flowRunIns.FlowID.String()},
+			logger.Errorf(logTags,
 				"get flow from flow_run_record.flow_id error: %v", err)
 			continue
 		}
+		logTags["flow_id"] = flowRunIns.FlowID.String()
 		if !flowIns.AllowParallelRun { // 若不允许同时运行，需要进行检测是不是有正在运行的
 			// TODO 这里存在高并发的时候还是会并行运行的情况，后续需要处理
 			isRunning, err := flowRunRepo.IsHaveRunningTask(
 				flowIns.ID, flowRunRecordUuid)
 			if err != nil {
-				logger.Errorf(
-					map[string]string{"flow_run_record_id": flowRunRecordStr},
+				logger.Errorf(logTags,
 					"filter running flow records error: %v", err)
 				continue
 			}
 			if isRunning {
-				logger.Infof(
-					map[string]string{
-						"flow_run_record_id": flowRunRecordStr,
-						"flow_id":            flowRunIns.FlowID.String()},
-					"this flow won't run because had been set not allowed parallel run")
+				logger.Infof(logTags, "won't run because not allowed parallel run")
 				err = flowRunRepo.NotAllowedParallelRun(flowRunIns.ID)
 				if err != nil {
-					logger.Errorf(
-						map[string]string{
-							"flow_run_record_id": flowRunRecordStr,
-							"flow_id":            flowRunIns.FlowID.String()},
-						"save NotAllowedParallelRun of flow_id(%s) failed",
-						flowRunIns.ID.String())
+					logger.Errorf(logTags, "save flowRunRepo.NotAllowedParallelRun failed: %v", err)
 				}
 				continue
 			}
 		}
 
 		// 发布flow下的“第一层”functions任务
+		// ToEnhance 目前第一层的发布在这里，而后续的发布在client api，这种重复不好。应当解决
 		firstLayerDownstreamFlowFunctionIDS := flowIns.FlowFunctionIDMapFlowFunction[config.FlowFunctionStartID].DownstreamFlowFunctionIDs
 		flowblocidMapBlochisid := make(
 			map[string]value_object.UUID, len(firstLayerDownstreamFlowFunctionIDS))
+		pubFuncLogTags := logTags
+		traceCtx := value_object.SetTraceIDToContext(flowRunIns.TraceID)
 		for _, flowFunctionID := range firstLayerDownstreamFlowFunctionIDS {
-			flowFunction := flowIns.FlowFunctionIDMapFlowFunction[flowFunctionID]
+			pubFuncLogTags["flow_function_id"] = flowFunctionID
 
+			flowFunction := flowIns.FlowFunctionIDMapFlowFunction[flowFunctionID]
 			functionIns := blocApp.GetFunctionByRepoID(flowFunction.FunctionID)
+			pubFuncLogTags["function_id"] = flowFunction.FunctionID.String()
 			if functionIns.IsZero() {
-				logger.Errorf(
-					map[string]string{
-						"flow_run_record_id": flowRunRecordStr,
-						"flow_id":            flowRunIns.FlowID.String(),
-						"function_id":        flowFunction.FunctionID.String(),
-					},
-					"find flow's first layer function failed. function_id: %s",
-					flowFunction.FunctionID.String())
+				// TODO 处理function注册的心跳过期问题
+				logger.Errorf(pubFuncLogTags, "find no function from blocApp")
 				goto PubFailed
 			}
+
 			aggFunctionRunRecord := aggregate.NewFunctionRunRecordFromFlowDriven(
-				*functionIns, *flowRunIns, flowFunctionID)
+				traceCtx, *functionIns, *flowRunIns, flowFunctionID)
 			err = event.PubEvent(&event.FunctionToRun{FunctionRunRecordID: aggFunctionRunRecord.ID})
 			if err != nil {
-				logger.Errorf(
-					map[string]string{
-						"flow_run_record_id": flowRunRecordStr,
-						"flow_id":            flowRunIns.FlowID.String(),
-						"function_id":        flowFunction.FunctionID.String()},
-					"pub FunctionToRun event failed. function_id: %s, err: %v",
-					flowFunction.FunctionID.String(), err)
+				logger.Errorf(pubFuncLogTags, "pub FunctionToRun event failed: %v", err)
 				goto PubFailed
 			}
 			err = functionRunRecordRepo.Create(aggFunctionRunRecord)
