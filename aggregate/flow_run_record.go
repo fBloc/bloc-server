@@ -73,3 +73,7 @@ func (task *FlowRunRecord) IsZero() bool {
 	}
 	return task.ID.IsNil()
 }
+
+func (task *FlowRunRecord) Finished() bool {
+	return !task.EndTime.IsZero()
+}

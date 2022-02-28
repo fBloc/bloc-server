@@ -21,7 +21,9 @@ func (blocApp *BlocApp) FlowTaskFinishedConsumer() {
 
 	for flowRunFinishedEvent := range flowRunFinishedEventChan {
 		flowRunRecordStr := flowRunFinishedEvent.Identity()
-		logTag := map[string]string{"flow_run_record_id": flowRunRecordStr}
+		logTag := map[string]string{
+			"business":           "flow run finished consumer",
+			"flow_run_record_id": flowRunRecordStr}
 
 		logger.Infof(
 			logTag,
@@ -40,6 +42,11 @@ func (blocApp *BlocApp) FlowTaskFinishedConsumer() {
 		}
 
 		// 更新此flow_run_record的状态为成功
-		flowRunRepo.Suc(flowRunIns.ID)
+		err = flowRunRepo.Suc(flowRunIns.ID)
+		if err != nil {
+			logger.Errorf(logTag, "save suc of flowRunRecord failed: %v", err)
+		} else {
+			logger.Infof(logTag, "finished")
+		}
 	}
 }

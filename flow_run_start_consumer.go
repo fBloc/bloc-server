@@ -24,7 +24,9 @@ func (blocApp *BlocApp) FlowTaskStartConsumer() {
 
 	for flowToRunEvent := range flowToRunEventChan {
 		flowRunRecordStr := flowToRunEvent.Identity()
-		logTags := map[string]string{"flow_run_record_id": flowRunRecordStr}
+		logTags := map[string]string{
+			"business":           "flow run start consumer",
+			"flow_run_record_id": flowRunRecordStr}
 		logger.Infof(logTags,
 			"get flow run start record id %s", flowRunRecordStr)
 
@@ -41,6 +43,10 @@ func (blocApp *BlocApp) FlowTaskStartConsumer() {
 		}
 		if flowRunIns.Canceled {
 			logger.Infof(logTags, "flow already canceled")
+			continue
+		}
+		if flowRunIns.Finished() {
+			logger.Errorf(logTags, "flow already finished. actual should not into here!")
 			continue
 		}
 
@@ -98,12 +104,7 @@ func (blocApp *BlocApp) FlowTaskStartConsumer() {
 			}
 			err = functionRunRecordRepo.Create(aggFunctionRunRecord)
 			if err != nil {
-				logger.Errorf(
-					map[string]string{
-						"flow_run_record_id": flowRunRecordStr,
-						"flow_id":            flowRunIns.FlowID.String(),
-						"function_id":        flowFunction.FunctionID.String(),
-					},
+				logger.Errorf(pubFuncLogTags,
 					"create flow's first layer function_run_record failed. function_id: %s, err: %v",
 					flowFunction.FunctionID.String(), err)
 				goto PubFailed
@@ -114,15 +115,26 @@ func (blocApp *BlocApp) FlowTaskStartConsumer() {
 		err = flowRunRepo.PatchFlowFuncIDMapFuncRunRecordID(
 			flowRunIns.ID, flowRunIns.FlowFuncIDMapFuncRunRecordID)
 		if err != nil {
-			logger.Errorf(
-				map[string]string{"flow_run_record_id": flowRunRecordStr},
+			logger.Errorf(logTags,
 				"update flow_run_record's flowFuncID_map_funcRunRecordID field failed: %s",
 				err.Error())
 			goto PubFailed
 		}
-		flowRunRepo.Start(flowRunIns.ID)
+		err = flowRunRepo.Start(flowRunIns.ID)
+		if err != nil {
+			logger.Errorf(logTags,
+				"flowRunRecord save start failed: %v", err.Error())
+		} else {
+			logger.Infof(logTags, "finished(suc)")
+		}
 		continue
 	PubFailed:
-		flowRunRepo.Fail(flowRunIns.ID, "pub flow's first lay functions failed")
+		err = flowRunRepo.Fail(flowRunIns.ID, "pub flow's first lay functions failed")
+		if err != nil {
+			logger.Errorf(logTags,
+				"flowRunRecord save failed(due to pub flow's first lay functions failed) failed: %v", err.Error())
+		} else {
+			logger.Infof(logTags, "finished(fail)")
+		}
 	}
 }

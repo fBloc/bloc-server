@@ -32,53 +32,42 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 
 	for functionToRunEvent := range funcToRunEventChan {
 		functionRunRecordIDStr := functionToRunEvent.Identity()
+
+		logTags := map[string]string{
+			"business":               "function run consumer",
+			"function_run_record_id": functionRunRecordIDStr}
+		logger.Infof(logTags, "received function_run_record: %s", functionRunRecordIDStr)
+
 		funcRunRecordUuid, err := value_object.ParseToUUID(functionRunRecordIDStr)
 		if err != nil {
-			logger.Errorf(
-				map[string]string{"function_run_record_id": functionRunRecordIDStr},
-				"parse received function_run_record_id(%s) to uuid failed.",
-				functionRunRecordIDStr)
+			logger.Errorf(logTags, "to uuid failed: %v", err)
 			continue
 		}
 
-		logger.Infof(
-			map[string]string{"function_run_record_id": functionRunRecordIDStr},
-			"get function run record id %s", functionRunRecordIDStr,
-		)
 		functionRecordIns, err := funcRunRecordRepo.GetByID(funcRunRecordUuid)
 		if err != nil {
-			logger.Errorf(
-				map[string]string{"function_run_record_id": functionRunRecordIDStr},
-				"function run record id %s match error: %s", functionRunRecordIDStr, err.Error())
+			logger.Errorf(logTags,
+				"get func_run_record by id failed: %v", err)
 			continue
 		}
 		if functionRecordIns.IsZero() {
-			logger.Errorf(
-				map[string]string{"function_run_record_id": functionRunRecordIDStr},
-				"function run record id %s match no ins", functionRunRecordIDStr)
+			logger.Errorf(logTags,
+				"get func_run_record by id match no record")
 			continue
 		}
+		logTags[string(value_object.TraceID)] = functionRecordIns.TraceID
 
 		flowIns, err := flowRepo.GetByID(functionRecordIns.FlowID)
+		logTags["flow_id"] = functionRecordIns.FlowID.String()
 		if err != nil {
-			logger.Errorf(
-				map[string]string{
-					"function_run_record_id": functionRunRecordIDStr,
-					"flow_id":                functionRecordIns.FlowID.String()},
-				"get flow by flow_id failed. flow_id: %s",
-				functionRecordIns.FlowID.String())
+			logger.Errorf(logTags, "get flow by flow_id failed: %v", err)
 			continue
 		}
 
 		flowRunRecordIns, err := flowRunRecordRepo.GetByID(functionRecordIns.FlowRunRecordID)
+		logTags["flow_run_record_id"] = functionRecordIns.FlowRunRecordID.String()
 		if err != nil {
-			logger.Errorf(
-				map[string]string{
-					"function_run_record_id": functionRunRecordIDStr,
-					"flow_id":                functionRecordIns.FlowID.String(),
-					"flow_run_record_id":     functionRecordIns.FlowRunRecordID.String()},
-				"get flow_run_record_ins from flow_run_record_id(%s) failed",
-				functionRecordIns.FlowRunRecordID.String())
+			logger.Errorf(logTags, "get flow_run_record_ins failed: %v", err)
 			continue
 		}
 		flowFuncIDMapFuncRunRecordID := flowRunRecordIns.FlowFuncIDMapFuncRunRecordID
@@ -95,35 +84,28 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 			for _, i := range flowFunction.UpstreamFlowFunctionIDs {
 				upstreamFunctionRunRecordID, ok := flowRunRecordIns.FlowFuncIDMapFuncRunRecordID[i]
 				if !ok { // 不存在表示没有运行完
-					logger.Infof(
-						map[string]string{
-							"function_run_record_id": functionRunRecordIDStr,
-							"flow_id":                functionRecordIns.FlowID.String(),
-						},
+					logger.Warningf(logTags,
 						"upstream function not run finished. upstream flow_function_id: %s", i)
 					upstreamAllSucFinished = false
 					break
 				}
 				upstreamFunctionRunRecordIns, err := funcRunRecordRepo.GetByID(upstreamFunctionRunRecordID)
 				if err != nil {
-					logger.Errorf(
-						map[string]string{"function_run_record_id": functionRunRecordIDStr},
+					logger.Errorf(logTags,
 						"get upstream function run record ins error:%v. upstream_function_run_record_id: %s",
 						err, upstreamFunctionRunRecordID.String())
 					upstreamAllSucFinished = false
 					break
 				}
 				if upstreamFunctionRunRecordIns.IsZero() {
-					logger.Errorf(
-						map[string]string{"function_run_record_id": functionRunRecordIDStr},
+					logger.Errorf(logTags,
 						"get upstream function run record ins nil. upstream_function_run_record_id: %s",
 						upstreamFunctionRunRecordID.String())
 					upstreamAllSucFinished = false
 					break
 				}
 				if !upstreamFunctionRunRecordIns.Finished() {
-					logger.Infof(
-						map[string]string{"function_run_record_id": functionRunRecordIDStr},
+					logger.Infof(logTags,
 						"upstream function is not finished. upstream_function_run_record_id: %s",
 						upstreamFunctionRunRecordID.String())
 					upstreamAllSucFinished = false
@@ -132,8 +114,7 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 				if upstreamFunctionRunRecordIns.InterceptBelowFunctionRun {
 					// 为什么会出现这种情况的说明：可能有两个上游节点，其中一个成功、另一个决定拦截
 					// 成功的发布下游节点的时候会发布此节点
-					logger.Infof(
-						map[string]string{"function_run_record_id": functionRunRecordIDStr},
+					logger.Infof(logTags,
 						"upstream function intercepted. breakout. upstream_function_run_record_id: %s",
 						upstreamFunctionRunRecordID.String())
 					upstreamFunctionIntercepted = true
@@ -142,36 +123,32 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 			}
 		}
 		if !upstreamAllSucFinished {
-			logger.Infof(
-				map[string]string{"function_run_record_id": functionRunRecordIDStr},
-				"upstream not all finished. break out",
-			)
+			logger.Infof(logTags, "upstream not all finished. break out")
 			event.PubEventAtCertainTime(functionToRunEvent, time.Now().Add(5*time.Second))
 			continue
 		}
 		if upstreamFunctionIntercepted {
 			// 上游有节点明确表示拦截了，不能继续往下执行。
-			flowRunRecordRepo.Intercepted(flowRunRecordIns.ID, "TODO")
-			flowRunRecordRepo.Suc(flowRunRecordIns.ID)
-			event.PubEvent(&event.FlowRunFinished{
+			var err error
+
+			err = flowRunRecordRepo.Intercepted(flowRunRecordIns.ID, "TODO")
+			if err != nil {
+				logger.Errorf(logTags, "save flow run finished : %v", err)
+			}
+
+			err = event.PubEvent(&event.FlowRunFinished{
 				FlowRunRecordID: flowRunRecordIns.ID,
 			})
+			if err != nil {
+				logger.Errorf(logTags, "pub flow run finished event failed: %v", err)
+			}
 			continue
 		}
 
 		functionIns := blocApp.GetFunctionByRepoID(functionRecordIns.FunctionID)
-		logger.Infof(
-			map[string]string{
-				"function_run_record_id": functionRunRecordIDStr,
-				"function_id":            functionIns.ID.String()},
-			"function id %s", functionIns.ID)
+		logTags["function_id"] = functionIns.ID.String()
 		if functionIns.IsZero() {
-			logger.Errorf(
-				map[string]string{
-					"function_run_record_id": functionRunRecordIDStr,
-					"function_id":            functionIns.ID.String()},
-				"get nil function_ins by function_id: %s",
-				functionRecordIns.FunctionID.String())
+			logger.Errorf(logTags, "get function by id match no record")
 			continue
 		}
 
@@ -188,38 +165,63 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 					upstreamFuncRunRecordID := flowFuncIDMapFuncRunRecordID[componentIpt.FlowFunctionID]
 					upstreamFuncRunRecordIns, err := funcRunRecordRepo.GetByID(upstreamFuncRunRecordID)
 					if err != nil {
-						funcRunRecordRepo.SaveFail(
+						logger.Errorf(logTags,
+							"find upstream functionRunRecordIns failed: %v. which id is: %s",
+							err, upstreamFuncRunRecordID)
+						functionRecordIns.Ipts[paramIndex][componentIndex] = "not valid from find upstream function error"
+
+						err := funcRunRecordRepo.SaveFail(
 							functionRecordIns.ID,
 							"ipt value get from upstream connection failed")
-						functionRecordIns.Ipts[paramIndex][componentIndex] = err.Error()
+						if err != nil {
+							logger.Errorf(logTags, "funcRunRecord save fail failed: %v", err)
+						}
 						continue
 					}
 					if upstreamFuncRunRecordIns.IsZero() {
-						funcRunRecordRepo.SaveFail(
+						logger.Errorf(logTags,
+							"find upstream functionRunRecordIns match record. which id is: %s",
+							upstreamFuncRunRecordID)
+						functionRecordIns.Ipts[paramIndex][componentIndex] = "not valid from not find upstream function"
+
+						err := funcRunRecordRepo.SaveFail(
 							functionRecordIns.ID,
 							"ipt value get from upstream connection failed")
-						logger.Errorf(
-							map[string]string{
-								"flow_run_record_id":     functionRecordIns.FlowRunRecordID.String(),
-								"function_run_record_id": functionRunRecordIDStr},
+						if err != nil {
+							logger.Errorf(logTags, "funcRunRecord save fail failed: %v", err)
+						}
+						logger.Errorf(logTags,
 							"ipt value get from upstream connection failed. find no valid corresponding functionRunRecordIns.paramIndex: %d, componentIndex: %d",
 							paramIndex, componentIndex)
-						functionRecordIns.Ipts[paramIndex][componentIndex] = "not valid"
 						continue
 					}
 					optValue, ok := upstreamFuncRunRecordIns.Opt[componentIpt.Key]
 					if !ok {
-						funcRunRecordRepo.SaveFail(
-							functionRecordIns.ID, "ipt value get from upstream connection failed")
-						functionRecordIns.Ipts[paramIndex][componentIndex] = "not valid"
+						logger.Errorf(logTags,
+							"upstream functionRunRecordIns's opt donnot have this key: %s. which id is: %s",
+							componentIpt.Key, upstreamFuncRunRecordID)
+						functionRecordIns.Ipts[paramIndex][componentIndex] = "not valid from upstream function opt not have this key"
+
+						err := funcRunRecordRepo.SaveFail(
+							functionRecordIns.ID,
+							"ipt value get from upstream connection failed")
+						if err != nil {
+							logger.Errorf(logTags, "funcRunRecord save fail failed: %v", err)
+						}
 						continue
 					}
 					isKeyExist, tmp, err := objectStorage.Get(optValue.(string))
 					if !isKeyExist || err != nil {
-						funcRunRecordRepo.SaveFail(
-							functionRecordIns.ID,
+						logger.Errorf(logTags,
+							"get upstream functionRunRecordIns's opt from object storage failed: error: %v, is_key_exist: %t",
+							optValue.(string), isKeyExist)
+						functionRecordIns.Ipts[paramIndex][componentIndex] = "not valid from object storage"
+
+						err := funcRunRecordRepo.SaveFail(functionRecordIns.ID,
 							"ipt value get from upstream connection failed")
-						functionRecordIns.Ipts[paramIndex][componentIndex] = "not valid"
+						if err != nil {
+							logger.Errorf(logTags, "funcRunRecord save fail failed: %v", err)
+						}
 						continue
 					}
 					json.Unmarshal(tmp, &value)
@@ -231,10 +233,15 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 					// 有效性检查
 					dataValid := value_type.CheckValueTypeValueValid(componentIpt.ValueType, value)
 					if !dataValid {
+						functionRecordIns.Ipts[paramIndex][componentIndex] = "not valid"
+
 						failMsg := fmt.Sprintf(
 							"ipt value not valid. ipt_index: %d; component_indxe: %d, value: %v",
 							paramIndex, componentIndex, value)
-						funcRunRecordRepo.SaveFail(functionRecordIns.ID, failMsg)
+						err := funcRunRecordRepo.SaveFail(functionRecordIns.ID, failMsg)
+						if err != nil {
+							logger.Errorf(logTags, "funcRunRecord save fail failed: %v", err)
+						}
 						functionRecordIns.Ipts[paramIndex][componentIndex] = "not valid"
 						continue
 					}
@@ -248,22 +255,15 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 			funcRunRecordUuid, functionIns.Ipts,
 			functionRecordIns.Ipts, objectStorage)
 		if err != nil {
-			logger.Errorf(
-				map[string]string{
-					"flow_run_record_id":     functionRecordIns.FlowRunRecordID.String(),
-					"function_run_record_id": functionRunRecordIDStr},
-				"persist ipt failed. error: %v", err)
+			logger.Errorf(logTags, "persist ipt failed: %v", err)
 			err := flowRunRecordRepo.Fail(
 				flowRunRecordIns.ID,
 				fmt.Sprintf(
-					"persist function-%s's ipt failed. error: %v", functionIns.Name, err),
+					"persist function-%s's ipt failed. error: %v",
+					functionIns.Name, err),
 			)
 			if err != nil {
-				logger.Errorf(
-					map[string]string{
-						"flow_run_record_id":     functionRecordIns.FlowRunRecordID.String(),
-						"function_run_record_id": functionRunRecordIDStr},
-					"persist flow_run_record fail. error: %v", err)
+				logger.Errorf(logTags, "persist flow_run_record fail: %v", err)
 			}
 			continue
 		}
@@ -271,13 +271,9 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 		// > ipt装配完成，先保存输入
 		// 若装配IPT失败
 		if functionRecordIns.ErrorMsg != "" {
-			logger.Errorf(
-				map[string]string{"function_run_record_id": functionRunRecordIDStr},
-				"function run record id %s assemble ipt failed, err: %s",
-				functionRunRecordIDStr, functionRecordIns.ErrorMsg)
-			funcRunRecordRepo.SaveFail(
-				functionRecordIns.ID,
-				"装配IPT失败")
+			logger.Errorf(logTags,
+				"assemble ipt failed, err: %s", functionRecordIns.ErrorMsg)
+			funcRunRecordRepo.SaveFail(functionRecordIns.ID, "装配IPT失败")
 			continue
 		}
 
@@ -297,13 +293,11 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 				err = funcRunRecordRepo.SetTimeout(funcRunRecordUuid,
 					time.Now().Add(time.Duration(leftSeconds)*time.Second))
 				if err != nil {
-					logger.Errorf(
-						map[string]string{"function_run_record_id": functionRunRecordIDStr},
+					logger.Errorf(logTags,
 						"set timeout for function_run_record failed: %v", err)
 				}
 			} else { // 已超时
-				logger.Infof(
-					map[string]string{"function_run_record_id": functionRunRecordIDStr},
+				logger.Infof(logTags,
 					"func run record id %s timeout canceled", functionRunRecordIDStr)
 				funcRunRecordRepo.SaveCancel(funcRunRecordUuid)
 				flowRunRecordRepo.TimeoutCancel(flowRunRecordIns.ID)
@@ -315,9 +309,9 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 			FunctionRunRecordID: funcRunRecordUuid,
 			ClientName:          functionIns.ProviderName})
 		if err != nil {
-			logger.Errorf(
-				map[string]string{"function_run_record_id": functionRunRecordIDStr},
-				"pub ClientRunFunction event failed: %v", err)
+			logger.Errorf(logTags, "pub ClientRunFunction event failed: %v", err)
+		} else {
+			logger.Infof(logTags, "pub function to run event suc")
 		}
 	}
 }
