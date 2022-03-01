@@ -21,13 +21,14 @@ func (blocApp *BlocApp) FlowTaskFinishedConsumer() {
 
 	for flowRunFinishedEvent := range flowRunFinishedEventChan {
 		flowRunRecordStr := flowRunFinishedEvent.Identity()
-		logTag := map[string]string{
-			"business":           "flow run finished consumer",
-			"flow_run_record_id": flowRunRecordStr}
 
-		logger.Infof(
-			logTag,
+		logTag := map[string]string{
+			string(value_object.SpanID): value_object.NewSpanID(),
+			"business":                  "flow run finished consumer",
+			"flow_run_record_id":        flowRunRecordStr}
+		logger.Infof(logTag,
 			"FlowRunFinishedConsumer flow_run_record__id %s finished", flowRunRecordStr)
+
 		flowRunRecordUuid, err := value_object.ParseToUUID(flowRunRecordStr)
 		if err != nil {
 			logger.Errorf(

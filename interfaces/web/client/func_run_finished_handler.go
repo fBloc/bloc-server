@@ -16,7 +16,8 @@ import (
 
 func FunctionRunFinished(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	logTags := web.GetTraceAboutFields(r.Context())
-	logTags["business"] = "function run finshed report"
+	logTags["business"] = "function_run_finshed report api"
+	scheduleLogger.Infof(logTags, "start")
 
 	var req FuncRunFinishedHttpReq
 	err := json.NewDecoder(r.Body).Decode(&req)
@@ -195,7 +196,7 @@ func FunctionRunFinished(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 						scheduleLogger.Errorf(logTags, "pub flow_run_finished event from suc failed: %v", err)
 					} else {
 						scheduleLogger.Infof(logTags,
-							"pub finished flow_task__id from all finished: %s", flowRunRecordIns.ID)
+							"pub finished flow_run_record event from all finished")
 					}
 				}
 			}

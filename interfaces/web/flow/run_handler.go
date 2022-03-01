@@ -12,7 +12,8 @@ import (
 
 func Run(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	logTags := web.GetTraceAboutFields(r.Context())
-	logTags["business"] = "run flow"
+	logTags["business"] = "frontend trigger flow to run"
+	fService.Logger.Infof(logTags, "start")
 
 	reqUser, suc := web.GetReqUserFromContext(r.Context())
 	if !suc {
@@ -80,6 +81,7 @@ func Run(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 func CancelRun(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	logTags := web.GetTraceAboutFields(r.Context())
 	logTags["business"] = "cancel flow run"
+	fService.Logger.Infof(logTags, "start")
 
 	reqUser, suc := web.GetReqUserFromContext(r.Context())
 	if !suc {

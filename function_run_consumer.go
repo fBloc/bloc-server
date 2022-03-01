@@ -34,8 +34,9 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 		functionRunRecordIDStr := functionToRunEvent.Identity()
 
 		logTags := map[string]string{
-			"business":               "function run consumer",
-			"function_run_record_id": functionRunRecordIDStr}
+			string(value_object.SpanID): value_object.NewSpanID(),
+			"business":                  "function run consumer",
+			"function_run_record_id":    functionRunRecordIDStr}
 		logger.Infof(logTags, "received function_run_record: %s", functionRunRecordIDStr)
 
 		funcRunRecordUuid, err := value_object.ParseToUUID(functionRunRecordIDStr)

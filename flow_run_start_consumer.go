@@ -25,8 +25,9 @@ func (blocApp *BlocApp) FlowTaskStartConsumer() {
 	for flowToRunEvent := range flowToRunEventChan {
 		flowRunRecordStr := flowToRunEvent.Identity()
 		logTags := map[string]string{
-			"business":           "flow run start consumer",
-			"flow_run_record_id": flowRunRecordStr}
+			string(value_object.SpanID): value_object.NewSpanID(),
+			"business":                  "flow run start consumer",
+			"flow_run_record_id":        flowRunRecordStr}
 		logger.Infof(logTags,
 			"get flow run start record id %s", flowRunRecordStr)
 
