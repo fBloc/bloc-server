@@ -34,11 +34,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	if !isNameMatchPwd {
 		uService.Logger.Warningf(logTags,
 			"name - password not match. name: %s", u.Name)
-		resp := &web.RespMsg{
-			Code: http.StatusUnauthorized,
-			Msg:  "name - password not match",
-		}
-		w.Write(resp.JSONBytes())
+		web.WriteBadRequestDataResp(&w, r, "name - password not match")
 		return
 	}
 

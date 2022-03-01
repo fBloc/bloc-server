@@ -15,77 +15,69 @@ type RespMsg struct {
 }
 
 func WriteSucResp(w *http.ResponseWriter, r *http.Request, data interface{}) {
-	traceID, _ := GetReqTraceIDFromContext(r.Context())
-	resp := RespMsg{
-		Code:    http.StatusOK,
-		Data:    data,
-		TraceID: traceID}
-	(*w).Write(resp.JSONBytes())
+	resp := RespMsg{Code: http.StatusOK, Data: data}
+	resp.writeResp(w, r)
 }
 
 func WriteDeleteSucResp(w *http.ResponseWriter, r *http.Request, delAmount int64) {
-	traceID, _ := GetReqTraceIDFromContext(r.Context())
 	resp := RespMsg{
-		Code:    http.StatusOK,
-		Data:    map[string]int64{"delete_amount": delAmount},
-		TraceID: traceID,
-	}
-	(*w).Write(resp.JSONBytes())
+		Code: http.StatusOK,
+		Data: map[string]int64{"delete_amount": delAmount}}
+	resp.writeResp(w, r)
 }
 
 func WritePlainSucOkResp(w *http.ResponseWriter, r *http.Request) {
-	traceID, _ := GetReqTraceIDFromContext(r.Context())
-	resp := RespMsg{Code: http.StatusOK, Data: "ok", TraceID: traceID}
-	(*w).Write(resp.JSONBytes())
+	resp := RespMsg{Code: http.StatusOK, Data: "ok"}
+	resp.writeResp(w, r)
 }
 
 func WriteBadRequestDataResp(w *http.ResponseWriter, r *http.Request, msg string, v ...interface{}) {
-	traceID, _ := GetReqTraceIDFromContext(r.Context())
-	resp := RespMsg{Code: http.StatusBadRequest, Msg: fmt.Sprintf(msg, v...), TraceID: traceID}
-	(*w).Write(resp.JSONBytes())
+	resp := RespMsg{Code: http.StatusBadRequest, Msg: fmt.Sprintf(msg, v...)}
+	resp.writeResp(w, r)
 }
 
 func WriteInternalServerErrorResp(
 	w *http.ResponseWriter, r *http.Request, err error, msg string, v ...interface{},
 ) {
-	traceID, _ := GetReqTraceIDFromContext(r.Context())
-
 	if err != nil {
 		msg += ":" + err.Error()
 	}
 	resp := RespMsg{
-		Code:    http.StatusInternalServerError,
-		Msg:     fmt.Sprintf(msg, v...),
-		TraceID: traceID,
+		Code: http.StatusInternalServerError,
+		Msg:  fmt.Sprintf(msg, v...),
 	}
-	(*w).Write(resp.JSONBytes())
+	resp.writeResp(w, r)
 }
 
 func WriteNeedLogin(w *http.ResponseWriter, r *http.Request) {
 	resp := RespMsg{Code: http.StatusUnauthorized, Msg: "login needed"}
-	(*w).Write(resp.JSONBytes())
+	resp.writeResp(w, r)
 }
 
 func WriteNeedSuperUser(w *http.ResponseWriter, r *http.Request) {
-	traceID, _ := GetReqTraceIDFromContext(r.Context())
-	resp := RespMsg{Code: http.StatusForbidden, Msg: "superuser needed", TraceID: traceID}
-	(*w).Write(resp.JSONBytes())
+	resp := RespMsg{Code: http.StatusForbidden, Msg: "superuser needed"}
+	resp.writeResp(w, r)
 }
 
 func WritePermissionNotEnough(w *http.ResponseWriter, r *http.Request, msg string) {
-	traceID, _ := GetReqTraceIDFromContext(r.Context())
 	resp := RespMsg{
-		Code:    http.StatusForbidden,
-		Msg:     "permission not enough:" + msg,
-		TraceID: traceID,
+		Code: http.StatusForbidden,
+		Msg:  "permission not enough:" + msg,
 	}
-	(*w).Write(resp.JSONBytes())
+	resp.writeResp(w, r)
 }
 
-func (resp *RespMsg) JSONBytes() []byte {
+func (resp *RespMsg) jSONBytes() []byte {
 	r, err := json.Marshal(resp)
 	if err != nil {
 		log.Println(err)
 	}
 	return r
+}
+
+func (resp *RespMsg) writeResp(w *http.ResponseWriter, r *http.Request) {
+	traceID, _ := GetReqTraceIDFromContext(r.Context())
+	resp.TraceID = traceID
+	(*w).Header().Add("content-type", "application/json")
+	(*w).Write(resp.jSONBytes())
 }
