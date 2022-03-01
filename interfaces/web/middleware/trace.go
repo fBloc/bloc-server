@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/fBloc/bloc-server/interfaces/web"
 	"github.com/fBloc/bloc-server/value_object"
 
 	"github.com/julienschmidt/httprouter"
@@ -13,8 +12,8 @@ import (
 // WithTrace trace logs by trace_id & span_id & parent_span_id
 func WithTrace(h httprouter.Handle) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		traceID := r.Header.Get(web.RequestContextTraceID)
-		parentSpanID := r.Header.Get(web.RequestContextSpanID)
+		traceID := r.Header.Get(string(value_object.TraceID))
+		parentSpanID := r.Header.Get(string(value_object.SpanID))
 
 		spanID := value_object.NewSpanID()
 		if traceID == "" {
