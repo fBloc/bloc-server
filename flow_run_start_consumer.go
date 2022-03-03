@@ -46,6 +46,7 @@ func (blocApp *BlocApp) FlowTaskStartConsumer() {
 			logger.Infof(logTags, "flow already canceled")
 			continue
 		}
+		logTags[string(value_object.TraceID)] = flowRunIns.TraceID
 		if flowRunIns.Finished() {
 			logger.Errorf(logTags, "flow already finished. actual should not into here!")
 			continue

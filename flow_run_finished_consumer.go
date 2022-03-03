@@ -41,6 +41,7 @@ func (blocApp *BlocApp) FlowTaskFinishedConsumer() {
 			logger.Errorf(logTag, "flow_run_record_id find no record!")
 			continue
 		}
+		logTag[string(value_object.TraceID)] = flowRunIns.TraceID
 
 		// 更新此flow_run_record的状态为成功
 		err = flowRunRepo.Suc(flowRunIns.ID)
