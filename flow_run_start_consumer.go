@@ -47,6 +47,7 @@ func (blocApp *BlocApp) FlowTaskStartConsumer() {
 			continue
 		}
 		logTags[string(value_object.TraceID)] = flowRunIns.TraceID
+		logger.Infof(logTags, "received msg and suc get flow_run_record ins")
 		if flowRunIns.Finished() {
 			logger.Errorf(logTags, "flow already finished. actual should not into here!")
 			continue
@@ -90,7 +91,7 @@ func (blocApp *BlocApp) FlowTaskStartConsumer() {
 
 			flowFunction := flowIns.FlowFunctionIDMapFlowFunction[flowFunctionID]
 			functionIns := blocApp.GetFunctionByRepoID(flowFunction.FunctionID)
-			pubFuncLogTags["function_id"] = flowFunction.FunctionID.String()
+			pubFuncLogTags["downstream function_id"] = flowFunction.FunctionID.String()
 			if functionIns.IsZero() {
 				// TODO 处理function注册的心跳过期问题
 				logger.Errorf(pubFuncLogTags, "find no function from blocApp")
@@ -99,11 +100,6 @@ func (blocApp *BlocApp) FlowTaskStartConsumer() {
 
 			aggFunctionRunRecord := aggregate.NewFunctionRunRecordFromFlowDriven(
 				traceCtx, *functionIns, *flowRunIns, flowFunctionID)
-			err = event.PubEvent(&event.FunctionToRun{FunctionRunRecordID: aggFunctionRunRecord.ID})
-			if err != nil {
-				logger.Errorf(pubFuncLogTags, "pub FunctionToRun event failed: %v", err)
-				goto PubFailed
-			}
 			err = functionRunRecordRepo.Create(aggFunctionRunRecord)
 			if err != nil {
 				logger.Errorf(pubFuncLogTags,
@@ -111,6 +107,15 @@ func (blocApp *BlocApp) FlowTaskStartConsumer() {
 					flowFunction.FunctionID.String(), err)
 				goto PubFailed
 			}
+
+			err = event.PubEvent(&event.FunctionToRun{FunctionRunRecordID: aggFunctionRunRecord.ID})
+			pubFuncLogTags["downstream function_run_record_id"] = aggFunctionRunRecord.ID.String()
+			if err != nil {
+				logger.Errorf(pubFuncLogTags, "pub FunctionToRun event failed: %v", err)
+				goto PubFailed
+			}
+
+			logger.Infof(pubFuncLogTags, "suc pubed downstream function to run event")
 			flowblocidMapBlochisid[flowFunctionID] = aggFunctionRunRecord.ID
 		}
 		flowRunIns.FlowFuncIDMapFuncRunRecordID = flowblocidMapBlochisid

@@ -57,6 +57,7 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 			continue
 		}
 		logTags[string(value_object.TraceID)] = functionRecordIns.TraceID
+		logger.Infof(logTags, "received msg and suc get function_run_record ins")
 
 		flowIns, err := flowRepo.GetByID(functionRecordIns.FlowID)
 		logTags["flow_id"] = functionRecordIns.FlowID.String()
