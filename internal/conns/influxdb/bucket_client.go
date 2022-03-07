@@ -3,6 +3,7 @@ package influxdb
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -112,17 +113,18 @@ func (bC *BucketClient) Query(
 		return nil, errors.Wrap(result.Err(), "query parsing error")
 	}
 
-	ret := make([]map[string]interface{}, 0, 100)
+	happenTimes := make([]time.Time, 0, 100)
+	happenTimeMapRecord := make(map[time.Time]map[string]interface{}, 100)
 	for result.Next() {
-		// influxdb query only support precision in second!
-		// need to give away some records
-		if !start.IsZero() && result.Record().Time().Before(start) {
+		hT := result.Record().Time()
+		if !start.IsZero() && hT.Before(start) {
 			continue
 		}
 		tmp := map[string]interface{}{
-			"time": result.Record().Time(),
+			"time": hT,
 			"data": result.Record().Value(),
 		}
+		happenTimes = append(happenTimes, hT)
 		for i, j := range result.Record().Values() {
 			if strings.HasPrefix(i, "_") {
 				continue
@@ -132,7 +134,17 @@ func (bC *BucketClient) Query(
 			}
 			tmp[i] = j
 		}
-		ret = append(ret, tmp)
+		happenTimeMapRecord[hT] = tmp
+	}
+	sort.SliceStable(
+		happenTimes,
+		func(i, j int) bool {
+			return happenTimes[i].Before(happenTimes[j])
+		})
+
+	ret := make([]map[string]interface{}, len(happenTimes))
+	for i, j := range happenTimes {
+		ret[i] = happenTimeMapRecord[j]
 	}
 	return ret, nil
 }
