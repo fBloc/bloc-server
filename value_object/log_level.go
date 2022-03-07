@@ -4,6 +4,6 @@ type LogLevel = string
 
 const (
 	Info    LogLevel = "info"
-	Warning LogLevel = "Warning"
+	Warning LogLevel = "warning"
 	Error   LogLevel = "error"
 )

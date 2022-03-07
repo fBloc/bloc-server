@@ -39,8 +39,10 @@ func (blocApp *BlocApp) CrontabWatcher() {
 				}
 
 				traceID := value_object.NewTraceID()
+				spanID := value_object.NewSpanID()
 				logTags := map[string]string{
 					string(value_object.TraceID): traceID,
+					string(value_object.SpanID):  spanID,
 					"business":                   "crontab publish flow to run",
 					"flow_id":                    flowIns.ID.String()}
 				logger.Infof(
@@ -56,7 +58,7 @@ func (blocApp *BlocApp) CrontabWatcher() {
 					logger.Errorf(logTags, "create flow_run_record failed: %v", err)
 					return
 				}
-				if created { // 并发安全、避免重复发布任务
+				if !created { // 创建失败、表示存在同crontab_flag创建的文档，不能重复发布
 					logger.Infof(logTags, "already created")
 					return
 				}
