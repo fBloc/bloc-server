@@ -132,8 +132,8 @@ func CancelRun(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		// TODO 需要并行吗？
 		err := fService.FlowRunRecord.UserCancel(i.ID, reqUser.ID)
 		if err != nil {
-			fService.Logger.Errorf(
-				logTags, "cancel flow_run_record(id:%s) failed: %v", err)
+			fService.Logger.Errorf(logTags,
+				"cancel flow_run_record(id:%s) failed: %v", i.ID.String(), err)
 			web.WriteInternalServerErrorResp(&w, r, err, "cancel record failed")
 			return
 		}

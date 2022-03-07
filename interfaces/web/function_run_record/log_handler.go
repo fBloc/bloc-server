@@ -47,7 +47,7 @@ func PullLog(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		start, time.Time{})
 	if err != nil {
 		fRRService.Logger.Errorf(logTags,
-			"pull log failed: %v", startTimeStr, err)
+			"pull log from start_time: %s failed: %v", err, startTimeStr)
 		web.WriteInternalServerErrorResp(
 			&w, r, err, "logger.PullLogBetweenTime error: %v", err)
 		return

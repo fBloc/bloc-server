@@ -19,7 +19,3 @@ linters-settings:
     check-unreachable: true
     check-rangeloops: true
     check-copylocks: true
-
-run:
-  skip-dirs:
-    - internal/pkg/iqiyioss

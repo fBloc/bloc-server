@@ -33,7 +33,7 @@ func (blocApp *BlocApp) FlowTaskStartConsumer() {
 
 		flowRunRecordUuid, err := value_object.ParseToUUID(flowRunRecordStr)
 		if err != nil {
-			logger.Errorf(logTags, "parse to uuid failed: $v", err)
+			logger.Errorf(logTags, "parse to uuid failed: %v", err)
 			continue
 		}
 

@@ -170,7 +170,7 @@ func CreateDraft(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		return
 	}
 
-	fService.Logger.Infof(logTags, "finished create draft flow. id:%s", reqUser.Name, flowIns.ID.String())
+	fService.Logger.Infof(logTags, "finished create draft flow. id: %s", flowIns.ID.String())
 	web.WriteSucResp(&w, r, fromAggWithoutUserPermission(flowIns))
 }
 
