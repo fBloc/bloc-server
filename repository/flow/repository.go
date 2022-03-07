@@ -40,7 +40,7 @@ type FlowRepository interface {
 	PatchName(id value_object.UUID, name string) error
 	PatchPosition(id value_object.UUID, position interface{}) error
 	// PatchFuncs(id value_object.UUID, funcs map[string]*flow_bloc.) error
-	PatchCrontab(id value_object.UUID, c crontab.CrontabRepresent) error
+	PatchCrontab(id value_object.UUID, c *crontab.CrontabRepresent) error
 	PatchAllowParallelRun(id value_object.UUID, pub bool) error
 	PatchRetryStrategy(id value_object.UUID, amount, intervalInSecond uint16) error
 	PatchTriggerKey(id value_object.UUID, key string) error

@@ -366,7 +366,7 @@ func (mr *MongoRepository) PatchRetryStrategy(id value_object.UUID, amount, inte
 	return mr.mongoCollection.PatchByID(id, updater)
 }
 
-func (mr *MongoRepository) PatchCrontab(id value_object.UUID, c crontab.CrontabRepresent) error {
+func (mr *MongoRepository) PatchCrontab(id value_object.UUID, c *crontab.CrontabRepresent) error {
 	// 对于非空的crontab设置，需要检查格式是否正确
 	if !c.IsZero() && !c.IsValid() {
 		return errors.New("crontab expression not valid")

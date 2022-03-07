@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/fBloc/bloc-server/aggregate"
-	"github.com/fBloc/bloc-server/internal/crontab"
 	"github.com/fBloc/bloc-server/pkg/value_type"
 	"github.com/fBloc/bloc-server/services/flow"
 	"github.com/fBloc/bloc-server/value_object"
@@ -145,12 +144,13 @@ type Flow struct {
 	Position                      interface{}              `json:"position"`
 	FlowFunctionIDMapFlowFunction map[string]*FlowFunction `json:"flowFunctionID_map_flowFunction"`
 	// 运行控制相关
-	Crontab               *crontab.CrontabRepresent `json:"crontab"`
-	TriggerKey            string                    `json:"trigger_key"`
-	TimeoutInSeconds      uint32                    `json:"timeout_in_seconds"`
-	RetryAmount           uint16                    `json:"retry_amount"`
-	RetryIntervalInSecond uint16                    `json:"retry_interval_in_second"`
-	AllowParallelRun      bool                      `json:"allow_parallel_run"`
+	// Crontab               *crontab.CrontabRepresent `json:"crontab"`
+	Crontab               string `json:"crontab"`
+	TriggerKey            string `json:"trigger_key"`
+	TimeoutInSeconds      uint32 `json:"timeout_in_seconds"`
+	RetryAmount           uint16 `json:"retry_amount"`
+	RetryIntervalInSecond uint16 `json:"retry_interval_in_second"`
+	AllowParallelRun      bool   `json:"allow_parallel_run"`
 	// permission
 	Read             bool `json:"read"`
 	Write            bool `json:"write"`
@@ -214,7 +214,7 @@ func fromAggWithoutUserPermission(aggF *aggregate.Flow) *Flow {
 		CreateTime:                    aggF.CreateTime,
 		Position:                      aggF.Position,
 		FlowFunctionIDMapFlowFunction: httpFuncs,
-		Crontab:                       aggF.Crontab,
+		Crontab:                       aggF.Crontab.String(),
 		TriggerKey:                    aggF.TriggerKey,
 		TimeoutInSeconds:              aggF.TimeoutInSeconds,
 		RetryAmount:                   aggF.RetryAmount,

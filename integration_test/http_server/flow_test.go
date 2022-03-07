@@ -52,7 +52,7 @@ func aggFlowToWebFlow(aggF *aggregate.Flow) *flow.Flow {
 		CreateTime:                    aggF.CreateTime,
 		Position:                      aggF.Position,
 		FlowFunctionIDMapFlowFunction: httpFuncs,
-		Crontab:                       aggF.Crontab,
+		Crontab:                       aggF.Crontab.String(),
 		TriggerKey:                    aggF.TriggerKey,
 		TimeoutInSeconds:              aggF.TimeoutInSeconds,
 		RetryAmount:                   aggF.RetryAmount,
@@ -354,7 +354,7 @@ func TestOnlineFlow(t *testing.T) {
 		})
 
 		Convey("update", func() {
-			Convey("SetExecuteControlAttributes", func() {
+			Convey("SetExecuteControlAttribute trigger key", func() {
 				triggerKey := gofakeit.RandomString(allChars)
 				req := flow.Flow{
 					ID:         pubResp.OnlineFlow.ID,
@@ -383,6 +383,57 @@ func TestOnlineFlow(t *testing.T) {
 				So(resp.Code, ShouldEqual, http.StatusOK)
 				So(getFlowResp.Flow.IsZero(), ShouldBeFalse)
 				So(getFlowResp.Flow.TriggerKey, ShouldEqual, triggerKey)
+			})
+
+			Convey("SetExecuteControlAttribute crontab string", func() {
+				Convey("valid set", func() {
+					crontabStr := "* * * * *"
+					req := flow.Flow{
+						ID:      pubResp.OnlineFlow.ID,
+						Crontab: crontabStr,
+					}
+					reqBody, _ := json.Marshal(req)
+					var resp *web.RespMsg
+					_, err := http_util.Patch(
+						superuserHeader(),
+						serverAddress+"/api/v1/flow/set_execute_control_attributes",
+						http_util.BlankGetParam,
+						reqBody,
+						&resp)
+					So(err, ShouldBeNil)
+					So(resp.Code, ShouldEqual, http.StatusOK)
+
+					getFlowResp := struct {
+						web.RespMsg
+						Flow *flow.Flow `json:"data"`
+					}{}
+					http_util.Get(
+						superuserHeader(),
+						serverAddress+"/api/v1/flow/get_by_id/"+pubResp.OnlineFlow.ID.String(),
+						http_util.BlankGetParam, &getFlowResp)
+					So(err, ShouldBeNil)
+					So(resp.Code, ShouldEqual, http.StatusOK)
+					So(getFlowResp.Flow.IsZero(), ShouldBeFalse)
+					So(getFlowResp.Flow.Crontab, ShouldEqual, crontabStr)
+				})
+
+				Convey("not valid set", func() {
+					crontabStr := "* * * *"
+					req := flow.Flow{
+						ID:      pubResp.OnlineFlow.ID,
+						Crontab: crontabStr,
+					}
+					reqBody, _ := json.Marshal(req)
+					var resp *web.RespMsg
+					_, err := http_util.Patch(
+						superuserHeader(),
+						serverAddress+"/api/v1/flow/set_execute_control_attributes",
+						http_util.BlankGetParam,
+						reqBody,
+						&resp)
+					So(err, ShouldBeNil)
+					So(resp.Code, ShouldEqual, http.StatusBadRequest)
+				})
 			})
 		})
 

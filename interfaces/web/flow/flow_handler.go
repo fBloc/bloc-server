@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/fBloc/bloc-server/interfaces/web"
+	"github.com/fBloc/bloc-server/internal/crontab"
 	"github.com/fBloc/bloc-server/value_object"
 
 	"github.com/julienschmidt/httprouter"
@@ -247,6 +248,14 @@ func SetExecuteControlAttributes(w http.ResponseWriter, r *http.Request, _ httpr
 	}
 	logTags["flow_id"] = reqFlow.ID.String()
 
+	// > 如果写了crontab表达式、需要进行检测是否有效
+	if reqFlow.Crontab != "" &&
+		!crontab.IsCrontabStringValid(reqFlow.Crontab) {
+		fService.Logger.Warningf(logTags, "crontab str not valid: %s", reqFlow.Crontab)
+		web.WriteBadRequestDataResp(&w, r, "crontab str not valid: %s", reqFlow.Crontab)
+		return
+	}
+
 	flowIns, err := fService.Flow.GetByID(reqFlow.ID)
 	if err != nil {
 		fService.Logger.Errorf(logTags, "get flow by id failed: %v", err)
@@ -266,12 +275,12 @@ func SetExecuteControlAttributes(w http.ResponseWriter, r *http.Request, _ httpr
 	}
 
 	// >> 更新crontab
-	if !reqFlow.Crontab.Equal(flowIns.Crontab) {
-		err := fService.Flow.PatchCrontab(
-			reqFlow.ID, *reqFlow.Crontab)
+	reqCrontab := crontab.BuildCrontab(reqFlow.Crontab)
+	if !reqCrontab.Equal(flowIns.Crontab) {
+		err := fService.Flow.PatchCrontab(reqFlow.ID, reqCrontab)
 		baseLogMsg := fmt.Sprintf(
 			"change flow's crontab from:%s to:%s",
-			flowIns.Crontab.String(), reqFlow.Crontab.String())
+			flowIns.Crontab.String(), reqFlow.Crontab)
 
 		if err != nil {
 			fService.Logger.Errorf(logTags, "%s. error: %v", baseLogMsg, err)

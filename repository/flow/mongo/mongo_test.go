@@ -371,7 +371,7 @@ func TestOnline(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(len(flows), ShouldEqual, 0)
 
-			err = epo.PatchCrontab(onlineFlow.ID, *crontab.BuildCrontab("* * * * *"))
+			err = epo.PatchCrontab(onlineFlow.ID, crontab.BuildCrontab("* * * * *"))
 			So(err, ShouldBeNil)
 
 			flows, err = epo.FilterCrontabFlows()
