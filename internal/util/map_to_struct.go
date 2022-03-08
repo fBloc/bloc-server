@@ -18,11 +18,7 @@ func ToTimeHookFunc() mapstructure.DecodeHookFunc {
 
 		switch f.Kind() {
 		case reflect.String:
-			a, b := time.Parse("2006-01-02T15:04:05Z08:00", data.(string))
-			if b == nil {
-				a = a.Add(time.Hour * -8) // 内部都应该使用UTC时间
-			}
-			return a, b
+			return time.Parse(time.RFC3339, data.(string))
 		case reflect.Float64:
 			return time.Unix(0, int64(data.(float64))*int64(time.Millisecond)), nil
 		case reflect.Int64:

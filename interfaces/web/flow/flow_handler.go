@@ -275,7 +275,7 @@ func SetExecuteControlAttributes(w http.ResponseWriter, r *http.Request, _ httpr
 		if len(sameTriggerKeyFlows) == 1 &&
 			sameTriggerKeyFlows[0].ID != reqFlow.ID {
 			fService.Logger.Infof(logTags,
-				"this trigger_key:%s already used")
+				"this trigger_key:%s already used", reqFlow.TriggerKey)
 			web.WriteBadRequestDataResp(&w, r,
 				"trigger_key already exist, plz change another one and try")
 			return

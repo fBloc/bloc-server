@@ -1,0 +1,25 @@
+name: test
+on: [push, pull_request]
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v3
+        with:
+          go-version: '1.17'
+      - uses: golangci/golangci-lint-action@v2
+        with:
+          version: v1.41.1
+      - name: lint
+        run: golangci-lint run --timeout=3m
+      - name: download dependencies
+        run: go mod tidy
+      - name: race detect
+        run: go build -race cmd/server/main.go
+      - name: test
+        run: go test ./...

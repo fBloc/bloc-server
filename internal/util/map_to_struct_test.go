@@ -28,7 +28,7 @@ func TestDecodeMapToStructP(t *testing.T) {
 			"age":       age,
 			"money":     money,
 			"birth_day": birth,
-			"join_time": joinTime.Format("2006-01-02T15:04:05Z08:00"),
+			"join_time": joinTime.Format(time.RFC3339),
 		}
 
 		var structData testDecodeMapToStructStruct
