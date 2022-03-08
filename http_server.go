@@ -190,6 +190,7 @@ func (blocApp *BlocApp) RunHttpServer() {
 			// 运行相关
 			basicPath := "/api/v1/flow"
 			router.GET(basicPath+"/run/by_origin_id/:origin_id", middleware.WithTrace(middleware.LoginAuth(flow.Run)))
+			router.GET(basicPath+"/run/by_trigger_key/:trigger_key", middleware.WithTrace(flow.RunByTriggerKey))
 			router.GET(basicPath+"/cancel_run/by_origin_id/:origin_id", middleware.WithTrace(middleware.LoginAuth(flow.CancelRun)))
 		}
 

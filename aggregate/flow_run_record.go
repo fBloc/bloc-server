@@ -47,6 +47,15 @@ func newFromFlow(ctx context.Context, f *Flow) *FlowRunRecord {
 	return ret
 }
 
+func NewKeyTriggeredFlowRunRecord(
+	ctx context.Context, f *Flow, key string,
+) (*FlowRunRecord, error) {
+	rR := newFromFlow(ctx, f)
+	rR.TriggerKey = key
+	rR.TriggerType = value_object.Key
+	return rR, nil
+}
+
 func NewUserTriggeredFlowRunRecord(
 	ctx context.Context, f *Flow, triggerUser *User,
 ) (*FlowRunRecord, error) {

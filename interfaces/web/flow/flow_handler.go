@@ -256,6 +256,32 @@ func SetExecuteControlAttributes(w http.ResponseWriter, r *http.Request, _ httpr
 		return
 	}
 
+	// 如果设置了trigger_key 、不能存在相同trigger_key的flow。否则不能够识别到驱动具体的是哪个flow
+	if reqFlow.TriggerKey != "" {
+		sameTriggerKeyFlows, err := fService.Flow.Filter(
+			value_object.NewRepositoryFilter().AddEqual("trigger_key", reqFlow.TriggerKey))
+		if err != nil {
+			fService.Logger.Errorf(logTags, "filter same trigger_key flows failed: %v", err)
+			web.WriteInternalServerErrorResp(&w, r, err, "filter same trigger_key flows failed: %v")
+			return
+		}
+		if len(sameTriggerKeyFlows) > 1 {
+			fService.Logger.Errorf(logTags,
+				"multi flow have same trigger_key: %s", reqFlow.TriggerKey)
+			web.WriteBadRequestDataResp(&w, r,
+				"trigger_key already exist, plz change another one and try")
+			return
+		}
+		if len(sameTriggerKeyFlows) == 1 &&
+			sameTriggerKeyFlows[0].ID != reqFlow.ID {
+			fService.Logger.Infof(logTags,
+				"this trigger_key:%s already used")
+			web.WriteBadRequestDataResp(&w, r,
+				"trigger_key already exist, plz change another one and try")
+			return
+		}
+	}
+
 	flowIns, err := fService.Flow.GetByID(reqFlow.ID)
 	if err != nil {
 		fService.Logger.Errorf(logTags, "get flow by id failed: %v", err)

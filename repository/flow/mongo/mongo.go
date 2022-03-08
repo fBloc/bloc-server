@@ -311,6 +311,24 @@ func (mr *MongoRepository) FilterCrontabFlows() ([]aggregate.Flow, error) {
 	return ret, err
 }
 
+func (mr *MongoRepository) Filter(
+	filter *value_object.RepositoryFilter,
+) ([]aggregate.Flow, error) {
+	var flows []mongoFlow
+	filter.AddEqual("is_draft", false).AddEqual("deleted", false)
+	err := mr.mongoCollection.CommonFilter(
+		*filter, value_object.RepositoryFilterOption{}, &flows)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := make([]aggregate.Flow, 0, len(flows))
+	for _, i := range flows {
+		ret = append(ret, *i.ToAggregate())
+	}
+	return ret, err
+}
+
 func (mr *MongoRepository) FilterDraft(userID value_object.UUID, nameContains string) ([]aggregate.Flow, error) {
 	filter := mongodb.NewFilter().AddEqual("is_draft", true).AddEqual("deleted", false)
 	if !userID.IsNil() {

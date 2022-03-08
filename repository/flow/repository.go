@@ -35,6 +35,7 @@ type FlowRepository interface {
 	FilterOnline(user *aggregate.User, nameContains string) (flows []aggregate.Flow, err error)
 	FilterCrontabFlows() (flows []aggregate.Flow, err error)
 	FilterDraft(userID value_object.UUID, nameContains string) (flows []aggregate.Flow, err error)
+	Filter(filter *value_object.RepositoryFilter) (flows []aggregate.Flow, err error)
 
 	// Update
 	PatchName(id value_object.UUID, name string) error
