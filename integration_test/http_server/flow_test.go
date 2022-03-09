@@ -355,19 +355,16 @@ func TestOnlineFlow(t *testing.T) {
 
 		Convey("update", func() {
 			Convey("SetExecuteControlAttribute trigger key", func() {
-				triggerKey := gofakeit.RandomString(allChars)
 				req := flow.Flow{
-					ID:         pubResp.OnlineFlow.ID,
-					TriggerKey: triggerKey,
+					ID:                pubResp.OnlineFlow.ID,
+					AllowTriggerByKey: true,
 				}
 				reqBody, _ := json.Marshal(req)
 				var resp *web.RespMsg
 				_, err := http_util.Patch(
 					superuserHeader(),
 					serverAddress+"/api/v1/flow/set_execute_control_attributes",
-					http_util.BlankGetParam,
-					reqBody,
-					&resp)
+					http_util.BlankGetParam, reqBody, &resp)
 				So(err, ShouldBeNil)
 				So(resp.Code, ShouldEqual, http.StatusOK)
 
@@ -382,7 +379,25 @@ func TestOnlineFlow(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(resp.Code, ShouldEqual, http.StatusOK)
 				So(getFlowResp.Flow.IsZero(), ShouldBeFalse)
-				So(getFlowResp.Flow.TriggerKey, ShouldEqual, triggerKey)
+				So(getFlowResp.Flow.AllowTriggerByKey, ShouldBeTrue)
+
+				req = flow.Flow{
+					ID:                pubResp.OnlineFlow.ID,
+					AllowTriggerByKey: false,
+				}
+				reqBody, _ = json.Marshal(req)
+				_, err = http_util.Patch(
+					superuserHeader(),
+					serverAddress+"/api/v1/flow/set_execute_control_attributes",
+					http_util.BlankGetParam, reqBody, &resp)
+				So(err, ShouldBeNil)
+				So(resp.Code, ShouldEqual, http.StatusOK)
+
+				http_util.Get(
+					superuserHeader(),
+					serverAddress+"/api/v1/flow/get_by_id/"+pubResp.OnlineFlow.ID.String(),
+					http_util.BlankGetParam, &getFlowResp)
+				So(getFlowResp.Flow.AllowTriggerByKey, ShouldBeFalse)
 			})
 
 			Convey("SetExecuteControlAttribute crontab string", func() {
