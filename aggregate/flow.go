@@ -164,8 +164,9 @@ type Flow struct {
 	// 是否允许正在运行时再次运行
 	AllowParallelRun bool
 	// 运行触发
-	Crontab    *crontab.CrontabRepresent
-	TriggerKey string
+	Crontab           *crontab.CrontabRepresent
+	TriggerKey        string
+	AllowTriggerByKey bool
 	// 重试策略
 	TimeoutInSeconds      uint32
 	RetryAmount           uint16

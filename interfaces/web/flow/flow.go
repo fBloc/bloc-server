@@ -147,6 +147,7 @@ type Flow struct {
 	// Crontab               *crontab.CrontabRepresent `json:"crontab"`
 	Crontab               string `json:"crontab"`
 	TriggerKey            string `json:"trigger_key"`
+	AllowTriggerByKey     bool   `json:"allow_trigger_by_key"`
 	TimeoutInSeconds      uint32 `json:"timeout_in_seconds"`
 	RetryAmount           uint16 `json:"retry_amount"`
 	RetryIntervalInSecond uint16 `json:"retry_interval_in_second"`
@@ -216,6 +217,7 @@ func fromAggWithoutUserPermission(aggF *aggregate.Flow) *Flow {
 		FlowFunctionIDMapFlowFunction: httpFuncs,
 		Crontab:                       aggF.Crontab.String(),
 		TriggerKey:                    aggF.TriggerKey,
+		AllowTriggerByKey:             aggF.AllowTriggerByKey,
 		TimeoutInSeconds:              aggF.TimeoutInSeconds,
 		RetryAmount:                   aggF.RetryAmount,
 		RetryIntervalInSecond:         aggF.RetryIntervalInSecond,

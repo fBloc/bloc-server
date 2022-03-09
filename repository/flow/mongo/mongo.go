@@ -146,7 +146,8 @@ type mongoFlow struct {
 	Position                      interface{}                        `bson:"position"`
 	FlowFunctionIDMapFlowFunction mongoFlowFunctionIDMapFlowFunction `bson:"flowFunctionID_map_flowFunction"`
 	Crontab                       *crontab.CrontabRepresent          `bson:"crontab,omitempty"`
-	TriggerKey                    string                             `bson:"trigger_key,omitempty"`
+	TriggerKey                    string                             `bson:"trigger_key"`
+	AllowTriggerByKey             bool                               `bson:"allow_trigger_by_key"`
 	TimeoutInSeconds              uint32                             `bson:"timeout_in_seconds,omitempty"`
 	RetryAmount                   uint16                             `bson:"retry_amount,omitempty"`
 	RetryIntervalInSecond         uint16                             `bson:"retry_interval_in_second,omitempty"`
@@ -172,6 +173,7 @@ func (m mongoFlow) ToAggregate() *aggregate.Flow {
 		Position:                      m.Position,
 		Crontab:                       m.Crontab,
 		TriggerKey:                    m.TriggerKey,
+		AllowTriggerByKey:             m.AllowTriggerByKey,
 		TimeoutInSeconds:              m.TimeoutInSeconds,
 		RetryAmount:                   m.RetryAmount,
 		RetryIntervalInSecond:         m.RetryIntervalInSecond,
@@ -199,6 +201,7 @@ func NewFromFlow(f *aggregate.Flow) *mongoFlow {
 		Crontab:                       f.Crontab,
 		Position:                      f.Position,
 		TriggerKey:                    f.TriggerKey,
+		AllowTriggerByKey:             f.AllowTriggerByKey,
 		TimeoutInSeconds:              f.TimeoutInSeconds,
 		RetryAmount:                   f.RetryAmount,
 		RetryIntervalInSecond:         f.RetryIntervalInSecond,
@@ -356,7 +359,7 @@ func (mr *MongoRepository) PatchName(id value_object.UUID, name string) error {
 	return mr.mongoCollection.PatchByID(id, updater)
 }
 
-// PatchTriggerKey 更新crontab配置
+// PatchWhetherAllowTriggerByKey 更新crontab配置
 func (mr *MongoRepository) PatchPosition(id value_object.UUID, position interface{}) error {
 	updater := mongodb.NewUpdater().AddSet("position", position)
 	return mr.mongoCollection.PatchByID(id, updater)
@@ -400,9 +403,9 @@ func (mr *MongoRepository) PatchAllowParallelRun(id value_object.UUID, allowPara
 	return mr.mongoCollection.PatchByID(id, updater)
 }
 
-// PatchTriggerKey 更新触发的key
-func (mr *MongoRepository) PatchTriggerKey(id value_object.UUID, key string) error {
-	updater := mongodb.NewUpdater().AddSet("trigger_key", key)
+// PatchWhetherAllowTriggerByKey 更新触发的key
+func (mr *MongoRepository) PatchWhetherAllowTriggerByKey(id value_object.UUID, allowed bool) error {
+	updater := mongodb.NewUpdater().AddSet("allow_trigger_by_key", allowed)
 	return mr.mongoCollection.PatchByID(id, updater)
 }
 
@@ -529,6 +532,7 @@ func (mr *MongoRepository) CreateDraftFromScratch(
 		CreateTime:                    time.Now(),
 		Position:                      position,
 		FlowFunctionIDMapFlowFunction: funcs,
+		TriggerKey:                    value_object.NewUUID().String(),
 		ReadUserIDs:                   []value_object.UUID{createUserID},
 		WriteUserIDs:                  []value_object.UUID{createUserID},
 		ExecuteUserIDs:                []value_object.UUID{createUserID},
@@ -572,6 +576,7 @@ func (mr *MongoRepository) CreateDraftFromExistFlow(
 		OriginID:                      originID,
 		CreateUserID:                  createUserID,
 		CreateTime:                    time.Now(),
+		TriggerKey:                    existFlow.TriggerKey,
 		Position:                      position,
 		FlowFunctionIDMapFlowFunction: funcs,
 		ReadUserIDs:                   existFlow.ReadUserIDs,
@@ -619,6 +624,7 @@ func (mr *MongoRepository) CreateOnlineFromDraft(
 	aggF.AllowParallelRun = latestFlow.AllowParallelRun
 	aggF.Crontab = latestFlow.Crontab
 	aggF.TriggerKey = latestFlow.TriggerKey
+	aggF.AllowTriggerByKey = latestFlow.AllowTriggerByKey
 	aggF.TimeoutInSeconds = latestFlow.TimeoutInSeconds
 	aggF.RetryAmount = latestFlow.RetryAmount
 	aggF.RetryIntervalInSecond = latestFlow.RetryIntervalInSecond

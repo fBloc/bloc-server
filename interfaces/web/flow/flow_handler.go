@@ -256,32 +256,6 @@ func SetExecuteControlAttributes(w http.ResponseWriter, r *http.Request, _ httpr
 		return
 	}
 
-	// 如果设置了trigger_key 、不能存在相同trigger_key的flow。否则不能够识别到驱动具体的是哪个flow
-	if reqFlow.TriggerKey != "" {
-		sameTriggerKeyFlows, err := fService.Flow.Filter(
-			value_object.NewRepositoryFilter().AddEqual("trigger_key", reqFlow.TriggerKey))
-		if err != nil {
-			fService.Logger.Errorf(logTags, "filter same trigger_key flows failed: %v", err)
-			web.WriteInternalServerErrorResp(&w, r, err, "filter same trigger_key flows failed: %v")
-			return
-		}
-		if len(sameTriggerKeyFlows) > 1 {
-			fService.Logger.Errorf(logTags,
-				"multi flow have same trigger_key: %s", reqFlow.TriggerKey)
-			web.WriteBadRequestDataResp(&w, r,
-				"trigger_key already exist, plz change another one and try")
-			return
-		}
-		if len(sameTriggerKeyFlows) == 1 &&
-			sameTriggerKeyFlows[0].ID != reqFlow.ID {
-			fService.Logger.Infof(logTags,
-				"this trigger_key:%s already used", reqFlow.TriggerKey)
-			web.WriteBadRequestDataResp(&w, r,
-				"trigger_key already exist, plz change another one and try")
-			return
-		}
-	}
-
 	flowIns, err := fService.Flow.GetByID(reqFlow.ID)
 	if err != nil {
 		fService.Logger.Errorf(logTags, "get flow by id failed: %v", err)
@@ -316,17 +290,17 @@ func SetExecuteControlAttributes(w http.ResponseWriter, r *http.Request, _ httpr
 		fService.Logger.Infof(logTags, baseLogMsg)
 	}
 
-	// >> 更新trigger_key
-	if reqFlow.TriggerKey != flowIns.TriggerKey {
-		err := fService.Flow.PatchTriggerKey(
-			reqFlow.ID, reqFlow.TriggerKey)
+	// >> 更新allow_trigger_by_key
+	if reqFlow.AllowTriggerByKey != flowIns.AllowTriggerByKey {
+		err := fService.Flow.PatchWhetherAllowTriggerByKey(
+			reqFlow.ID, reqFlow.AllowTriggerByKey)
 		baseLogMsg := fmt.Sprintf(
-			"change flow's trigger_key from:%s to:%s",
-			flowIns.TriggerKey, reqFlow.TriggerKey)
+			"change flow's allow_trigger_by_key from:%t to:%t",
+			flowIns.AllowTriggerByKey, reqFlow.AllowTriggerByKey)
 
 		if err != nil {
 			fService.Logger.Errorf(logTags, "%s. error: %v", baseLogMsg, err)
-			web.WriteInternalServerErrorResp(&w, r, err, "update trigger_key failed")
+			web.WriteInternalServerErrorResp(&w, r, err, "update allow_trigger_by_key failed")
 			return
 		}
 		fService.Logger.Infof(logTags, baseLogMsg)

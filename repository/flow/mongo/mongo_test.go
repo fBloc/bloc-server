@@ -391,16 +391,15 @@ func TestOnline(t *testing.T) {
 			So(f.AllowParallelRun, ShouldBeTrue)
 		})
 
-		Convey("PatchTriggerKey", func() {
+		Convey("PatchWhetherAllowTriggerByKey", func() {
 			f, _ := epo.GetByID(onlineFlow.ID)
-			So(f.TriggerKey, ShouldEqual, "")
+			So(f.AllowTriggerByKey, ShouldBeFalse)
 
-			triggerKey := "xxxx"
-			err := epo.PatchTriggerKey(onlineFlow.ID, triggerKey)
+			err := epo.PatchWhetherAllowTriggerByKey(onlineFlow.ID, true)
 			So(err, ShouldBeNil)
 
 			f, _ = epo.GetByID(onlineFlow.ID)
-			So(f.TriggerKey, ShouldEqual, triggerKey)
+			So(f.AllowTriggerByKey, ShouldBeTrue)
 		})
 
 		Convey("PatchTimeout", func() {

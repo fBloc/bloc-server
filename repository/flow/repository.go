@@ -44,7 +44,7 @@ type FlowRepository interface {
 	PatchCrontab(id value_object.UUID, c *crontab.CrontabRepresent) error
 	PatchAllowParallelRun(id value_object.UUID, pub bool) error
 	PatchRetryStrategy(id value_object.UUID, amount, intervalInSecond uint16) error
-	PatchTriggerKey(id value_object.UUID, key string) error
+	PatchWhetherAllowTriggerByKey(id value_object.UUID, allowed bool) error
 	PatchTimeout(id value_object.UUID, tOS uint32) error
 	PatchFlowFunctionIDMapFlowFunction(
 		id value_object.UUID,
