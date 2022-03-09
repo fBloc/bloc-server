@@ -11,6 +11,11 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
+type runByKeyRespStruct struct {
+	Msg             string `json:"msg"`
+	FlowRunRecordID string `json:"flow_run_record_id"`
+}
+
 func RunByTriggerKey(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	logTags := web.GetTraceAboutFields(r.Context())
 	logTags["business"] = "trigger_key flow to run"
@@ -37,44 +42,56 @@ func RunByTriggerKey(w http.ResponseWriter, r *http.Request, ps httprouter.Param
 		return
 	}
 	if len(flows) > 1 {
-		fService.Logger.Errorf(logTags,
-			"matched more than one flow!")
+		fService.Logger.Errorf(logTags, "matched more than one flow!")
+		web.WriteInternalServerErrorResp(&w, r, nil,
+			"trigger_key match multi flow, call the server's responsible person to fix it")
+		return
 	}
 
-	for _, flowIns := range flows {
-		thisLogTags := logTags
-		thisLogTags["origin_id"] = flowIns.OriginID.String()
-
-		// create new run record
-		aggFlowRunRecord, err := aggregate.NewKeyTriggeredFlowRunRecord(
-			r.Context(), &flowIns, triggerKey)
-		if err != nil {
-			fService.Logger.Errorf(
-				logTags, "create aggregate flow_run_record failed: %v", err)
-			web.WriteInternalServerErrorResp(&w, r, err, "build aggregate flow failed")
-			return
+	flowIns := flows[0]
+	thisLogTags := logTags
+	thisLogTags["origin_id"] = flowIns.OriginID.String()
+	if !flowIns.AllowTriggerByKey {
+		fService.Logger.Infof(logTags, "not allowed trigger by key")
+		resp := runByKeyRespStruct{
+			Msg: "not allowed trigger by key",
 		}
+		web.WriteSucResp(&w, r, resp)
+		return
+	}
 
-		err = fService.FlowRunRecord.Create(aggFlowRunRecord)
-		if err != nil {
-			fService.Logger.Errorf(
-				logTags, "persist flow_run_record failed: %v", err)
-			web.WriteInternalServerErrorResp(
-				&w, r, err, "create flow run record to repository failed")
-			return
-		}
-		logTags["flow_run_record_id"] = aggFlowRunRecord.ID.String()
+	// create new run record
+	aggFlowRunRecord, err := aggregate.NewKeyTriggeredFlowRunRecord(
+		r.Context(), &flowIns, triggerKey)
+	if err != nil {
+		fService.Logger.Errorf(
+			logTags, "create aggregate flow_run_record failed: %v", err)
+		web.WriteInternalServerErrorResp(&w, r, err, "build aggregate flow failed")
+		return
+	}
 
-		err = event.PubEvent(&event.FlowToRun{FlowRunRecordID: aggFlowRunRecord.ID})
-		if err != nil {
-			fService.Logger.Errorf(logTags, "pub event failed: %v", err)
-			web.WriteInternalServerErrorResp(&w, r, err, "pub event failed")
-			return
-		}
+	err = fService.FlowRunRecord.Create(aggFlowRunRecord)
+	if err != nil {
+		fService.Logger.Errorf(
+			logTags, "persist flow_run_record failed: %v", err)
+		web.WriteInternalServerErrorResp(
+			&w, r, err, "create flow_run_record to repository failed")
+		return
+	}
+	logTags["flow_run_record_id"] = aggFlowRunRecord.ID.String()
+
+	err = event.PubEvent(&event.FlowToRun{FlowRunRecordID: aggFlowRunRecord.ID})
+	if err != nil {
+		fService.Logger.Errorf(logTags, "pub event failed: %v", err)
+		web.WriteInternalServerErrorResp(&w, r, err, "pub event failed")
+		return
 	}
 
 	fService.Logger.Infof(logTags, "finished")
-	web.WritePlainSucOkResp(&w, r)
+	resp := runByKeyRespStruct{
+		FlowRunRecordID: aggFlowRunRecord.ID.String(),
+	}
+	web.WriteSucResp(&w, r, resp)
 }
 
 func Run(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
