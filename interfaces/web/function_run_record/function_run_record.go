@@ -38,8 +38,8 @@ type FunctionRunRecord struct {
 	FunctionID                  value_object.UUID      `json:"function_id"`
 	FlowFunctionID              string                 `json:"flow_function_id"`
 	FlowRunRecordID             value_object.UUID      `json:"flow_run_record_id"`
-	Start                       time.Time              `json:"start"`
-	End                         time.Time              `json:"end"`
+	Start                       *time.Time             `json:"start"`
+	End                         *time.Time             `json:"end"`
 	Suc                         bool                   `json:"suc"`
 	InterceptBelowFunctionRun   bool                   `json:"intercept_below_function_run"`
 	Canceled                    bool                   `json:"canceled,omitempty"`
@@ -52,7 +52,7 @@ type FunctionRunRecord struct {
 	ProcessStages               []string               `json:"process_stages"`
 	ProcessStageIndex           int                    `json:"process_stage_index,omitempty"`
 	FunctionProviderName        string                 `json:"function_provider_name"`
-	ShouldBeCanceledAt          time.Time              `json:"should_be_canceled_at,omitempty"`
+	ShouldBeCanceledAt          *time.Time             `json:"should_be_canceled_at"`
 	TraceID                     string                 `json:"trace_id"`
 }
 
@@ -91,8 +91,6 @@ func fromAgg(
 		FunctionID:                  aggFRR.FunctionID,
 		FlowFunctionID:              aggFRR.FlowFunctionID,
 		FlowRunRecordID:             aggFRR.FlowRunRecordID,
-		Start:                       aggFRR.Start,
-		End:                         aggFRR.End,
 		Suc:                         aggFRR.Suc,
 		InterceptBelowFunctionRun:   aggFRR.InterceptBelowFunctionRun,
 		Canceled:                    aggFRR.Canceled,
@@ -105,8 +103,16 @@ func fromAgg(
 		ProcessStages:               aggFRR.ProcessStages,
 		ProcessStageIndex:           aggFRR.ProcessStageIndex,
 		FunctionProviderName:        aggFRR.FunctionProviderName,
-		ShouldBeCanceledAt:          aggFRR.ShouldBeCanceledAt,
 		TraceID:                     aggFRR.TraceID,
+	}
+	if !aggFRR.ShouldBeCanceledAt.IsZero() {
+		retFlow.ShouldBeCanceledAt = &aggFRR.ShouldBeCanceledAt
+	}
+	if !aggFRR.Start.IsZero() {
+		retFlow.Start = &aggFRR.Start
+	}
+	if !aggFRR.End.IsZero() {
+		retFlow.End = &aggFRR.End
 	}
 	return retFlow
 }

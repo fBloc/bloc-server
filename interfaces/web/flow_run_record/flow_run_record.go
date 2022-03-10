@@ -28,9 +28,9 @@ type FlowFunctionRecord struct {
 	TriggerKey                   string                               `json:"trigger_key"`
 	TriggerSource                value_object.FlowTriggeredSourceType `json:"trigger_source"`
 	TriggerUserName              string                               `json:"trigger_user_name"`
-	TriggerTime                  time.Time                            `json:"trigger_time"`
-	StartTime                    time.Time                            `json:"start_time"`
-	EndTime                      time.Time                            `json:"end_time"`
+	TriggerTime                  *time.Time                           `json:"trigger_time"`
+	StartTime                    *time.Time                           `json:"start_time"`
+	EndTime                      *time.Time                           `json:"end_time"`
 	Status                       value_object.RunState                `json:"status"`
 	ErrorMsg                     string                               `json:"error_msg"`
 	RetriedAmount                uint16                               `json:"retried_amount"`
@@ -57,15 +57,21 @@ func fromAgg(
 		TriggerType:                  aggFRR.TriggerType,
 		TriggerKey:                   aggFRR.TriggerKey,
 		TriggerSource:                aggFRR.TriggerSource,
-		TriggerTime:                  aggFRR.TriggerTime,
-		StartTime:                    aggFRR.StartTime,
-		EndTime:                      aggFRR.EndTime,
 		Status:                       aggFRR.Status,
 		ErrorMsg:                     aggFRR.ErrorMsg,
 		RetriedAmount:                aggFRR.RetriedAmount,
 		TimeoutCanceled:              aggFRR.TimeoutCanceled,
 		Canceled:                     aggFRR.Canceled,
 		TraceID:                      aggFRR.TraceID,
+	}
+	if !aggFRR.TriggerTime.IsZero() {
+		retFlow.TriggerTime = &aggFRR.TriggerTime
+	}
+	if !aggFRR.StartTime.IsZero() {
+		retFlow.StartTime = &aggFRR.StartTime
+	}
+	if !aggFRR.EndTime.IsZero() {
+		retFlow.EndTime = &aggFRR.EndTime
 	}
 	if aggFRR.CancelUserID.IsNil() && aggFRR.TriggerUserID.IsNil() {
 		return retFlow
