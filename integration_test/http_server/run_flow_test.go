@@ -95,7 +95,7 @@ func TestRunFlow(t *testing.T) {
 				len(clientFlow.FlowFunctionIDMapFlowFunction[config.FlowFunctionStartID].DownstreamFlowFunctionIDs),
 			)
 			So(theFlowRunRecord.StartTime.IsZero(), ShouldBeFalse)
-			So(theFlowRunRecord.EndTime.IsZero(), ShouldBeTrue)
+			So(theFlowRunRecord.EndTime, ShouldEqual, nil)
 
 			addFunctionRunRecordID, ok := theFlowRunRecord.FlowFuncIDMapFuncRunRecordID[aggFuncAddFlowFunctionID]
 			So(ok, ShouldBeTrue)
@@ -113,7 +113,7 @@ func TestRunFlow(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(addFunctionRunRecordresp.Code, ShouldEqual, http.StatusOK)
 			So(addFunctionRunRecordresp.FunctionRunRecord.ID, ShouldEqual, addFunctionRunRecordID)
-			So(addFunctionRunRecordresp.FunctionRunRecord.End.IsZero(), ShouldBeTrue)
+			So(addFunctionRunRecordresp.FunctionRunRecord.End, ShouldBeNil)
 			So(addFunctionRunRecordresp.FunctionRunRecord.Suc, ShouldBeFalse)
 			So(addFunctionRunRecordresp.FunctionRunRecord.ProcessStageIndex, ShouldEqual, 0)
 			So(addFunctionRunRecordresp.FunctionRunRecord.Progress, ShouldEqual, 0)
@@ -260,7 +260,7 @@ func TestRunFlow(t *testing.T) {
 			// 2 stand for the second function is suc published
 			So(len(theFlowRunRecord.FlowFuncIDMapFuncRunRecordID), ShouldEqual, 2)
 			So(theFlowRunRecord.Status, ShouldEqual, value_object.Running)
-			So(theFlowRunRecord.EndTime.IsZero(), ShouldBeTrue)
+			So(theFlowRunRecord.EndTime, ShouldBeNil)
 
 			theSecondMultiplyFunctionRunRecordID, ok := theFlowRunRecord.FlowFuncIDMapFuncRunRecordID[aggFuncMultiplyFlowFunctionID]
 			So(ok, ShouldBeTrue)
@@ -277,7 +277,7 @@ func TestRunFlow(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(multiplyFunctionRunRecordresp.Code, ShouldEqual, http.StatusOK)
 			So(multiplyFunctionRunRecordresp.FunctionRunRecord.ID, ShouldEqual, theSecondMultiplyFunctionRunRecordID)
-			So(multiplyFunctionRunRecordresp.FunctionRunRecord.End.IsZero(), ShouldBeTrue)
+			So(multiplyFunctionRunRecordresp.FunctionRunRecord.End, ShouldBeNil)
 			So(multiplyFunctionRunRecordresp.FunctionRunRecord.Suc, ShouldBeFalse)
 
 			// upload multiply-function run opt
