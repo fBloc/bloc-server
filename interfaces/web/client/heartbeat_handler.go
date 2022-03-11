@@ -41,7 +41,7 @@ func ReportFunctionExecuteHeartbeat(w http.ResponseWriter, r *http.Request, _ ht
 		return
 	}
 
-	heartBeatIns, err := heartbeatRepo.GetByFunctionRunRecordID(funcRunRecordUUID)
+	heartBeatIns, err := heartbeatService.HeartBeatRepo.GetByFunctionRunRecordID(funcRunRecordUUID)
 	if err != nil {
 		scheduleLogger.Errorf(logTags, "get heartbeat by function_run_record_id failed: %v", err)
 		web.WriteInternalServerErrorResp(&w, r, err, "no such function run record")
@@ -49,7 +49,7 @@ func ReportFunctionExecuteHeartbeat(w http.ResponseWriter, r *http.Request, _ ht
 	}
 	logTags["heartbeat_id"] = heartBeatIns.ID.String()
 
-	err = heartbeatRepo.AliveReport(heartBeatIns.ID)
+	err = heartbeatService.HeartBeatRepo.AliveReport(heartBeatIns.ID)
 	if err != nil {
 		scheduleLogger.Errorf(logTags, "heartbeat alive report failed: %v", err)
 		web.WriteInternalServerErrorResp(&w, r, err, "alive report failed")

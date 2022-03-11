@@ -18,6 +18,7 @@ import (
 	flow_service "github.com/fBloc/bloc-server/services/flow"
 	flowRunRecord_service "github.com/fBloc/bloc-server/services/flow_run_record"
 	function_service "github.com/fBloc/bloc-server/services/function"
+	heartbeat_service "github.com/fBloc/bloc-server/services/function_execute_heartbeat"
 	functionRunRecord_service "github.com/fBloc/bloc-server/services/function_run_record"
 	user_service "github.com/fBloc/bloc-server/services/user"
 	user_cache "github.com/fBloc/bloc-server/services/user_cache"
@@ -311,6 +312,18 @@ func (blocApp *BlocApp) RunHttpServer() {
 		client.InjectObjectStorageImplement(
 			blocApp.GetOrCreateConsumerObjectStorage(),
 		)
+
+		executeHeartBeatService, err := heartbeat_service.NewFunctionExecuteHeartbeatService(
+			heartbeat_service.WithLogger(httpLogger),
+			heartbeat_service.WithFunctionHeartbeatRepository(
+				blocApp.GetOrCreateFuncRunHBeatRepository()),
+			heartbeat_service.WithFunctionRunRecordRepository(
+				blocApp.GetOrCreateFunctionRunRecordRepository()),
+		)
+		if err != nil {
+			panic(err)
+		}
+		client.InjectHeartbeatService(executeHeartBeatService)
 
 		basicPath := "/api/v1/client"
 		{

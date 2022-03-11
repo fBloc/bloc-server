@@ -133,3 +133,10 @@ func (mr *MongoRepository) Delete(
 	return mr.mongoCollection.Delete(
 		mongodb.NewFilter().AddEqual("id", id))
 }
+
+func (mr *MongoRepository) DeleteByFunctionRunRecordID(
+	functionRunRecordID value_object.UUID,
+) (int64, error) {
+	return mr.mongoCollection.Delete(
+		mongodb.NewFilter().AddEqual("function_run_record_id", functionRunRecordID))
+}

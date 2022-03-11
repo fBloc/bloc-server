@@ -21,4 +21,5 @@ type FunctionExecuteHeartbeatRepository interface {
 
 	// delete
 	Delete(id value_object.UUID) (int64, error)
+	DeleteByFunctionRunRecordID(functionRunRecordID value_object.UUID) (int64, error)
 }

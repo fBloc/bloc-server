@@ -77,10 +77,20 @@ func TestFunctionExecuteHeartBeat(t *testing.T) {
 			So(len(deads), ShouldEqual, 1)
 		})
 
-		Reset(func() {
+		Convey("Delete by id", func() {
 			deleteAmount, err := epo.Delete(aggFunctionExecuteHeartBeat.ID)
 			So(err, ShouldBeNil)
 			So(deleteAmount, ShouldEqual, 1)
+		})
+
+		Convey("Delete by function_run_record_id", func() {
+			deleteAmount, err := epo.DeleteByFunctionRunRecordID(funcRunRecordID)
+			So(err, ShouldBeNil)
+			So(deleteAmount, ShouldEqual, 1)
+		})
+
+		Reset(func() {
+			epo.Delete(aggFunctionExecuteHeartBeat.ID)
 		})
 	})
 }

@@ -36,6 +36,15 @@ func FunctionRunFinished(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 		return
 	}
 
+	// 兜底逻辑、删除此function_run_record_id对应的heartbeat。理论上应该通过明确的删除接口来完成
+	heartBeatDeleteAmount, err := heartbeatService.HeartBeatRepo.DeleteByFunctionRunRecordID(funcRunRecordUUID)
+	if err != nil {
+		scheduleLogger.Errorf(logTags,
+			"delete heartbeat failed: %v", err)
+	}
+	scheduleLogger.Infof(logTags,
+		"delete heartbeat amount: %d", heartBeatDeleteAmount)
+
 	fRRIns, err := fRRService.FunctionRunRecords.GetByID(funcRunRecordUUID)
 	if err != nil {
 		scheduleLogger.Errorf(logTags, "get functionRunRecord by id failed: %v", err)

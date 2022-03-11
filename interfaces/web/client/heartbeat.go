@@ -1,15 +1,13 @@
 package client
 
-import (
-	function_execute_heartbeat_repository "github.com/fBloc/bloc-server/repository/function_execute_heartbeat"
-)
+import "github.com/fBloc/bloc-server/services/function_execute_heartbeat"
 
-var heartbeatRepo function_execute_heartbeat_repository.FunctionExecuteHeartbeatRepository
+var heartbeatService *function_execute_heartbeat.FunctionExecuteHeartbeatService
 
-func InjectHeartbeatRepo(
-	hBR function_execute_heartbeat_repository.FunctionExecuteHeartbeatRepository,
+func InjectHeartbeatService(
+	hBR *function_execute_heartbeat.FunctionExecuteHeartbeatService,
 ) {
-	heartbeatRepo = hBR
+	heartbeatService = hBR
 }
 
 type FunctionExecuteHeartBeatHttpReq struct {
