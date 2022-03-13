@@ -64,6 +64,7 @@ type mongoFlowRunRecord struct {
 	Canceled                     bool                                 `bson:"canceled"`
 	CancelUserID                 value_object.UUID                    `bson:"cancel_user_id"`
 	TraceID                      string                               `bson:"trace_id"`
+	OverideIptParams             map[string][][]interface{}           `bson:"overide_ipt_params,omitempty"`
 }
 
 func (m *mongoFlowRunRecord) IsZero() bool {
@@ -102,6 +103,7 @@ func NewFromAggregate(
 		Canceled:                     fRR.Canceled,
 		CancelUserID:                 fRR.CancelUserID,
 		TraceID:                      fRR.TraceID,
+		OverideIptParams:             fRR.OverideIptParams,
 	}
 	return &resp
 }
@@ -130,6 +132,7 @@ func (m mongoFlowRunRecord) ToAggregate() *aggregate.FlowRunRecord {
 		Canceled:                     m.Canceled,
 		CancelUserID:                 m.CancelUserID,
 		TraceID:                      m.TraceID,
+		OverideIptParams:             m.OverideIptParams,
 	}
 	return &resp
 }

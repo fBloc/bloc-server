@@ -155,79 +155,92 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 		}
 
 		// 装配输入参数到function_run_record实例【从flowFunction中配置的输入参数的来源（manual/connection）获得】
+		// 如果是被覆盖参数方式触发运行的，优先使用传入的覆盖参数
 		functionRecordIns.Ipts = make([][]interface{}, len(flowFunction.ParamIpts))
 		for paramIndex, paramIpt := range flowFunction.ParamIpts {
 			functionRecordIns.Ipts[paramIndex] = make([]interface{}, len(paramIpt))
 			for componentIndex, componentIpt := range paramIpt {
-				var value interface{}
-				if componentIpt.IptWay == value_object.UserIpt {
-					value = componentIpt.Value
-				} else if componentIpt.IptWay == value_object.Connection {
-					// 找到上游对应节点的运行记录并从其opt中取出要的数据
-					upstreamFuncRunRecordID := flowFuncIDMapFuncRunRecordID[componentIpt.FlowFunctionID]
-					upstreamFuncRunRecordIns, err := funcRunRecordRepo.GetByID(upstreamFuncRunRecordID)
-					if err != nil {
-						logger.Errorf(logTags,
-							"find upstream functionRunRecordIns failed: %v. which id is: %s",
-							err, upstreamFuncRunRecordID)
-						functionRecordIns.Ipts[paramIndex][componentIndex] = "not valid from find upstream function error"
-
-						err := funcRunRecordRepo.SaveFail(
-							functionRecordIns.ID,
-							"ipt value get from upstream connection failed")
-						if err != nil {
-							logger.Errorf(logTags, "funcRunRecord save fail failed: %v", err)
-						}
-						continue
+				var value interface{} = nil
+				customSetted := false
+				if _, ok := flowRunRecordIns.OverideIptParams[functionRecordIns.FlowFunctionID]; ok {
+					customeParam := flowRunRecordIns.OverideIptParams[functionRecordIns.FlowFunctionID]
+					if len(customeParam)-1 >= paramIndex && len(customeParam[paramIndex])-1 >= componentIndex {
+						value = customeParam[paramIndex][componentIndex]
+						customSetted = true
 					}
-					if upstreamFuncRunRecordIns.IsZero() {
-						logger.Errorf(logTags,
-							"find upstream functionRunRecordIns match record. which id is: %s",
-							upstreamFuncRunRecordID)
-						functionRecordIns.Ipts[paramIndex][componentIndex] = "not valid from not find upstream function"
-
-						err := funcRunRecordRepo.SaveFail(
-							functionRecordIns.ID,
-							"ipt value get from upstream connection failed")
-						if err != nil {
-							logger.Errorf(logTags, "funcRunRecord save fail failed: %v", err)
-						}
-						logger.Errorf(logTags,
-							"ipt value get from upstream connection failed. find no valid corresponding functionRunRecordIns.paramIndex: %d, componentIndex: %d",
-							paramIndex, componentIndex)
-						continue
-					}
-					optValue, ok := upstreamFuncRunRecordIns.Opt[componentIpt.Key]
-					if !ok {
-						logger.Errorf(logTags,
-							"upstream functionRunRecordIns's opt donnot have this key: %s. which id is: %s",
-							componentIpt.Key, upstreamFuncRunRecordID)
-						functionRecordIns.Ipts[paramIndex][componentIndex] = "not valid from upstream function opt not have this key"
-
-						err := funcRunRecordRepo.SaveFail(
-							functionRecordIns.ID,
-							"ipt value get from upstream connection failed")
-						if err != nil {
-							logger.Errorf(logTags, "funcRunRecord save fail failed: %v", err)
-						}
-						continue
-					}
-					isKeyExist, tmp, err := objectStorage.Get(optValue.(string))
-					if !isKeyExist || err != nil {
-						logger.Errorf(logTags,
-							"get upstream functionRunRecordIns's opt from object storage failed: error: %v, is_key_exist: %t",
-							optValue.(string), isKeyExist)
-						functionRecordIns.Ipts[paramIndex][componentIndex] = "not valid from object storage"
-
-						err := funcRunRecordRepo.SaveFail(functionRecordIns.ID,
-							"ipt value get from upstream connection failed")
-						if err != nil {
-							logger.Errorf(logTags, "funcRunRecord save fail failed: %v", err)
-						}
-						continue
-					}
-					json.Unmarshal(tmp, &value)
 				}
+
+				if !customSetted {
+					if componentIpt.IptWay == value_object.UserIpt {
+						value = componentIpt.Value
+					} else if componentIpt.IptWay == value_object.Connection {
+						// 找到上游对应节点的运行记录并从其opt中取出要的数据
+						upstreamFuncRunRecordID := flowFuncIDMapFuncRunRecordID[componentIpt.FlowFunctionID]
+						upstreamFuncRunRecordIns, err := funcRunRecordRepo.GetByID(upstreamFuncRunRecordID)
+						if err != nil {
+							logger.Errorf(logTags,
+								"find upstream functionRunRecordIns failed: %v. which id is: %s",
+								err, upstreamFuncRunRecordID)
+							functionRecordIns.Ipts[paramIndex][componentIndex] = "not valid from find upstream function error"
+
+							err := funcRunRecordRepo.SaveFail(
+								functionRecordIns.ID,
+								"ipt value get from upstream connection failed")
+							if err != nil {
+								logger.Errorf(logTags, "funcRunRecord save fail failed: %v", err)
+							}
+							continue
+						}
+						if upstreamFuncRunRecordIns.IsZero() {
+							logger.Errorf(logTags,
+								"find upstream functionRunRecordIns match record. which id is: %s",
+								upstreamFuncRunRecordID)
+							functionRecordIns.Ipts[paramIndex][componentIndex] = "not valid from not find upstream function"
+
+							err := funcRunRecordRepo.SaveFail(
+								functionRecordIns.ID,
+								"ipt value get from upstream connection failed")
+							if err != nil {
+								logger.Errorf(logTags, "funcRunRecord save fail failed: %v", err)
+							}
+							logger.Errorf(logTags,
+								"ipt value get from upstream connection failed. find no valid corresponding functionRunRecordIns.paramIndex: %d, componentIndex: %d",
+								paramIndex, componentIndex)
+							continue
+						}
+						optValue, ok := upstreamFuncRunRecordIns.Opt[componentIpt.Key]
+						if !ok {
+							logger.Errorf(logTags,
+								"upstream functionRunRecordIns's opt donnot have this key: %s. which id is: %s",
+								componentIpt.Key, upstreamFuncRunRecordID)
+							functionRecordIns.Ipts[paramIndex][componentIndex] = "not valid from upstream function opt not have this key"
+
+							err := funcRunRecordRepo.SaveFail(
+								functionRecordIns.ID,
+								"ipt value get from upstream connection failed")
+							if err != nil {
+								logger.Errorf(logTags, "funcRunRecord save fail failed: %v", err)
+							}
+							continue
+						}
+						isKeyExist, tmp, err := objectStorage.Get(optValue.(string))
+						if !isKeyExist || err != nil {
+							logger.Errorf(logTags,
+								"get upstream functionRunRecordIns's opt from object storage failed: error: %v, is_key_exist: %t",
+								optValue.(string), isKeyExist)
+							functionRecordIns.Ipts[paramIndex][componentIndex] = "not valid from object storage"
+
+							err := funcRunRecordRepo.SaveFail(functionRecordIns.ID,
+								"ipt value get from upstream connection failed")
+							if err != nil {
+								logger.Errorf(logTags, "funcRunRecord save fail failed: %v", err)
+							}
+							continue
+						}
+						json.Unmarshal(tmp, &value)
+					}
+				}
+
 				if value == nil && componentIpt.Blank {
 					// 非必需参数 且 用户没有填写
 					continue

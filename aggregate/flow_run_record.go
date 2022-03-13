@@ -31,6 +31,7 @@ type FlowRunRecord struct {
 	Canceled                     bool
 	CancelUserID                 value_object.UUID
 	TraceID                      string
+	OverideIptParams             map[string][][]interface{}
 }
 
 func newFromFlow(ctx context.Context, f *Flow) *FlowRunRecord {
@@ -45,6 +46,17 @@ func newFromFlow(ctx context.Context, f *Flow) *FlowRunRecord {
 	}
 
 	return ret
+}
+
+func NewKeyTriggeredFlowRunRecordWithCustomParam(
+	ctx context.Context, f *Flow, key string,
+	params map[string][][]interface{},
+) (*FlowRunRecord, error) {
+	rR := newFromFlow(ctx, f)
+	rR.TriggerKey = key
+	rR.TriggerType = value_object.Key
+	rR.OverideIptParams = params
+	return rR, nil
 }
 
 func NewKeyTriggeredFlowRunRecord(

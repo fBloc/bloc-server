@@ -273,6 +273,9 @@ func (mr *MongoRepository) SaveIptBrief(
 		for componentIndex, componentVal := range param {
 			uploadByte, _ := json.Marshal(componentVal)
 			byteInrune := []rune(string(uploadByte))
+			if string(byteInrune[len(byteInrune)-1]) == "\"" {
+				byteInrune = byteInrune[:len(byteInrune)-1]
+			}
 			minLength := 51
 			if len(byteInrune) < minLength {
 				minLength = len(byteInrune)
@@ -282,7 +285,7 @@ func (mr *MongoRepository) SaveIptBrief(
 			iptBAOk[paramIndex] = append(iptBAOk[paramIndex], mongoIptBriefAndKey{
 				IsArray:   iptConfig[paramIndex].Components[componentIndex].AllowMulti,
 				ValueType: iptConfig[paramIndex].Components[componentIndex].ValueType,
-				Brief:     string(byteInrune[:minLength-1]),
+				Brief:     string(byteInrune[:minLength]),
 				FullKey:   key})
 			err := objectStorageImplement.Set(key, uploadByte)
 			if err != nil {

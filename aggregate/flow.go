@@ -32,6 +32,38 @@ type FlowFunction struct {
 	ParamIpts                 [][]IptComponentConfig // 第一层对应一个ipt，第二层对应ipt内的component
 }
 
+func (flowFunc *FlowFunction) CheckWhetherParamValidIsValid(
+	userIptValue [][]interface{},
+) (bool, error) {
+	if flowFunc.Function.IsZero() {
+		return false, fmt.Errorf(
+			"not set function to flow_function: %s, cannot check whether param is valid",
+			flowFunc.Note)
+	}
+
+	// 重要，这里的参数检测仅仅采用半检测 - 即只检测用户输入的参数类型是有效的。不考虑整体的有效性
+	// 不考虑整体的是为了兼容一种参数半动态输入驱动运行的情况
+	for iptIndex, iptParamVals := range userIptValue {
+		if len(iptParamVals) <= 0 { // 只是占位
+			continue
+		}
+		if len(iptParamVals) > len(flowFunc.ParamIpts[iptIndex]) {
+			return false, fmt.Errorf("ipt index:%d's component value exceed", iptIndex)
+		}
+		for componentIndex, componentVal := range iptParamVals {
+			componentParamConfig := flowFunc.ParamIpts[iptIndex][componentIndex]
+			valueValid := value_type.CheckValueTypeValueValid(
+				componentParamConfig.ValueType, componentVal)
+			if !valueValid {
+				return false, fmt.Errorf(
+					"user_ipt value type wrong",
+				)
+			}
+		}
+	}
+	return true, nil
+}
+
 // CheckValid 检测此function node的配置是否正确且有效
 func (flowFunc *FlowFunction) CheckValid(
 	thisFlowFuncID string,

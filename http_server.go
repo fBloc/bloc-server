@@ -192,6 +192,8 @@ func (blocApp *BlocApp) RunHttpServer() {
 			basicPath := "/api/v1/flow"
 			router.GET(basicPath+"/run/by_origin_id/:origin_id", middleware.WithTrace(middleware.LoginAuth(flow.Run)))
 			router.GET(basicPath+"/run/by_trigger_key/:trigger_key", middleware.WithTrace(flow.RunByTriggerKey))
+			router.POST(basicPath+"/run/by_trigger_key_with_param_overide/:trigger_key",
+				middleware.WithTrace(flow.RunByTriggerKeyWithParamOverride))
 			router.GET(basicPath+"/cancel_run/by_origin_id/:origin_id", middleware.WithTrace(middleware.LoginAuth(flow.CancelRun)))
 		}
 
