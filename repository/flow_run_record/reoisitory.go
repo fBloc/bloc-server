@@ -54,6 +54,7 @@ type FlowRunRecordRepository interface {
 	TimeoutCancel(id value_object.UUID) error
 	UserCancel(id, userID value_object.UUID) error
 	NotAllowedParallelRun(id value_object.UUID) error
+	FunctionDead(id value_object.UUID, msg string) error
 
 	// Delete
 }

@@ -1,14 +1,12 @@
 package config
 
-const (
-	DefaultUserName     = "bloc"
-	DefaultUserPassword = "maytheforcebewithyou"
-)
+import "time"
 
 const (
-	DefaultLogKeepDays = 60
-)
-
-const (
-	FlowFunctionStartID = "0"
+	DefaultUserName        = "bloc"
+	DefaultUserPassword    = "maytheforcebewithyou"
+	DefaultLogKeepDays     = 60
+	FlowFunctionStartID    = "0"
+	FunctionReportInterval = time.Second * 5
+	FunctionReportTimeout  = 4 * FunctionReportInterval
 )

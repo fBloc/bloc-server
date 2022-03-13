@@ -347,6 +347,15 @@ func (mr *MongoRepository) Fail(id value_object.UUID, errorMsg string) error {
 			AddSet("end_time", time.Now()))
 }
 
+func (mr *MongoRepository) FunctionDead(id value_object.UUID, errorMsg string) error {
+	return mr.mongoCollection.PatchByID(
+		id,
+		mongodb.NewUpdater().
+			AddSet("status", value_object.Fail).
+			AddSet("error_msg", errorMsg).
+			AddSet("end_time", time.Now()))
+}
+
 func (mr *MongoRepository) Intercepted(id value_object.UUID, msg string) error {
 	return mr.mongoCollection.PatchByID(
 		id,

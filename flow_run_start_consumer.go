@@ -1,6 +1,10 @@
 package bloc
 
 import (
+	"fmt"
+	"sync"
+	"time"
+
 	"github.com/fBloc/bloc-server/aggregate"
 	"github.com/fBloc/bloc-server/config"
 	"github.com/fBloc/bloc-server/event"
@@ -12,6 +16,7 @@ func (blocApp *BlocApp) FlowTaskStartConsumer() {
 	logger := blocApp.GetOrCreateScheduleLogger()
 	flowRunRepo := blocApp.GetOrCreateFlowRunRecordRepository()
 	flowRepo := blocApp.GetOrCreateFlowRepository()
+	functionRepo := blocApp.GetOrCreateFunctionRepository()
 	functionRunRecordRepo := blocApp.GetOrCreateFunctionRunRecordRepository()
 
 	flowToRunEventChan := make(chan event.DomainEvent)
@@ -78,6 +83,48 @@ func (blocApp *BlocApp) FlowTaskStartConsumer() {
 				continue
 			}
 		}
+
+		// 检测其下的functions的心跳是否存在过期的，如果存在就直接不要发布保存失败就是了
+		var checkAllFuncAliveMutex sync.WaitGroup
+		checkAllFuncAliveMutex.Add(len(flowIns.FlowFunctionIDMapFlowFunction) - 1)
+		notAliveFuncs := make([]*aggregate.Function, 0, 2)
+		var notAliveFuncMutex sync.Mutex
+		for flowFunctionID, flowFunc := range flowIns.FlowFunctionIDMapFlowFunction {
+			if flowFunctionID == config.FlowFunctionStartID {
+				continue
+			}
+			go func(
+				functionID value_object.UUID,
+				wg *sync.WaitGroup,
+			) {
+				defer wg.Done()
+				functionIns, err := functionRepo.GetByID(functionID)
+				if err != nil {
+					return
+				}
+				if time.Since(functionIns.LastAliveTime) > config.FunctionReportTimeout {
+					notAliveFuncMutex.Lock()
+					defer notAliveFuncMutex.Unlock()
+					notAliveFuncs = append(notAliveFuncs, functionIns)
+					return
+				}
+			}(flowFunc.FunctionID, &checkAllFuncAliveMutex)
+		}
+		checkAllFuncAliveMutex.Wait()
+		if len(notAliveFuncs) > 0 {
+			errorMsg := fmt.Sprintf("have %d functions dead. wont run!", len(notAliveFuncs))
+			for _, i := range notAliveFuncs {
+				logger.Warningf(logTags,
+					"function id-%s name-%s provider-%s is dead. last alive time %v",
+					i.ID.String(), i.Name, i.ProviderName, i.LastAliveTime)
+			}
+			err = flowRunRepo.FunctionDead(flowRunIns.ID, errorMsg)
+			if err != nil {
+				logger.Errorf(logTags, "save flowRunRepo.FunctionDead failed: %v", err)
+			}
+			continue
+		}
+		logger.Infof(logTags, "all downs functions are alive")
 
 		// 发布flow下的“第一层”functions任务
 		// ToEnhance 目前第一层的发布在这里，而后续的发布在client api，这种重复不好。应当解决

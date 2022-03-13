@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/fBloc/bloc-server/aggregate"
@@ -111,6 +112,53 @@ func FunctionRunFinished(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 			web.WriteInternalServerErrorResp(&w, r, err, "function_run_record save suc failed")
 			return
 		}
+
+		// 检测其下的所有下游function是否活跃、如果有不活跃的直接停止flow继续运行
+		handledFunctionIDMap := make(map[value_object.UUID]bool)
+		var iterDowns func(flowFunctionID string)
+		iterDowns = func(flowFunctionID string) {
+			for _, downFlowFunctionID := range flowIns.FlowFunctionIDMapFlowFunction[flowFunctionID].DownstreamFlowFunctionIDs {
+				handledFunctionIDMap[flowIns.FlowFunctionIDMapFlowFunction[downFlowFunctionID].FunctionID] = true
+				iterDowns(downFlowFunctionID)
+			}
+		}
+		var checkAllFuncAliveMutex sync.WaitGroup
+		checkAllFuncAliveMutex.Add(len(handledFunctionIDMap))
+		notAliveFuncs := make([]*aggregate.Function, 0, 2)
+		var notAliveFuncMutex sync.Mutex
+		for functionID := range handledFunctionIDMap {
+			go func(
+				functionID value_object.UUID,
+				wg *sync.WaitGroup,
+			) {
+				defer wg.Done()
+				functionIns, err := fService.Function.GetByID(functionID)
+				if err != nil {
+					return
+				}
+				if time.Since(functionIns.LastAliveTime) > config.FunctionReportTimeout {
+					notAliveFuncMutex.Lock()
+					defer notAliveFuncMutex.Unlock()
+					notAliveFuncs = append(notAliveFuncs, functionIns)
+					return
+				}
+			}(functionID, &checkAllFuncAliveMutex)
+		}
+		checkAllFuncAliveMutex.Wait()
+		if len(notAliveFuncs) > 0 {
+			errorMsg := fmt.Sprintf("have %d functions dead. wont run!", len(notAliveFuncs))
+			for _, i := range notAliveFuncs {
+				scheduleLogger.Warningf(logTags,
+					"function id-%s name-%s provider-%s is dead. last alive time %v",
+					i.ID.String(), i.Name, i.ProviderName, i.LastAliveTime)
+			}
+			err = flowService.FlowRunRecord.FunctionDead(fRRIns.FlowRunRecordID, errorMsg)
+			if err != nil {
+				scheduleLogger.Errorf(logTags, "save flowRunRepo.FunctionDead failed: %v", err)
+			}
+			goto Final
+		}
+		scheduleLogger.Infof(logTags, "all downs functions are alive")
 
 		flowFunction := flowIns.FlowFunctionIDMapFlowFunction[fRRIns.FlowFunctionID]
 		if !req.InterceptBelowFunctionRun { // 成功运行完成且不拦截
