@@ -199,6 +199,18 @@ func (c *Collection) FindOneOrInsert(
 	return
 }
 
+func (c *Collection) UpdateOneOrInsert(
+	mFilter *MongoFilter,
+	mSetter *MongoUpdater,
+) (err error) {
+	_, err = c.collection.UpdateOne(
+		context.TODO(),
+		mFilter.filter,
+		mSetter.finalStatement(),
+		options.Update().SetUpsert(true))
+	return err
+}
+
 // CreateIndex create index into mongo collection
 func (c *Collection) CreateIndex(models []mongo.IndexModel) error {
 	if len(models) <= 0 {

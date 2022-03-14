@@ -11,14 +11,6 @@ func mongoDBIndexes() []mongo.IndexModel {
 	return []mongo.IndexModel{
 		{
 			Keys: bson.M{
-				"id": "hashed",
-			},
-			Options: &options.IndexOptions{
-				Sparse: &truePoint,
-			},
-		},
-		{
-			Keys: bson.M{
 				"function_run_record_id": "hashed",
 			},
 			Options: &options.IndexOptions{

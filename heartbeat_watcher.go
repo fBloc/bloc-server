@@ -29,7 +29,7 @@ func (blocApp *BlocApp) RePubDeadRuns() {
 
 		for _, d := range deads {
 			// 立即进行删除此条信息（利用mongo通过ID删除的原子性保障来确保不会「重复重发」）
-			deleteAmount, err := heartBeatRepo.Delete(d.ID)
+			deleteAmount, err := heartBeatRepo.DeleteByFunctionRunRecordID(d.FunctionRunRecordID)
 			if err != nil {
 				logger.Errorf(
 					map[string]string{},

@@ -30,7 +30,6 @@ func TestFunctionExecuteHeartBeat(t *testing.T) {
 		funcRunRecordID := value_object.NewUUID()
 		aggFunctionExecuteHeartBeat := aggregate.NewFunctionExecuteHeartBeat(funcRunRecordID)
 		So(aggFunctionExecuteHeartBeat.IsZero(), ShouldBeFalse)
-		So(aggFunctionExecuteHeartBeat.ID, ShouldNotEqual, value_object.NillUUID)
 
 		err := epo.Create(aggFunctionExecuteHeartBeat)
 		So(err, ShouldBeNil)
@@ -42,24 +41,34 @@ func TestFunctionExecuteHeartBeat(t *testing.T) {
 			So(aggFEHB.FunctionRunRecordID, ShouldEqual, funcRunRecordID)
 		})
 
-		Convey("GetByID", func() {
-			aggFEHB, _ := epo.GetByFunctionRunRecordID(funcRunRecordID)
-			aggFEHB, err := epo.GetByID(aggFEHB.ID)
+		Convey("AliveReportByFunctionRunRecordID", func() {
+			newFuncRunRecordID := value_object.NewUUID()
+
+			aggFEHB, err := epo.GetByFunctionRunRecordID(newFuncRunRecordID)
+			So(err, ShouldBeNil)
+			So(aggFEHB.IsZero(), ShouldBeTrue)
+
+			// first report should create the record
+			err = epo.AliveReportByFuncRunRecordID(newFuncRunRecordID)
+			So(err, ShouldBeNil)
+
+			aggFEHB, err = epo.GetByFunctionRunRecordID(newFuncRunRecordID)
 			So(err, ShouldBeNil)
 			So(aggFEHB.IsZero(), ShouldBeFalse)
-			So(aggFEHB.FunctionRunRecordID, ShouldEqual, funcRunRecordID)
-		})
-
-		Convey("AliveReport", func() {
-			aggFEHB, _ := epo.GetByFunctionRunRecordID(funcRunRecordID)
+			So(aggFEHB.FunctionRunRecordID, ShouldEqual, newFuncRunRecordID)
 
 			beforeTime := time.Now()
 			time.Sleep(1 * time.Second)
-			err := epo.AliveReport(aggFEHB.ID)
+
+			err = epo.AliveReportByFuncRunRecordID(newFuncRunRecordID)
 			So(err, ShouldBeNil)
 
-			aggFEHB, _ = epo.GetByID(aggFEHB.ID)
+			aggFEHB, err = epo.GetByFunctionRunRecordID(newFuncRunRecordID)
+			So(err, ShouldBeNil)
+			So(aggFEHB.FunctionRunRecordID, ShouldEqual, newFuncRunRecordID)
 			So(aggFEHB.LatestHeartbeatTime, ShouldHappenAfter, beforeTime)
+
+			epo.DeleteByFunctionRunRecordID(newFuncRunRecordID)
 		})
 
 		Convey("AllDeads filter", func() {
@@ -77,12 +86,6 @@ func TestFunctionExecuteHeartBeat(t *testing.T) {
 			So(len(deads), ShouldEqual, 1)
 		})
 
-		Convey("Delete by id", func() {
-			deleteAmount, err := epo.Delete(aggFunctionExecuteHeartBeat.ID)
-			So(err, ShouldBeNil)
-			So(deleteAmount, ShouldEqual, 1)
-		})
-
 		Convey("Delete by function_run_record_id", func() {
 			deleteAmount, err := epo.DeleteByFunctionRunRecordID(funcRunRecordID)
 			So(err, ShouldBeNil)
@@ -90,7 +93,7 @@ func TestFunctionExecuteHeartBeat(t *testing.T) {
 		})
 
 		Reset(func() {
-			epo.Delete(aggFunctionExecuteHeartBeat.ID)
+			epo.DeleteByFunctionRunRecordID(funcRunRecordID)
 		})
 	})
 }

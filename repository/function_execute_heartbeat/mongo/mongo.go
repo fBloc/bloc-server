@@ -40,25 +40,19 @@ func New(
 }
 
 type mongoFunctionExecuteHeartBeat struct {
-	ID                  value_object.UUID `bson:"id"`
 	FunctionRunRecordID value_object.UUID `bson:"function_run_record_id"`
-	StartTime           time.Time         `bson:"start_time"`
 	LatestHeartbeatTime time.Time         `bson:"latest_heartbeat_time"`
 }
 
 func (m *mongoFunctionExecuteHeartBeat) ToAggregate() *aggregate.FunctionExecuteHeartBeat {
 	return &aggregate.FunctionExecuteHeartBeat{
-		ID:                  m.ID,
 		FunctionRunRecordID: m.FunctionRunRecordID,
-		StartTime:           m.StartTime,
 		LatestHeartbeatTime: m.LatestHeartbeatTime}
 }
 
 func NewFromAggregate(f *aggregate.FunctionExecuteHeartBeat) *mongoFunctionExecuteHeartBeat {
 	resp := mongoFunctionExecuteHeartBeat{
-		ID:                  f.ID,
 		FunctionRunRecordID: f.FunctionRunRecordID,
-		StartTime:           f.StartTime,
 	}
 	if f.LatestHeartbeatTime.IsZero() {
 		resp.LatestHeartbeatTime = f.LatestHeartbeatTime
@@ -125,6 +119,15 @@ func (mr *MongoRepository) AliveReport(
 ) error {
 	updater := mongodb.NewUpdater().AddSet("latest_heartbeat_time", time.Now())
 	return mr.mongoCollection.PatchByID(id, updater)
+}
+
+func (mr *MongoRepository) AliveReportByFuncRunRecordID(
+	funcRunRecordID value_object.UUID,
+) error {
+	err := mr.mongoCollection.UpdateOneOrInsert(
+		mongodb.NewFilter().AddEqual("function_run_record_id", funcRunRecordID),
+		mongodb.NewUpdater().AddSet("latest_heartbeat_time", time.Now()).AddSet("function_run_record_id", funcRunRecordID))
+	return err
 }
 
 func (mr *MongoRepository) Delete(
