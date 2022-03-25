@@ -10,6 +10,7 @@ type FunctionRepository interface {
 	Create(f *aggregate.Function) error
 
 	// read
+	GetByIDForCheckAliveTime(id value_object.UUID) (*aggregate.Function, error)
 	GetByID(id value_object.UUID) (*aggregate.Function, error)
 	GetSameIptOptFunction(iptDigest, optDigest string) (*aggregate.Function, error)
 	All() ([]*aggregate.Function, error)

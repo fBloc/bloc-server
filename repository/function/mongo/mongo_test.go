@@ -97,6 +97,29 @@ func TestQuery(t *testing.T) {
 		So(aggFunc.Name, ShouldEqual, fakeFunction.Name)
 	})
 
+	Convey("Alive report", t, func() {
+		aggFunc, err := epo.GetByID(fakeFunction.ID)
+		So(err, ShouldBeNil)
+		So(aggFunc.IsZero(), ShouldBeFalse)
+		So(aggFunc.LastAliveTime.IsZero(), ShouldBeTrue)
+
+		epo.AliveReport(fakeFunction.ID)
+
+		aggFunc, err = epo.GetByID(fakeFunction.ID)
+		So(err, ShouldBeNil)
+		So(aggFunc.IsZero(), ShouldBeFalse)
+		So(aggFunc.LastAliveTime.IsZero(), ShouldBeFalse)
+		theAliveTime := aggFunc.LastAliveTime
+
+		Convey("GetByIDForCheckAliveTime", func() {
+			funcIns, err := epo.GetByIDForCheckAliveTime(fakeFunction.ID)
+			So(err, ShouldBeNil)
+			So(funcIns.IsZero(), ShouldBeFalse)
+			So(funcIns.LastAliveTime.IsZero(), ShouldBeFalse)
+			So(funcIns.LastAliveTime, ShouldEqual, theAliveTime)
+		})
+	})
+
 	Convey("GetSameIptOptFunction hit", t, func() {
 		aggFunc, err := epo.GetSameIptOptFunction(
 			fakeFunction.IptDigest, fakeFunction.OptDigest)

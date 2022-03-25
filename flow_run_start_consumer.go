@@ -98,7 +98,7 @@ func (blocApp *BlocApp) FlowTaskStartConsumer() {
 				wg *sync.WaitGroup,
 			) {
 				defer wg.Done()
-				functionIns, err := functionRepo.GetByID(functionID)
+				functionIns, err := functionRepo.GetByIDForCheckAliveTime(functionID)
 				if err != nil {
 					return
 				}

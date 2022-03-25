@@ -26,6 +26,8 @@ const (
 	FilterInGetPathLimit
 	FilterInGetPathOffset
 	FilterInGetPathSort
+	FilterInGetPathFilterFields
+	FilterInGetPathFilterOutFields
 	maxFilterInGetPath
 )
 const (
@@ -61,6 +63,10 @@ func (r FilterInGetPath) WebReqSuffix() string {
 		return "limit"
 	case FilterInGetPathOffset:
 		return "offset"
+	case FilterInGetPathFilterFields:
+		return "fields_only"
+	case FilterInGetPathFilterOutFields:
+		return "fields_without"
 	default:
 		return "not valid"
 	}
@@ -105,16 +111,21 @@ func ParseReqQueryToGroupedFilters(queryMap url.Values) (map[FilterInGetPath][]s
 		val := queryMap.Get(reqKey)
 		theFilterInGetPath = FilterInGetPathEq
 
-		if reqKey == FilterInGetPathLimit.String() {
+		switch reqKey {
+		case FilterInGetPathLimit.String():
 			theFilterInGetPath = FilterInGetPathLimit
-		} else if reqKey == FilterInGetPathOffset.String() {
+		case FilterInGetPathOffset.String():
 			theFilterInGetPath = FilterInGetPathOffset
-		} else if reqKey == FilterInGetPathSort.String() {
+		case FilterInGetPathSort.String():
 			if val != "asc" && val != "desc" {
 				return nil, errors.New("sort field's value must be asc/desc")
 			}
-			theFilterInGetPath = FilterInGetPathOffset
-		} else {
+			theFilterInGetPath = FilterInGetPathSort
+		case FilterInGetPathFilterFields.String():
+			theFilterInGetPath = FilterInGetPathFilterFields
+		case FilterInGetPathFilterOutFields.String():
+			theFilterInGetPath = FilterInGetPathFilterOutFields
+		default:
 			for suffix, filterInGetPath := range allSuffixMapFilterInGetPath {
 				if strings.HasSuffix(reqKey, suffix) {
 					reqKey = strings.ReplaceAll(reqKey, suffix, "")
@@ -129,7 +140,9 @@ func ParseReqQueryToGroupedFilters(queryMap url.Values) (map[FilterInGetPath][]s
 	return ret, nil
 }
 
-func (f FilterInGetPath) AddToRepositoryFilter(filter *value_object.RepositoryFilter, key string, val interface{}) {
+func (f FilterInGetPath) AddToRepositoryFilter(
+	filter *value_object.RepositoryFilter, key string, val interface{},
+) {
 	switch f {
 	case FilterInGetPathEq:
 		filter.AddEqual(key, val)
@@ -150,6 +163,6 @@ func (f FilterInGetPath) AddToRepositoryFilter(filter *value_object.RepositoryFi
 	case FilterInGetPathContains:
 		filter.AddContains(key, val)
 	case FilterInGetPathNotContains:
-		filter.AddContains(key, val)
+		filter.AddNotContains(key, val)
 	}
 }

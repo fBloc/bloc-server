@@ -32,12 +32,66 @@ func NewCollection(
 	return &Collection{Name: collectionName, collection: collection}, nil
 }
 
+func (c *Collection) GetByIDWithFieldCtrl(
+	id value_object.UUID,
+	withFields []string,
+	withoutFields []string,
+	resultPointer interface{},
+) error {
+	if id.IsNil() {
+		return errors.New("id cannot be blank string")
+	}
+	return c.GetWithFieldCtrl(
+		NewFilter().AddEqual("id", id),
+		&filter_options.FilterOption{},
+		withFields, withoutFields, resultPointer)
+}
+
 // GetByID get by id
 func (c *Collection) GetByID(id value_object.UUID, resultPointer interface{}) error {
 	if id.IsNil() {
 		return errors.New("id cannot be blank string")
 	}
 	return c.Get(NewFilter().AddEqual("id", id), &filter_options.FilterOption{}, resultPointer)
+}
+
+func (c *Collection) GetWithFieldCtrl(
+	mFilter *MongoFilter,
+	filterOptions *filter_options.FilterOption,
+	withFields []string,
+	withoutFields []string,
+	resultPointer interface{},
+) error {
+	findOptions := options.FindOneOptions{}
+	if filterOptions != nil {
+		if len(filterOptions.SortAscFields) > 0 || len(filterOptions.SortDescFields) > 0 {
+			sortOptions := bson.D{}
+			for _, i := range filterOptions.SortAscFields {
+				sortOptions = append(sortOptions, bson.E{Key: i, Value: 1})
+			}
+			for _, i := range filterOptions.SortDescFields {
+				sortOptions = append(sortOptions, bson.E{Key: i, Value: -1})
+			}
+			findOptions.SetSort(sortOptions)
+		}
+	} else {
+		findOptions.SetSort(bson.M{"$natural": -1})
+	}
+
+	projection := bson.M{}
+	for _, i := range withFields {
+		projection[i] = 1
+	}
+	for _, i := range withoutFields {
+		projection[i] = 0
+	}
+	findOptions.SetProjection(projection)
+
+	err := c.collection.FindOne(context.TODO(), mFilter.filter, &findOptions).Decode(resultPointer)
+	if err != nil && err == mongo.ErrNoDocuments {
+		return nil
+	}
+	return err
 }
 
 func (c *Collection) Get(
@@ -116,6 +170,15 @@ func (c *Collection) CommonFilter(
 	} else { // 默认使用倒序
 		mongoFitlerOptions.SetSort(bson.M{"$natural": -1})
 	}
+
+	projection := bson.M{}
+	for _, i := range filterOptions.WithFields {
+		projection[i] = 1
+	}
+	for _, i := range filterOptions.WithoutFields {
+		projection[i] = 0
+	}
+	mongoFitlerOptions.SetProjection(projection)
 
 	cursor, _ := c.collection.Find(context.TODO(), mongoFilter.FilterExpression(), &mongoFitlerOptions)
 	return cursor.All(context.TODO(), resultSlicePointer)

@@ -159,6 +159,21 @@ func (mr *MongoRepository) IDMapFunctionAll() (map[value_object.UUID]*aggregate.
 	return ret, nil
 }
 
+func (mr *MongoRepository) GetByIDForCheckAliveTime(
+	id value_object.UUID,
+) (*aggregate.Function, error) {
+	var m mongoFunction
+	err := mr.mongoCollection.GetByIDWithFieldCtrl(
+		id,
+		[]string{"id", "last_alive_time", "name", "provider_name"},
+		[]string{},
+		&m)
+	if err != nil {
+		return nil, err
+	}
+	return m.ToAggregate(), nil
+}
+
 func (mr *MongoRepository) GetByID(
 	id value_object.UUID,
 ) (*aggregate.Function, error) {

@@ -1,10 +1,12 @@
 package value_object
 
 type RepositoryFilterOption struct {
-	Limit  int64
-	OffSet int64
-	Asc    bool
-	Desc   bool
+	Limit         int64
+	OffSet        int64
+	Asc           bool
+	Desc          bool
+	WithFields    []string
+	WithoutFields []string
 }
 
 func NewRepositoryFilterOption() *RepositoryFilterOption {
@@ -25,4 +27,12 @@ func (fo *RepositoryFilterOption) SetAsc() {
 
 func (fo *RepositoryFilterOption) SetDesc() {
 	fo.Desc = true
+}
+
+func (fo *RepositoryFilterOption) SetWithFields(fields []string) {
+	fo.WithFields = fields
+}
+
+func (fo *RepositoryFilterOption) SetWithoutFields(fields []string) {
+	fo.WithoutFields = fields
 }
