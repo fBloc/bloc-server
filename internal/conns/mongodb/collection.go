@@ -43,7 +43,7 @@ func (c *Collection) GetByIDWithFieldCtrl(
 	}
 	return c.GetWithFieldCtrl(
 		NewFilter().AddEqual("id", id),
-		&filter_options.FilterOption{},
+		filter_options.NewFilterOption(),
 		withFields, withoutFields, resultPointer)
 }
 
@@ -52,7 +52,7 @@ func (c *Collection) GetByID(id value_object.UUID, resultPointer interface{}) er
 	if id.IsNil() {
 		return errors.New("id cannot be blank string")
 	}
-	return c.Get(NewFilter().AddEqual("id", id), &filter_options.FilterOption{}, resultPointer)
+	return c.Get(NewFilter().AddEqual("id", id), filter_options.NewFilterOption(), resultPointer)
 }
 
 func (c *Collection) GetWithFieldCtrl(
@@ -73,6 +73,12 @@ func (c *Collection) GetWithFieldCtrl(
 				sortOptions = append(sortOptions, bson.E{Key: i, Value: -1})
 			}
 			findOptions.SetSort(sortOptions)
+		} else {
+			if filterOptions.NaturalAsc != nil && *filterOptions.NaturalAsc {
+				findOptions.SetSort(bson.M{"$natural": 1})
+			} else {
+				findOptions.SetSort(bson.M{"$natural": -1})
+			}
 		}
 	} else {
 		findOptions.SetSort(bson.M{"$natural": -1})
@@ -110,6 +116,12 @@ func (c *Collection) Get(
 				sortOptions = append(sortOptions, bson.E{Key: i, Value: -1})
 			}
 			findOptions.SetSort(sortOptions)
+		} else {
+			if filterOptions.NaturalAsc != nil && *filterOptions.NaturalAsc {
+				findOptions.SetSort(bson.M{"$natural": 1})
+			} else {
+				findOptions.SetSort(bson.M{"$natural": -1})
+			}
 		}
 	} else {
 		findOptions.SetSort(bson.M{"$natural": -1})
@@ -137,6 +149,12 @@ func (c *Collection) FindOneAndDelete(
 				sortOptions = append(sortOptions, bson.E{Key: i, Value: -1})
 			}
 			findOptions.SetSort(sortOptions)
+		} else {
+			if filterOptions.NaturalAsc != nil && *filterOptions.NaturalAsc {
+				findOptions.SetSort(bson.M{"$natural": 1})
+			} else {
+				findOptions.SetSort(bson.M{"$natural": -1})
+			}
 		}
 	} else {
 		findOptions.SetSort(bson.M{"$natural": -1})
@@ -200,7 +218,11 @@ func (c *Collection) Filter(
 	findOptions := options.FindOptions{}
 	if filterOptions != nil {
 		if len(filterOptions.SortAscFields) == 0 && len(filterOptions.SortDescFields) == 0 {
-			findOptions.SetSort(bson.M{"$natural": -1})
+			if filterOptions.NaturalAsc != nil && *filterOptions.NaturalAsc {
+				findOptions.SetSort(bson.M{"$natural": 1})
+			} else {
+				findOptions.SetSort(bson.M{"$natural": -1})
+			}
 		} else {
 			sortOptions := bson.D{}
 			for _, i := range filterOptions.SortAscFields {

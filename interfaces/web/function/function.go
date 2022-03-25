@@ -1,6 +1,7 @@
 package function
 
 import (
+	"sort"
 	"time"
 
 	"github.com/fBloc/bloc-server/aggregate"
@@ -51,6 +52,7 @@ type Function struct {
 	Name          string            `json:"name"`
 	GroupName     string            `json:"group_name"`
 	ProviderName  string            `json:"provider_name"`
+	RegisterTime  time.Time         `json:"register_time"`
 	LastAliveTime time.Time         `json:"last_alive_time"`
 	Description   string            `json:"description"`
 	Ipt           ipt.IptSlice      `json:"ipt"`
@@ -63,6 +65,7 @@ func (f *Function) ToAggregate() *aggregate.Function {
 		Name:          f.Name,
 		GroupName:     f.GroupName,
 		ProviderName:  f.ProviderName,
+		RegisterTime:  f.RegisterTime,
 		LastAliveTime: f.LastAliveTime,
 		Description:   f.Description,
 		Ipts:          f.Ipt,
@@ -93,6 +96,7 @@ type GroupFunctions struct {
 func newGroupedFunctionsFromAggFunctions(
 	aggFuncs []*aggregate.Function,
 ) ([]GroupFunctions, error) {
+	var groupNames []string
 	groupNameMapGroup := make(map[string]*GroupFunctions)
 	for _, aggF := range aggFuncs {
 		f := newFunctionFromAgg(aggF)
@@ -103,12 +107,18 @@ func newGroupedFunctionsFromAggFunctions(
 			groupNameMapGroup[f.GroupName] = &GroupFunctions{
 				GroupName: f.GroupName,
 			}
+			groupNames = append(groupNames, f.GroupName)
 		}
 		groupNameMapGroup[f.GroupName].Functions = append(
 			groupNameMapGroup[f.GroupName].Functions, f)
 	}
+
+	// the frontend need a stable order of group names
+	sort.Strings(groupNames)
+
 	ret := make([]GroupFunctions, 0, len(groupNameMapGroup))
-	for _, groupFuncs := range groupNameMapGroup {
+	for _, groupName := range groupNames {
+		groupFuncs := groupNameMapGroup[groupName]
 		ret = append(ret, *groupFuncs)
 	}
 	return ret, nil

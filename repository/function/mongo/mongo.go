@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/fBloc/bloc-server/internal/conns/mongodb"
+	"github.com/fBloc/bloc-server/internal/filter_options"
 	"github.com/fBloc/bloc-server/pkg/add_or_del"
 	"github.com/fBloc/bloc-server/pkg/ipt"
 	"github.com/fBloc/bloc-server/pkg/opt"
@@ -44,6 +45,7 @@ type mongoFunction struct {
 	Name                    string              `bson:"name"`
 	GroupName               string              `bson:"group_name"`
 	ProviderName            string              `bson:"provider_name"`
+	RegisterTime            time.Time           `bson:"register_time"`
 	LastAliveTime           time.Time           `bson:"last_alive_time"`
 	Description             string              `bson:"description"`
 	Ipts                    ipt.IptSlice        `bson:"ipts"`
@@ -62,6 +64,7 @@ func (m *mongoFunction) ToAggregate() *aggregate.Function {
 		Name:                    m.Name,
 		GroupName:               m.GroupName,
 		ProviderName:            m.ProviderName,
+		RegisterTime:            m.RegisterTime,
 		LastAliveTime:           m.LastAliveTime,
 		Description:             m.Description,
 		Ipts:                    m.Ipts,
@@ -81,6 +84,7 @@ func NewFromFunction(f *aggregate.Function) *mongoFunction {
 		Name:                    f.Name,
 		GroupName:               f.GroupName,
 		ProviderName:            f.ProviderName,
+		RegisterTime:            f.RegisterTime,
 		LastAliveTime:           f.LastAliveTime,
 		Description:             f.Description,
 		Ipts:                    f.Ipts,
@@ -109,13 +113,20 @@ func NewFromFunction(f *aggregate.Function) *mongoFunction {
 func (mr *MongoRepository) Create(
 	f *aggregate.Function,
 ) error {
-	_, err := mr.mongoCollection.InsertOne(NewFromFunction(f))
+	mF := NewFromFunction(f)
+	if mF.RegisterTime.IsZero() {
+		mF.RegisterTime = time.Now()
+	}
+	_, err := mr.mongoCollection.InsertOne(mF)
 	return err
 }
 
 func (mr *MongoRepository) All() ([]*aggregate.Function, error) {
 	var m []mongoFunction
-	err := mr.mongoCollection.Filter(nil, nil, &m)
+	err := mr.mongoCollection.Filter(
+		nil,
+		filter_options.NewFilterOption().SetSortByNaturalAsc(),
+		&m)
 	if err != nil {
 		return nil, err
 	}
@@ -135,7 +146,8 @@ func (mr *MongoRepository) UserReadAbleAll(
 	var m []mongoFunction
 	err := mr.mongoCollection.Filter(
 		mongodb.NewFilter().AddEqual("read_user_ids", user.ID),
-		nil, &m)
+		filter_options.NewFilterOption().SetSortByNaturalAsc(),
+		&m)
 	if err != nil {
 		return nil, err
 	}

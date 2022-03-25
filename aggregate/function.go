@@ -22,6 +22,7 @@ type Function struct {
 	OptDigest     string
 	ProcessStages []string
 	ExeFunc       function_developer_implement.FunctionDeveloperImplementInterface
+	RegisterTime  time.Time
 	// heartbeat
 	LastAliveTime time.Time
 	// 用于权限
