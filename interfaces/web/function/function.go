@@ -2,9 +2,9 @@ package function
 
 import (
 	"sort"
-	"time"
 
 	"github.com/fBloc/bloc-server/aggregate"
+	"github.com/fBloc/bloc-server/internal/timestamp"
 	"github.com/fBloc/bloc-server/pkg/ipt"
 	"github.com/fBloc/bloc-server/pkg/opt"
 	"github.com/fBloc/bloc-server/services/function"
@@ -48,15 +48,15 @@ func MakeSureAllUserImplementFunctionsInRepository(
 }
 
 type Function struct {
-	ID            value_object.UUID `json:"id"`
-	Name          string            `json:"name"`
-	GroupName     string            `json:"group_name"`
-	ProviderName  string            `json:"provider_name"`
-	RegisterTime  time.Time         `json:"register_time"`
-	LastAliveTime time.Time         `json:"last_alive_time"`
-	Description   string            `json:"description"`
-	Ipt           ipt.IptSlice      `json:"ipt"`
-	Opt           []*opt.Opt        `json:"opt"`
+	ID            value_object.UUID    `json:"id"`
+	Name          string               `json:"name"`
+	GroupName     string               `json:"group_name"`
+	ProviderName  string               `json:"provider_name"`
+	RegisterTime  *timestamp.Timestamp `json:"register_time"`
+	LastAliveTime *timestamp.Timestamp `json:"last_alive_time"`
+	Description   string               `json:"description"`
+	Ipt           ipt.IptSlice         `json:"ipt"`
+	Opt           []*opt.Opt           `json:"opt"`
 }
 
 func (f *Function) ToAggregate() *aggregate.Function {
@@ -65,8 +65,8 @@ func (f *Function) ToAggregate() *aggregate.Function {
 		Name:          f.Name,
 		GroupName:     f.GroupName,
 		ProviderName:  f.ProviderName,
-		RegisterTime:  f.RegisterTime,
-		LastAliveTime: f.LastAliveTime,
+		RegisterTime:  f.RegisterTime.ToTime(),
+		LastAliveTime: f.LastAliveTime.ToTime(),
 		Description:   f.Description,
 		Ipts:          f.Ipt,
 		Opts:          f.Opt,
@@ -82,7 +82,7 @@ func newFunctionFromAgg(aggF *aggregate.Function) *Function {
 		Name:          aggF.Name,
 		GroupName:     aggF.GroupName,
 		ProviderName:  aggF.ProviderName,
-		LastAliveTime: aggF.LastAliveTime,
+		LastAliveTime: timestamp.NewTimeStampFromTime(aggF.LastAliveTime),
 		Description:   aggF.Description,
 		Ipt:           aggF.Ipts,
 		Opt:           aggF.Opts}

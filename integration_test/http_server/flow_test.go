@@ -11,6 +11,7 @@ import (
 	"github.com/fBloc/bloc-server/interfaces/web"
 	"github.com/fBloc/bloc-server/interfaces/web/flow"
 	"github.com/fBloc/bloc-server/internal/http_util"
+	"github.com/fBloc/bloc-server/internal/timestamp"
 	"github.com/fBloc/bloc-server/value_object"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -49,7 +50,7 @@ func aggFlowToWebFlow(aggF *aggregate.Flow) *flow.Flow {
 		Version:                       aggF.Version,
 		OriginID:                      aggF.OriginID,
 		Newest:                        aggF.Newest,
-		CreateTime:                    aggF.CreateTime,
+		CreateTime:                    timestamp.NewTimeStampFromTime(aggF.CreateTime),
 		Position:                      aggF.Position,
 		FlowFunctionIDMapFlowFunction: httpFuncs,
 		Crontab:                       aggF.Crontab.String(),

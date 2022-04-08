@@ -3,10 +3,10 @@ package user
 import (
 	"errors"
 	"net/http"
-	"time"
 
 	"github.com/fBloc/bloc-server/aggregate"
 	"github.com/fBloc/bloc-server/interfaces/web"
+	"github.com/fBloc/bloc-server/internal/timestamp"
 	"github.com/fBloc/bloc-server/services/user"
 	"github.com/fBloc/bloc-server/value_object"
 )
@@ -36,12 +36,12 @@ func InitialUserExistOrCreate(
 }
 
 type User struct {
-	ID          value_object.UUID `json:"id,omitempty"`
-	Token       value_object.UUID `json:"token,omitempty"` // only return when login in
-	Name        string            `json:"name"`
-	RaWPassword string            `json:"password"`
-	CreateTime  time.Time         `json:"create_time"`
-	IsSuper     bool              `json:"super"`
+	ID          value_object.UUID    `json:"id,omitempty"`
+	Token       value_object.UUID    `json:"token,omitempty"` // only return when login in
+	Name        string               `json:"name"`
+	RaWPassword string               `json:"password"`
+	CreateTime  *timestamp.Timestamp `json:"create_time"`
+	IsSuper     bool                 `json:"super"`
 }
 
 func (u *User) IsZero() bool {
@@ -58,7 +58,7 @@ func FromAgg(aggU *aggregate.User) *User {
 	return &User{
 		ID:         aggU.ID,
 		Name:       aggU.Name,
-		CreateTime: aggU.CreateTime,
+		CreateTime: timestamp.NewTimeStampFromTime(aggU.CreateTime),
 		IsSuper:    aggU.IsSuper,
 	}
 }

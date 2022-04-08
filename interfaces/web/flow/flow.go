@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/fBloc/bloc-server/aggregate"
+	"github.com/fBloc/bloc-server/internal/timestamp"
 	"github.com/fBloc/bloc-server/pkg/value_type"
 	"github.com/fBloc/bloc-server/services/flow"
 	"github.com/fBloc/bloc-server/value_object"
@@ -30,9 +31,9 @@ type LatestRun struct {
 	TriggerKey                   string                               `json:"trigger_key"`
 	TriggerSource                value_object.FlowTriggeredSourceType `json:"trigger_source"`
 	TriggerUserName              string                               `json:"trigger_user_name"`
-	TriggerTime                  time.Time                            `json:"trigger_time"`
-	StartTime                    time.Time                            `json:"start_time"`
-	EndTime                      time.Time                            `json:"end_time"`
+	TriggerTime                  *timestamp.Timestamp                 `json:"trigger_time"`
+	StartTime                    *timestamp.Timestamp                 `json:"start_time"`
+	EndTime                      *timestamp.Timestamp                 `json:"end_time"`
 	Status                       value_object.RunState                `json:"status"`
 	ErrorMsg                     string                               `json:"error_msg"`
 	RetriedAmount                uint16                               `json:"retried_amount"`
@@ -53,9 +54,9 @@ func newLatestRunFromAgg(flowRunRecord *aggregate.FlowRunRecord) *LatestRun {
 		TriggerType:                  flowRunRecord.TriggerType,
 		TriggerKey:                   flowRunRecord.TriggerKey,
 		TriggerSource:                flowRunRecord.TriggerSource,
-		TriggerTime:                  flowRunRecord.TriggerTime,
-		StartTime:                    flowRunRecord.StartTime,
-		EndTime:                      flowRunRecord.EndTime,
+		TriggerTime:                  timestamp.NewTimeStampFromTime(flowRunRecord.TriggerTime),
+		StartTime:                    timestamp.NewTimeStampFromTime(flowRunRecord.StartTime),
+		EndTime:                      timestamp.NewTimeStampFromTime(flowRunRecord.EndTime),
 		Status:                       flowRunRecord.Status,
 		ErrorMsg:                     flowRunRecord.ErrorMsg,
 		RetriedAmount:                flowRunRecord.RetriedAmount,
@@ -129,6 +130,8 @@ func (flowFunc FlowFunction) formatToAggFlowFunction() *aggregate.FlowFunction {
 type FunctionRunInfo struct {
 	Status              value_object.RunState `json:"status"`
 	FunctionRunRecordID value_object.UUID     `json:"function_run_record_id"`
+	Start               *timestamp.Timestamp  `json:"start_time"`
+	End                 *timestamp.Timestamp  `json:"end_time"`
 }
 
 type Flow struct {
@@ -140,7 +143,7 @@ type Flow struct {
 	Newest                        bool                     `json:"newest"`
 	CreateUserID                  value_object.UUID        `json:"create_user_id,omitempty"`
 	CreateUserName                string                   `json:"create_user_name"`
-	CreateTime                    time.Time                `json:"create_time"`
+	CreateTime                    *timestamp.Timestamp     `json:"create_time"`
 	Position                      interface{}              `json:"position"`
 	FlowFunctionIDMapFlowFunction map[string]*FlowFunction `json:"flowFunctionID_map_flowFunction"`
 	// 运行控制相关
@@ -212,7 +215,7 @@ func fromAggWithoutUserPermission(aggF *aggregate.Flow) *Flow {
 		Version:                       aggF.Version,
 		OriginID:                      aggF.OriginID,
 		Newest:                        aggF.Newest,
-		CreateTime:                    aggF.CreateTime,
+		CreateTime:                    timestamp.NewTimeStampFromTime(aggF.CreateTime),
 		Position:                      aggF.Position,
 		FlowFunctionIDMapFlowFunction: httpFuncs,
 		Crontab:                       aggF.Crontab.String(),
@@ -281,6 +284,8 @@ func fromAggWithCertainRunFunctionView(
 		flowfunctionID      string
 		functionRunRecordID value_object.UUID
 		functionRunState    value_object.RunState
+		Start               time.Time
+		End                 time.Time
 	}
 	resp := make(chan funcRunState, len(theFlowRunRecord.FlowFuncIDMapFuncRunRecordID))
 
@@ -324,6 +329,8 @@ func fromAggWithCertainRunFunctionView(
 				flowfunctionID:      flowFuncID,
 				functionRunRecordID: functionRunRecordID,
 				functionRunState:    thisFuncRunState,
+				Start:               funcRecord.Start,
+				End:                 funcRecord.End,
 			}
 		}(flowFuncID, functionRunRecordID, resp, &wg)
 	}
@@ -341,6 +348,8 @@ func fromAggWithCertainRunFunctionView(
 		retFlow.LatestRunFlowFunctionIDMapFunctionRunInfo[i.flowfunctionID] = FunctionRunInfo{
 			Status:              i.functionRunState,
 			FunctionRunRecordID: i.functionRunRecordID,
+			Start:               timestamp.NewTimeStampFromTime(i.Start),
+			End:                 timestamp.NewTimeStampFromTime(i.End),
 		}
 	}
 
@@ -370,6 +379,8 @@ func fromAggWithLatestRunFunctionView(
 			flowfunctionID      string
 			functionRunRecordID value_object.UUID
 			functionRunState    value_object.RunState
+			Start               time.Time
+			End                 time.Time
 		}
 		resp := make(chan funcRunState, len(latestFlowRunRecord.FlowFuncIDMapFuncRunRecordID))
 
@@ -385,6 +396,8 @@ func fromAggWithLatestRunFunctionView(
 						flowfunctionID:      flowFuncID,
 						functionRunRecordID: functionRunRecordID,
 						functionRunState:    value_object.UnknownRunState,
+						Start:               funcRecord.Start,
+						End:                 funcRecord.End,
 					}
 					return
 				}
@@ -413,6 +426,8 @@ func fromAggWithLatestRunFunctionView(
 					flowfunctionID:      flowFuncID,
 					functionRunRecordID: functionRunRecordID,
 					functionRunState:    thisFuncRunState,
+					Start:               funcRecord.Start,
+					End:                 funcRecord.End,
 				}
 			}(flowFuncID, functionRunRecordID, resp, &wg)
 		}
@@ -430,6 +445,8 @@ func fromAggWithLatestRunFunctionView(
 			retFlow.LatestRunFlowFunctionIDMapFunctionRunInfo[i.flowfunctionID] = FunctionRunInfo{
 				Status:              i.functionRunState,
 				FunctionRunRecordID: i.functionRunRecordID,
+				Start:               timestamp.NewTimeStampFromTime(i.Start),
+				End:                 timestamp.NewTimeStampFromTime(i.End),
 			}
 		}
 

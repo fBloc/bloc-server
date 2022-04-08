@@ -1,10 +1,9 @@
 package function_run_record
 
 import (
-	"time"
-
 	"github.com/fBloc/bloc-server/aggregate"
 	"github.com/fBloc/bloc-server/infrastructure/log_collect_backend"
+	"github.com/fBloc/bloc-server/internal/timestamp"
 	"github.com/fBloc/bloc-server/services/function_run_record"
 	"github.com/fBloc/bloc-server/value_object"
 	"github.com/spf13/cast"
@@ -38,8 +37,8 @@ type FunctionRunRecord struct {
 	FunctionID                  value_object.UUID      `json:"function_id"`
 	FlowFunctionID              string                 `json:"flow_function_id"`
 	FlowRunRecordID             value_object.UUID      `json:"flow_run_record_id"`
-	Start                       *time.Time             `json:"start"`
-	End                         *time.Time             `json:"end"`
+	Start                       *timestamp.Timestamp   `json:"start"`
+	End                         *timestamp.Timestamp   `json:"end"`
 	Suc                         bool                   `json:"suc"`
 	InterceptBelowFunctionRun   bool                   `json:"intercept_below_function_run"`
 	Canceled                    bool                   `json:"canceled,omitempty"`
@@ -52,7 +51,7 @@ type FunctionRunRecord struct {
 	ProcessStages               []string               `json:"process_stages"`
 	ProcessStageIndex           int                    `json:"process_stage_index,omitempty"`
 	FunctionProviderName        string                 `json:"function_provider_name"`
-	ShouldBeCanceledAt          *time.Time             `json:"should_be_canceled_at"`
+	ShouldBeCanceledAt          *timestamp.Timestamp   `json:"should_be_canceled_at"`
 	TraceID                     string                 `json:"trace_id"`
 }
 
@@ -104,15 +103,9 @@ func fromAgg(
 		ProcessStageIndex:           aggFRR.ProcessStageIndex,
 		FunctionProviderName:        aggFRR.FunctionProviderName,
 		TraceID:                     aggFRR.TraceID,
-	}
-	if !aggFRR.ShouldBeCanceledAt.IsZero() {
-		retFlow.ShouldBeCanceledAt = &aggFRR.ShouldBeCanceledAt
-	}
-	if !aggFRR.Start.IsZero() {
-		retFlow.Start = &aggFRR.Start
-	}
-	if !aggFRR.End.IsZero() {
-		retFlow.End = &aggFRR.End
+		Start:                       timestamp.NewTimeStampFromTime(aggFRR.Start),
+		ShouldBeCanceledAt:          timestamp.NewTimeStampFromTime(aggFRR.ShouldBeCanceledAt),
+		End:                         timestamp.NewTimeStampFromTime(aggFRR.End),
 	}
 	return retFlow
 }

@@ -3,7 +3,6 @@ package log_data
 import (
 	"encoding/json"
 	"net/http"
-	"time"
 
 	"github.com/fBloc/bloc-server/infrastructure/log"
 	"github.com/fBloc/bloc-server/interfaces/web"
@@ -23,9 +22,6 @@ func PullLog(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 			"json unmarshal req body failed: %v", err)
 		web.WriteBadRequestDataResp(&w, r, err.Error())
 		return
-	}
-	if req.EndTime.IsZero() {
-		req.EndTime = time.Now()
 	}
 
 	var thisLog *log.Logger = nil
@@ -51,7 +47,7 @@ func PullLog(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	}
 
 	logStrSlice, err := thisLog.PullLogBetweenTime(
-		req.TagFilters, req.StartTime, req.EndTime)
+		req.TagFilters, req.StartTime.ToTime(), req.EndTime.ToTime())
 	if err != nil {
 		logger.Errorf(logTags, "pull log failed: %v", err)
 		web.WriteInternalServerErrorResp(&w, r, err, "PullLogBetweenTime failed")
