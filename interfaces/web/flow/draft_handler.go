@@ -285,6 +285,7 @@ func PubDraft(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	if err != nil {
 		fService.Logger.Errorf(logTags, "publish failed: %v", err)
 		web.WriteInternalServerErrorResp(&w, r, err, "publish failed")
+		return
 	}
 	fService.Logger.Infof(logTags, "suc published draft")
 

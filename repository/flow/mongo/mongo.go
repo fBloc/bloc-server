@@ -367,7 +367,7 @@ func (mr *MongoRepository) PatchPosition(id value_object.UUID, position interfac
 
 // OfflineByID 对flow进行下线
 func (mr *MongoRepository) OfflineByID(id value_object.UUID) error {
-	updater := mongodb.NewUpdater().AddSet("newest", false).AddSet("is_draft", true)
+	updater := mongodb.NewUpdater().AddSet("newest", false).AddSet("deleted", true)
 	return mr.mongoCollection.PatchByID(id, updater)
 }
 
