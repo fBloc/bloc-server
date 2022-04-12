@@ -17,6 +17,9 @@ func NewTimeStampFromTime(t time.Time) *Timestamp {
 }
 
 func (t *Timestamp) ToTime() time.Time {
+	if t.IsZero() {
+		return time.Time{}
+	}
 	return time.Time(*t)
 }
 

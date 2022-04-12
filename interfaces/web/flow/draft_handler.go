@@ -455,7 +455,7 @@ func DeleteDraftByOriginID(w http.ResponseWriter, r *http.Request, ps httprouter
 		return
 	}
 
-	deleteCount, err := fService.Flow.DeleteByOriginID(uuOriginID)
+	deleteCount, err := fService.Flow.DeleteDraftByOriginID(uuOriginID)
 	if err != nil {
 		fService.Logger.Errorf(logTags, "delete draft flow failed: %v", err)
 		web.WriteInternalServerErrorResp(&w, r, err, "delete failed")
