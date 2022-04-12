@@ -433,7 +433,7 @@ func TestOnline(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			f, _ = epo.GetByID(onlineFlow.ID)
-			So(f.IsDraft, ShouldBeTrue)
+			So(f.IsZero(), ShouldBeTrue)
 		})
 
 		Convey("CreateDraftFromExistFlow", func() {

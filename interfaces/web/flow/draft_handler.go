@@ -223,6 +223,7 @@ func PubDraft(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	if !draftFlowIns.UserCanWrite(reqUser) {
 		fService.Logger.Errorf(logTags, "need write permission")
 		web.WritePermissionNotEnough(&w, r, "need write permission to pub draft flow")
+		return
 	}
 	draftFlowIns.CreateUserID = reqUser.ID
 

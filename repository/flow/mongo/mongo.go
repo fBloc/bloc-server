@@ -597,8 +597,7 @@ func (mr *MongoRepository) CreateDraftFromExistFlow(
 func (mr *MongoRepository) CreateOnlineFromDraft(
 	draftF *aggregate.Flow,
 ) (*aggregate.Flow, error) {
-	// 这里不需要管是否在线！有可能创建drfat后flow被下线了！（比如发现了bug）
-	latestFlow, err := mr.GetLatestByOriginID(draftF.OriginID)
+	latestFlow, err := mr.GetOnlineByOriginID(draftF.OriginID)
 	if err != nil {
 		return nil, errors.Wrap(err, "draft.origin_id find exist flow error")
 	}
@@ -609,7 +608,7 @@ func (mr *MongoRepository) CreateOnlineFromDraft(
 	aggF.CreateTime = time.Now()
 	if latestFlow.IsZero() { // 没有已存在的同origin_id的flow（完全新建的draft提交的情况）
 		// 直接创建就是了
-		return nil, mr.mongoCreateFromAgg(aggF)
+		return aggF, mr.mongoCreateFromAgg(aggF)
 	}
 	// 已有flow
 	// 1. 继承一些属性
