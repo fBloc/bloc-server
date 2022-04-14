@@ -19,6 +19,19 @@ func InjectFlowService(
 	fService = f
 }
 
+type FlowExecuteAttribute struct {
+	ID value_object.UUID `json:"id"`
+	// 运行控制相关
+	// Crontab               *crontab.CrontabRepresent `json:"crontab"`
+	Crontab               *string `json:"crontab"`
+	TriggerKey            *string `json:"trigger_key"`
+	AllowTriggerByKey     *bool   `json:"allow_trigger_by_key"`
+	TimeoutInSeconds      *uint32 `json:"timeout_in_seconds"`
+	RetryAmount           *uint16 `json:"retry_amount"`
+	RetryIntervalInSecond *uint16 `json:"retry_interval_in_second"`
+	AllowParallelRun      *bool   `json:"allow_parallel_run"`
+}
+
 type LatestRun struct {
 	ID                           value_object.UUID                    `json:"id"`
 	ArrangementID                value_object.UUID                    `json:"arrangement_id,omitempty"`

@@ -231,8 +231,8 @@ func SetExecuteControlAttributes(w http.ResponseWriter, r *http.Request, _ httpr
 	}
 	logTags["user_name"] = reqUser.Name
 
-	var reqFlow Flow
-	err := json.NewDecoder(r.Body).Decode(&reqFlow)
+	var reqFlowExecuteAttribute FlowExecuteAttribute
+	err := json.NewDecoder(r.Body).Decode(&reqFlowExecuteAttribute)
 	if err != nil {
 		fService.Logger.Warningf(
 			logTags, "json unmarshal req body to flow failed: %v", err)
@@ -241,22 +241,22 @@ func SetExecuteControlAttributes(w http.ResponseWriter, r *http.Request, _ httpr
 	}
 
 	// > id不能为空
-	if reqFlow.ID.IsNil() {
+	if reqFlowExecuteAttribute.ID.IsNil() {
 		fService.Logger.Warningf(logTags, "lack flow_id")
 		web.WriteBadRequestDataResp(&w, r, "must have id field")
 		return
 	}
-	logTags["flow_id"] = reqFlow.ID.String()
+	logTags["flow_id"] = reqFlowExecuteAttribute.ID.String()
 
 	// > 如果写了crontab表达式、需要进行检测是否有效
-	if reqFlow.Crontab != "" &&
-		!crontab.IsCrontabStringValid(reqFlow.Crontab) {
-		fService.Logger.Warningf(logTags, "crontab str not valid: %s", reqFlow.Crontab)
-		web.WriteBadRequestDataResp(&w, r, "crontab str not valid: %s", reqFlow.Crontab)
+	if reqFlowExecuteAttribute.Crontab != nil &&
+		!crontab.IsCrontabStringValid(*reqFlowExecuteAttribute.Crontab) {
+		fService.Logger.Warningf(logTags, "crontab str not valid: %s", *reqFlowExecuteAttribute.Crontab)
+		web.WriteBadRequestDataResp(&w, r, "crontab str not valid: %s", *reqFlowExecuteAttribute.Crontab)
 		return
 	}
 
-	flowIns, err := fService.Flow.GetByID(reqFlow.ID)
+	flowIns, err := fService.Flow.GetByID(reqFlowExecuteAttribute.ID)
 	if err != nil {
 		fService.Logger.Errorf(logTags, "get flow by id failed: %v", err)
 		web.WriteInternalServerErrorResp(&w, r, err, "get flow by id failed")
@@ -275,28 +275,31 @@ func SetExecuteControlAttributes(w http.ResponseWriter, r *http.Request, _ httpr
 	}
 
 	// >> 更新crontab
-	reqCrontab := crontab.BuildCrontab(reqFlow.Crontab)
-	if !reqCrontab.Equal(flowIns.Crontab) {
-		err := fService.Flow.PatchCrontab(reqFlow.ID, reqCrontab)
-		baseLogMsg := fmt.Sprintf(
-			"change flow's crontab from:%s to:%s",
-			flowIns.Crontab.String(), reqFlow.Crontab)
+	if reqFlowExecuteAttribute.Crontab != nil {
+		reqCrontab := crontab.BuildCrontab(*reqFlowExecuteAttribute.Crontab)
+		if !reqCrontab.Equal(flowIns.Crontab) {
+			err := fService.Flow.PatchCrontab(reqFlowExecuteAttribute.ID, reqCrontab)
+			baseLogMsg := fmt.Sprintf(
+				"change flow's crontab from:%s to:%s",
+				flowIns.Crontab.String(), *reqFlowExecuteAttribute.Crontab)
 
-		if err != nil {
-			fService.Logger.Errorf(logTags, "%s. error: %v", baseLogMsg, err)
-			web.WriteInternalServerErrorResp(&w, r, err, "update crontab failed")
-			return
+			if err != nil {
+				fService.Logger.Errorf(logTags, "%s. error: %v", baseLogMsg, err)
+				web.WriteInternalServerErrorResp(&w, r, err, "update crontab failed")
+				return
+			}
+			fService.Logger.Infof(logTags, baseLogMsg)
 		}
-		fService.Logger.Infof(logTags, baseLogMsg)
 	}
 
 	// >> 更新allow_trigger_by_key
-	if reqFlow.AllowTriggerByKey != flowIns.AllowTriggerByKey {
+	if reqFlowExecuteAttribute.AllowTriggerByKey != nil &&
+		*reqFlowExecuteAttribute.AllowTriggerByKey != flowIns.AllowTriggerByKey {
 		err := fService.Flow.PatchWhetherAllowTriggerByKey(
-			reqFlow.ID, reqFlow.AllowTriggerByKey)
+			reqFlowExecuteAttribute.ID, *reqFlowExecuteAttribute.AllowTriggerByKey)
 		baseLogMsg := fmt.Sprintf(
 			"change flow's allow_trigger_by_key from:%t to:%t",
-			flowIns.AllowTriggerByKey, reqFlow.AllowTriggerByKey)
+			flowIns.AllowTriggerByKey, *reqFlowExecuteAttribute.AllowTriggerByKey)
 
 		if err != nil {
 			fService.Logger.Errorf(logTags, "%s. error: %v", baseLogMsg, err)
@@ -307,12 +310,13 @@ func SetExecuteControlAttributes(w http.ResponseWriter, r *http.Request, _ httpr
 	}
 
 	// >> 更新超时设置
-	if reqFlow.TimeoutInSeconds != flowIns.TimeoutInSeconds {
+	if reqFlowExecuteAttribute.TimeoutInSeconds != nil &&
+		*reqFlowExecuteAttribute.TimeoutInSeconds != flowIns.TimeoutInSeconds {
 		err := fService.Flow.PatchTimeout(
-			reqFlow.ID, reqFlow.TimeoutInSeconds)
+			reqFlowExecuteAttribute.ID, *reqFlowExecuteAttribute.TimeoutInSeconds)
 		baseLogMsg := fmt.Sprintf(
 			"change flow's timeout from:%d to:%d",
-			flowIns.TimeoutInSeconds, reqFlow.TimeoutInSeconds)
+			flowIns.TimeoutInSeconds, *reqFlowExecuteAttribute.TimeoutInSeconds)
 
 		if err != nil {
 			fService.Logger.Errorf(logTags, "%s. error: %v", baseLogMsg, err)
@@ -323,19 +327,23 @@ func SetExecuteControlAttributes(w http.ResponseWriter, r *http.Request, _ httpr
 	}
 
 	// >> 更新重试策略
-	if reqFlow.RetryAmount != flowIns.RetryAmount ||
-		reqFlow.RetryIntervalInSecond != flowIns.RetryIntervalInSecond {
-		if reqFlow.RetryAmount > 0 && reqFlow.RetryIntervalInSecond <= 0 {
-			// 对于设置了重试次数的，重试间隔不能设置为0，暂时默认给个1秒
-			reqFlow.RetryIntervalInSecond = 1
-		}
+	if reqFlowExecuteAttribute.RetryAmount != nil ||
+		reqFlowExecuteAttribute.RetryIntervalInSecond != nil {
+		retryAmount := flowIns.RetryAmount
+		retryIntervalInSecond := flowIns.RetryIntervalInSecond
 
+		if reqFlowExecuteAttribute.RetryAmount != nil {
+			retryAmount = *reqFlowExecuteAttribute.RetryAmount
+		}
+		if reqFlowExecuteAttribute.RetryIntervalInSecond != nil {
+			retryIntervalInSecond = *reqFlowExecuteAttribute.RetryIntervalInSecond
+		}
 		err := fService.Flow.PatchRetryStrategy(
-			reqFlow.ID, reqFlow.RetryAmount, reqFlow.RetryIntervalInSecond)
+			reqFlowExecuteAttribute.ID, retryAmount, retryIntervalInSecond)
 		baseLogMsg := fmt.Sprintf(
 			"change flow's retry_strategy from:%d-%ds to:%d-%ds",
 			flowIns.RetryAmount, flowIns.RetryIntervalInSecond,
-			reqFlow.RetryAmount, reqFlow.RetryIntervalInSecond)
+			retryAmount, retryIntervalInSecond)
 		if err != nil {
 			fService.Logger.Errorf(logTags, "%s. error: %v", baseLogMsg, err)
 			web.WriteInternalServerErrorResp(&w, r, err, "update retry_strategy failed")
@@ -345,12 +353,13 @@ func SetExecuteControlAttributes(w http.ResponseWriter, r *http.Request, _ httpr
 	}
 
 	// >> 更新是否支持在运行的时候也发布
-	if reqFlow.AllowParallelRun != flowIns.AllowParallelRun {
+	if reqFlowExecuteAttribute.AllowParallelRun != nil &&
+		*reqFlowExecuteAttribute.AllowParallelRun != flowIns.AllowParallelRun {
 		err := fService.Flow.PatchAllowParallelRun(
-			reqFlow.ID, reqFlow.AllowParallelRun)
+			reqFlowExecuteAttribute.ID, *reqFlowExecuteAttribute.AllowParallelRun)
 		baseLogMsg := fmt.Sprintf(
 			"change flow's allow_parallel_run from:%t to:%t",
-			flowIns.AllowParallelRun, reqFlow.AllowParallelRun)
+			flowIns.AllowParallelRun, *reqFlowExecuteAttribute.AllowParallelRun)
 		if err != nil {
 			fService.Logger.Errorf(logTags, "%s. error: %v", baseLogMsg, err)
 			web.WriteInternalServerErrorResp(&w, r, err, "update allow_parallel_run failed")
