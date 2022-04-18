@@ -86,6 +86,7 @@ func (us *UserCacheService) initialCache() {
 	idMapUser := make(map[value_object.UUID]aggregate.User, len(allUsers))
 	tokenMapUser := make(map[value_object.UUID]aggregate.User, len(allUsers))
 	for _, i := range allUsers {
+		i.IsSuper = true // Warning: as v1.0.0 decide not 2 support permission. just give all user super permission.
 		idMapUser[i.ID] = i
 		tokenMapUser[i.Token] = i
 	}
@@ -95,6 +96,7 @@ func (us *UserCacheService) initialCache() {
 
 func (us *UserCacheService) visitRepositoryByToken(token value_object.UUID) (aggregate.User, error) {
 	resp, err := us.user.GetByToken(token)
+	resp.IsSuper = true // Warning: as v1.0.0 decide not 2 support permission. just give all user super permission.
 	if err != nil {
 		return aggregate.User{}, err
 	}
@@ -144,6 +146,8 @@ func (us *UserCacheService) visitRepositoryByID(
 	}
 	cache.Lock()
 	defer cache.Unlock()
+	// Warning: as v1.0.0 decide not 2 support permission. just give all user super permission.
+	resp.IsSuper = true
 	cache.userIDMapUser[resp.ID] = *resp
 	cache.userTokenMapUser[resp.Token] = *resp
 	return *resp, nil
