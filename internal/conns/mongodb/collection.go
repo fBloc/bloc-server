@@ -239,6 +239,16 @@ func (c *Collection) Filter(
 		if filterOptions.OffSet > 0 {
 			findOptions.SetSkip(filterOptions.OffSet)
 		}
+		if len(filterOptions.WithoutFields) > 0 {
+			projection := bson.M{}
+			for _, i := range filterOptions.WithoutFields {
+				projection[i] = 1
+			}
+			for _, i := range filterOptions.WithoutFields {
+				projection[i] = 0
+			}
+			findOptions.SetProjection(projection)
+		}
 	}
 
 	cursor, _ := c.collection.Find(context.TODO(), mFilter.FilterExpression(), &findOptions)

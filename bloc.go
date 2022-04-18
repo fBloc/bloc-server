@@ -490,7 +490,7 @@ func (bA *BlocApp) GetFunctionByRepoID(functionRepoID value_object.UUID) *aggreg
 		return ins
 	}
 	functionRepo := bA.GetOrCreateFunctionRepository()
-	allFunctions, err := functionRepo.All()
+	allFunctions, err := functionRepo.All([]string{})
 	if err != nil {
 		panic(err)
 	}

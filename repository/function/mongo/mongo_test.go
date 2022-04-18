@@ -78,7 +78,7 @@ func TestCreate(t *testing.T) {
 
 func TestQuery(t *testing.T) {
 	Convey("All", t, func() {
-		funcs, err := epo.All()
+		funcs, err := epo.All([]string{})
 		So(err, ShouldBeNil)
 		So(len(funcs), ShouldEqual, 1)
 		So(funcs[0].Name, ShouldEqual, fakeFunction.Name)

@@ -251,7 +251,7 @@ func TestDraft(t *testing.T) {
 		})
 
 		Convey("FilterDraft", func() {
-			flows, err := epo.FilterDraft(readeUser.ID, fakeName)
+			flows, err := epo.FilterDraft(readeUser.ID, fakeName, []string{})
 			So(err, ShouldBeNil)
 			So(len(flows), ShouldEqual, 1)
 			So(flows[0].Name, ShouldEqual, fakeName)
@@ -315,7 +315,7 @@ func TestOnline(t *testing.T) {
 		epo.DeleteDraftByOriginID(draftFlow.OriginID)
 
 		Convey("FilterOnline", func() {
-			flows, err := epo.FilterOnline(&readeUser, fakeName)
+			flows, err := epo.FilterOnline(&readeUser, fakeName, []string{})
 			So(err, ShouldBeNil)
 			So(len(flows), ShouldEqual, 1)
 			So(flows[0].Name, ShouldEqual, fakeName)

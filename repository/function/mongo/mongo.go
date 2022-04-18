@@ -121,12 +121,13 @@ func (mr *MongoRepository) Create(
 	return err
 }
 
-func (mr *MongoRepository) All() ([]*aggregate.Function, error) {
+func (mr *MongoRepository) All(withoutFields []string) ([]*aggregate.Function, error) {
 	var m []mongoFunction
-	err := mr.mongoCollection.Filter(
-		nil,
-		filter_options.NewFilterOption().SetSortByNaturalAsc(),
-		&m)
+	filterOption := filter_options.NewFilterOption().SetSortByNaturalAsc()
+	for _, i := range withoutFields {
+		filterOption.AddWithoutFields(i)
+	}
+	err := mr.mongoCollection.Filter(nil, filterOption, &m)
 	if err != nil {
 		return nil, err
 	}
@@ -138,16 +139,20 @@ func (mr *MongoRepository) All() ([]*aggregate.Function, error) {
 }
 
 func (mr *MongoRepository) UserReadAbleAll(
-	user *aggregate.User,
+	user *aggregate.User, withoutFields []string,
 ) ([]*aggregate.Function, error) {
 	if user.IsZero() {
 		return nil, errors.New("ipt user is nil")
 	}
 	var m []mongoFunction
+
+	filterOption := filter_options.NewFilterOption().SetSortByNaturalAsc()
+	for _, i := range withoutFields {
+		filterOption.AddWithoutFields(i)
+	}
 	err := mr.mongoCollection.Filter(
 		mongodb.NewFilter().AddEqual("read_user_ids", user.ID),
-		filter_options.NewFilterOption().SetSortByNaturalAsc(),
-		&m)
+		filterOption, &m)
 	if err != nil {
 		return nil, err
 	}

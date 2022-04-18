@@ -275,7 +275,9 @@ func (mr *MongoRepository) GetDraftByOriginID(originID value_object.UUID) (*aggr
 	return mr.get(mongodb.NewFilter().AddEqual("origin_id", originID).AddEqual("is_draft", true).AddEqual("deleted", false))
 }
 
-func (mr *MongoRepository) FilterOnline(user *aggregate.User, nameContains string) ([]aggregate.Flow, error) {
+func (mr *MongoRepository) FilterOnline(
+	user *aggregate.User, nameContains string, withoutFields []string,
+) ([]aggregate.Flow, error) {
 	filter := mongodb.NewFilter().AddEqual("is_draft", false).AddEqual("newest", true).AddEqual("deleted", false)
 	if !user.IsZero() && !user.IsSuper {
 		filter.AddEqual("read_user_ids", user.ID)
@@ -283,9 +285,13 @@ func (mr *MongoRepository) FilterOnline(user *aggregate.User, nameContains strin
 	if nameContains != "" {
 		filter.AddContains("name", nameContains)
 	}
+	filterOption := filter_options.NewFilterOption()
+	for _, i := range withoutFields {
+		filterOption.AddWithoutFields(i)
+	}
 
 	var flows []mongoFlow
-	err := mr.mongoCollection.Filter(filter, &filter_options.FilterOption{}, &flows)
+	err := mr.mongoCollection.Filter(filter, filterOption, &flows)
 	if err != nil {
 		return nil, err
 	}
@@ -332,7 +338,9 @@ func (mr *MongoRepository) Filter(
 	return ret, err
 }
 
-func (mr *MongoRepository) FilterDraft(userID value_object.UUID, nameContains string) ([]aggregate.Flow, error) {
+func (mr *MongoRepository) FilterDraft(
+	userID value_object.UUID, nameContains string, withoutFields []string,
+) ([]aggregate.Flow, error) {
 	filter := mongodb.NewFilter().AddEqual("is_draft", true).AddEqual("deleted", false)
 	if !userID.IsNil() {
 		filter.AddEqual("read_user_ids", userID)
@@ -340,9 +348,13 @@ func (mr *MongoRepository) FilterDraft(userID value_object.UUID, nameContains st
 	if nameContains != "" {
 		filter.AddContains("name", nameContains)
 	}
+	filterOption := filter_options.NewFilterOption()
+	for _, i := range withoutFields {
+		filterOption.AddWithoutFields(i)
+	}
 
 	var flows []mongoFlow
-	err := mr.mongoCollection.Filter(filter, &filter_options.FilterOption{}, &flows)
+	err := mr.mongoCollection.Filter(filter, filterOption, &flows)
 	if err != nil {
 		return nil, err
 	}

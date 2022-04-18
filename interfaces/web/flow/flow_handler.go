@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/fBloc/bloc-server/interfaces/web"
 	"github.com/fBloc/bloc-server/internal/crontab"
@@ -205,8 +206,17 @@ func FilterFlow(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		return
 	}
 
+	withoutFields := r.URL.Query().Get("without_fields")
+	var withoutFieldsSlice []string
+	if withoutFields != "" {
+		withoutFieldsSlice = strings.Split(withoutFields, ",")
+	}
 	// 否则是过滤查找
-	aggSlice, err := fService.Flow.FilterOnline(reqUser, r.URL.Query().Get("name__contains"))
+	aggSlice, err := fService.Flow.FilterOnline(
+		reqUser,
+		r.URL.Query().Get("name__contains"),
+		withoutFieldsSlice)
+
 	if err != nil {
 		fService.Logger.Errorf(logTags, "filter failed: %v", err)
 		web.WriteInternalServerErrorResp(&w, r, err, "visit repository failed")

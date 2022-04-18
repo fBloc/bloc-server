@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/fBloc/bloc-server/config"
 	"github.com/fBloc/bloc-server/interfaces/web"
@@ -77,8 +78,13 @@ func FilterDraftByName(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 	logTags["user_name"] = reqUser.Name
 
 	nameContains := r.URL.Query().Get("name__contains")
+	withoutFields := r.URL.Query().Get("without_fields")
+	var withoutFieldsSlice []string
+	if withoutFields != "" {
+		withoutFieldsSlice = strings.Split(withoutFields, ",")
+	}
 
-	aggSlice, err := fService.Flow.FilterDraft(reqUser.ID, nameContains)
+	aggSlice, err := fService.Flow.FilterDraft(reqUser.ID, nameContains, withoutFieldsSlice)
 	if err != nil {
 		fService.Logger.Errorf(
 			logTags,

@@ -2,6 +2,7 @@ package function
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/fBloc/bloc-server/aggregate"
 	"github.com/fBloc/bloc-server/interfaces/web"
@@ -21,12 +22,18 @@ func All(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	}
 	logTags["user_name"] = reqUser.Name
 
+	withoutFields := r.URL.Query().Get("without_fields")
+	var withoutFieldsSlice []string
+	if withoutFields != "" {
+		withoutFieldsSlice = strings.Split(withoutFields, ",")
+	}
+
 	var err error
 	var aggFs []*aggregate.Function
 	if reqUser.IsSuper {
-		aggFs, err = fService.Function.All()
+		aggFs, err = fService.Function.All(withoutFieldsSlice)
 	} else {
-		aggFs, err = fService.Function.UserReadAbleAll(reqUser)
+		aggFs, err = fService.Function.UserReadAbleAll(reqUser, withoutFieldsSlice)
 	}
 	if err != nil {
 		fService.Logger.Errorf(logTags, "get repository failed: %v", err)

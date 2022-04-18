@@ -13,8 +13,8 @@ type FunctionRepository interface {
 	GetByIDForCheckAliveTime(id value_object.UUID) (*aggregate.Function, error)
 	GetByID(id value_object.UUID) (*aggregate.Function, error)
 	GetSameIptOptFunction(iptDigest, optDigest string) (*aggregate.Function, error)
-	All() ([]*aggregate.Function, error)
-	UserReadAbleAll(user *aggregate.User) ([]*aggregate.Function, error)
+	All(withoutFields []string) ([]*aggregate.Function, error)
+	UserReadAbleAll(user *aggregate.User, withoutFields []string) ([]*aggregate.Function, error)
 	IDMapFunctionAll() (map[value_object.UUID]*aggregate.Function, error)
 
 	// update
