@@ -3,6 +3,7 @@ package aggregate
 import (
 	"errors"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/fBloc/bloc-server/config"
@@ -30,6 +31,37 @@ type FlowFunction struct {
 	UpstreamFlowFunctionIDs   []string
 	DownstreamFlowFunctionIDs []string
 	ParamIpts                 [][]IptComponentConfig // 第一层对应一个ipt，第二层对应ipt内的component
+	findAllUpstreamIDOnce     sync.Once
+	allUpstreamIDsMap         map[string]struct{}
+}
+
+// AllUpstreamFlowFunctionIDsMap including father、grandfather、...'s flow_function_ids
+func (flowFunc *FlowFunction) AllUpstreamFlowFunctionIDsMap(flowFuncIDMapFlowFunction map[string]*FlowFunction) map[string]struct{} {
+	if flowFunc.allUpstreamIDsMap != nil {
+		return flowFunc.allUpstreamIDsMap
+	}
+	var upIDs []string
+	var iterFunc func(thisFlowFunc *FlowFunction, upIDs *[]string)
+	iterFunc = func(thisFlowFunc *FlowFunction, upIDs *[]string) {
+		for _, upstreamFlowFuncID := range thisFlowFunc.UpstreamFlowFunctionIDs {
+			if upstreamFlowFuncID == config.FlowFunctionStartID {
+				return
+			}
+			*upIDs = append(*upIDs, upstreamFlowFuncID)
+			iterFunc(flowFuncIDMapFlowFunction[upstreamFlowFuncID], upIDs)
+		}
+	}
+
+	flowFunc.findAllUpstreamIDOnce.Do(
+		func() {
+			iterFunc(flowFunc, &upIDs)
+			upIDsMap := make(map[string]struct{}, len(upIDs))
+			for _, i := range upIDs {
+				upIDsMap[i] = struct{}{}
+			}
+			flowFunc.allUpstreamIDsMap = upIDsMap
+		})
+	return flowFunc.allUpstreamIDsMap
 }
 
 func (flowFunc *FlowFunction) CheckWhetherParamValidIsValid(
@@ -136,15 +168,10 @@ func (flowFunc *FlowFunction) CheckValid(
 					)
 				}
 
-				// 2.connection写的节点ID需要是此节点的直接上游
-				var isUpstreamFuncNodeID bool
-				for _, upFuncNodeID := range flowFunc.UpstreamFlowFunctionIDs {
-					if upFuncNodeID == componentParamConfig.FlowFunctionID {
-						isUpstreamFuncNodeID = true
-						break
-					}
-				}
-				if !isUpstreamFuncNodeID {
+				// 2. connection写的节点ID需要是此节点的上游
+				// 注意：可以不是直接上游！
+				allUpStreamsMap := flowFunc.AllUpstreamFlowFunctionIDsMap(flowFuncIDMapFlowFunction)
+				if _, ok := allUpStreamsMap[componentParamConfig.FlowFunctionID]; !ok {
 					return false, fmt.Errorf(
 						`「%s」节点第%d个ipt下的第%d个component输入的上游flow_function节点id(%s)无效
 						-此flow_function_id对应的节点不是直接上游节点、不能作为输入`,
