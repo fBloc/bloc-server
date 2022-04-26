@@ -96,7 +96,6 @@ func (us *UserCacheService) initialCache() {
 
 func (us *UserCacheService) visitRepositoryByToken(token value_object.UUID) (aggregate.User, error) {
 	resp, err := us.user.GetByToken(token)
-	resp.IsSuper = true // Warning: as v1.0.0 decide not 2 support permission. just give all user super permission.
 	if err != nil {
 		return aggregate.User{}, err
 	}
@@ -106,6 +105,7 @@ func (us *UserCacheService) visitRepositoryByToken(token value_object.UUID) (agg
 			"get user by token missed:%s", token.String())
 		return aggregate.User{}, nil
 	}
+	resp.IsSuper = true // Warning: as v1.0.0 decide not 2 support permission. just give all user super permission.
 	cache.Lock()
 	defer cache.Unlock()
 	cache.userIDMapUser[resp.ID] = *resp
