@@ -280,7 +280,7 @@ func PubDraft(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 			draftFlowIns.FlowFunctionIDMapFlowFunction,
 		)
 		if !valid {
-			msg := fmt.Sprintf("function:%s failed valid check: %v", flowFunc.Note, err)
+			msg := fmt.Sprintf("function:「%s」failed valid check: %v", flowFunc.Note, err)
 			fService.Logger.Errorf(logTags, msg)
 			web.WriteBadRequestDataResp(&w, r, msg)
 			return

@@ -1,7 +1,6 @@
 package aggregate
 
 import (
-	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -193,13 +192,15 @@ func (flowFunc *FlowFunction) CheckValid(
 							flowFunc.Note,
 							iptIndex, componentIndex, componentParamConfig.FlowFunctionID)
 					}
-					return true, nil
 				}
 			} else if componentParamConfig.IptWay == value_object.UserIpt { // 配置的参数输入方式是用户输入的值
 				valueValid := value_type.CheckValueTypeValueValid(
 					componentParamConfig.ValueType, componentParamConfig.Value)
 				if !valueValid {
-					return false, errors.New("user_ipt value type wrong")
+					return false, fmt.Errorf(
+						"user_ipt value type wrong. ipt_index: %d, component_idex: %d, needed_value_type: %s, get_value: %v",
+						iptIndex, componentIndex, componentParamConfig.ValueType, componentParamConfig.Value,
+					)
 				}
 			}
 		}
