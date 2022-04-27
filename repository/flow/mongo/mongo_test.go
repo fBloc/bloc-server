@@ -433,7 +433,8 @@ func TestOnline(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			f, _ = epo.GetByID(onlineFlow.ID)
-			So(f.IsZero(), ShouldBeTrue)
+			So(f.IsZero(), ShouldBeFalse)
+			So(f.Deleted, ShouldBeTrue)
 		})
 
 		Convey("CreateDraftFromExistFlow", func() {
@@ -478,7 +479,8 @@ func TestOnline(t *testing.T) {
 			// after delete. there should no such flow
 			f, err := epo.GetByID(onlineFlow.ID)
 			So(err, ShouldBeNil)
-			So(f.IsZero(), ShouldBeTrue)
+			So(f.IsZero(), ShouldBeFalse)
+			So(f.Deleted, ShouldBeTrue)
 		})
 
 		Reset(func() {

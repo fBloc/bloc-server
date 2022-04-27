@@ -601,7 +601,8 @@ func TestOnlineFlow(t *testing.T) {
 				http_util.BlankGetParam, &getFlowResp)
 			So(err, ShouldBeNil)
 			So(resp.Code, ShouldEqual, http.StatusOK)
-			So(getFlowResp.Flow.IsZero(), ShouldBeTrue)
+			So(getFlowResp.Flow.IsZero(), ShouldBeFalse)
+			So(getFlowResp.Flow.Delete, ShouldBeTrue)
 		})
 	})
 }

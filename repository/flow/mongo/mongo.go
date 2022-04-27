@@ -229,7 +229,7 @@ func (mr *MongoRepository) GetByID(id value_object.UUID) (*aggregate.Flow, error
 	if id.IsNil() {
 		return nil, errors.New("must have id")
 	}
-	return mr.get(mongodb.NewFilter().AddEqual("id", id).AddEqual("deleted", false))
+	return mr.get(mongodb.NewFilter().AddEqual("id", id))
 }
 
 func (mr *MongoRepository) GetByIDStr(id string) (*aggregate.Flow, error) {
