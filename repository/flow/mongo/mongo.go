@@ -390,12 +390,6 @@ func (mr *MongoRepository) OfflineByID(id value_object.UUID) error {
 // }
 
 func (mr *MongoRepository) PatchRetryStrategy(id value_object.UUID, amount, intervalInSecond uint16) error {
-	if amount < 0 {
-		return errors.New("retry_amount must >0 ")
-	}
-	if intervalInSecond < 0 {
-		return errors.New("retry_interval_in_second must > 0")
-	}
 	updater := mongodb.NewUpdater().
 		AddSet("retry_interval_in_second", intervalInSecond).
 		AddSet("retry_amount", amount)
