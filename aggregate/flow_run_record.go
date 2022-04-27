@@ -15,6 +15,7 @@ type FlowRunRecord struct {
 	ArrangementRunRecordID       string
 	FlowID                       value_object.UUID
 	FlowOriginID                 value_object.UUID
+	FlowVersion                  uint
 	FlowFuncIDMapFuncRunRecordID map[string]value_object.UUID
 	TriggerType                  value_object.TriggerType
 	TriggerKey                   string
@@ -39,6 +40,7 @@ func newFromFlow(ctx context.Context, f *Flow) *FlowRunRecord {
 		ID:            value_object.NewUUID(),
 		FlowID:        f.ID,
 		FlowOriginID:  f.OriginID,
+		FlowVersion:   f.Version,
 		TriggerSource: value_object.FlowTriggerSource,
 		TriggerTime:   time.Now(),
 		Status:        value_object.Created,

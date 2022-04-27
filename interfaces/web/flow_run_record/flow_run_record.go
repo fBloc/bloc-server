@@ -22,6 +22,7 @@ type FlowFunctionRecord struct {
 	ArrangementRunRecordID       string                               `json:"arrangement_run_record_id,omitempty"`
 	FlowID                       value_object.UUID                    `json:"flow_id"`
 	FlowOriginID                 value_object.UUID                    `json:"flow_origin_id"`
+	FlowVersion                  uint                                 `json:"flow_version"`
 	FlowFuncIDMapFuncRunRecordID map[string]value_object.UUID         `json:"flowFunctionID_map_functionRunRecordID"`
 	TriggerType                  value_object.TriggerType             `json:"trigger_type"`
 	TriggerKey                   string                               `json:"trigger_key"`
@@ -52,6 +53,7 @@ func fromAgg(
 		ArrangementRunRecordID:       aggFRR.ArrangementRunRecordID,
 		FlowID:                       aggFRR.FlowID,
 		FlowOriginID:                 aggFRR.FlowOriginID,
+		FlowVersion:                  aggFRR.FlowVersion,
 		FlowFuncIDMapFuncRunRecordID: aggFRR.FlowFuncIDMapFuncRunRecordID,
 		TriggerType:                  aggFRR.TriggerType,
 		TriggerKey:                   aggFRR.TriggerKey,

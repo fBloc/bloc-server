@@ -47,6 +47,7 @@ type mongoFlowRunRecord struct {
 	ArrangementRunRecordID       string                               `bson:"arrangement_task_id,omitempty"`
 	FlowID                       value_object.UUID                    `bson:"flow_id"`
 	FlowOriginID                 value_object.UUID                    `bson:"flow_origin_id"`
+	FlowVersion                  uint                                 `bson:"flow_version"`
 	FlowFuncIDMapFuncRunRecordID map[string]value_object.UUID         `bson:"flowFuncID_map_funcRunRecordID"`
 	TriggerTime                  time.Time                            `bson:"trigger_time"`
 	TriggerKey                   string                               `bson:"trigger_key"`
@@ -87,6 +88,7 @@ func NewFromAggregate(
 		ArrangementRunRecordID:       fRR.ArrangementRunRecordID,
 		FlowID:                       fRR.FlowID,
 		FlowOriginID:                 fRR.FlowOriginID,
+		FlowVersion:                  fRR.FlowVersion,
 		FlowFuncIDMapFuncRunRecordID: fRR.FlowFuncIDMapFuncRunRecordID,
 		TriggerTime:                  fRR.TriggerTime,
 		TriggerKey:                   fRR.TriggerKey,
@@ -116,6 +118,7 @@ func (m mongoFlowRunRecord) ToAggregate() *aggregate.FlowRunRecord {
 		ArrangementRunRecordID:       m.ArrangementRunRecordID,
 		FlowID:                       m.FlowID,
 		FlowOriginID:                 m.FlowOriginID,
+		FlowVersion:                  m.FlowVersion,
 		FlowFuncIDMapFuncRunRecordID: m.FlowFuncIDMapFuncRunRecordID,
 		TriggerTime:                  m.TriggerTime,
 		TriggerKey:                   m.TriggerKey,
