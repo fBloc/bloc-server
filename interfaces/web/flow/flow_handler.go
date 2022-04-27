@@ -116,14 +116,14 @@ func GetFlowByCertainFlowRunRecord(w http.ResponseWriter, r *http.Request, ps ht
 	}
 
 	retFlow := fromAggWithCertainRunFunctionView(flowIns, aggFlowRunRecord, reqUser)
-	if !flowIns.Newest { // 老版本的话，只返回read权限(别的操作都不该有了)
-		fService.Logger.Infof(logTags, "old version flow")
-		retFlow = fromAggWithoutUserPermission(flowIns)
-		retFlow.Write = false
-		retFlow.Execute = false
-		retFlow.Delete = false
-		retFlow.AssignPermission = false
-	}
+	// if !flowIns.Newest { // 老版本的话，只返回read权限(别的操作都不该有了)
+	// 	fService.Logger.Infof(logTags, "old version flow")
+	// 	retFlow = fromAggWithoutUserPermission(flowIns)
+	// 	retFlow.Write = false
+	// 	retFlow.Execute = false
+	// 	retFlow.Delete = false
+	// 	retFlow.AssignPermission = false
+	// }
 
 	fService.Logger.Infof(logTags, "finished")
 	web.WriteSucResp(&w, r, retFlow)
