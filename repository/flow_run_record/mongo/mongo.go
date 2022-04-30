@@ -214,7 +214,16 @@ func (mr *MongoRepository) IsHaveRunningTask(
 	flowID, thisFlowRunRecordID value_object.UUID,
 ) (bool, error) {
 	filter := value_object.NewRepositoryFilter()
-	filter.AddEqual("flow_id", flowID).AddNotEqual("id", thisFlowRunRecordID)
+	filter.
+		AddEqual("flow_id", flowID).
+		AddNotEqual("id", thisFlowRunRecordID)
+
+	nFRS := value_object.NotFinishedRunStatus()
+	notfinishedStatus := make([]interface{}, 0, len(nFRS))
+	for _, i := range nFRS {
+		notfinishedStatus = append(notfinishedStatus, i)
+	}
+	filter.AddIn("status", notfinishedStatus)
 
 	filterOption := value_object.NewRepositoryFilterOption()
 	filterOption.SetDesc()
@@ -226,7 +235,6 @@ func (mr *MongoRepository) IsHaveRunningTask(
 	if err != nil {
 		return false, err
 	}
-
 	if len(mFRRs) < 1 {
 		return false, nil
 	}

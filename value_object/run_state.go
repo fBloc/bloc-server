@@ -23,3 +23,7 @@ func (tS RunState) IsRunFinished() bool {
 func (tS RunState) IsRunStateValid() bool {
 	return tS > 0 && tS < maxRunStatus
 }
+
+func NotFinishedRunStatus() []RunState {
+	return []RunState{Created, InQueue, Running}
+}
