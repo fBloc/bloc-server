@@ -45,7 +45,7 @@ func RegisterFunctions(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 						msg := fmt.Sprintf(
 							`another function provider %s already created %s-%s function.
 							not allowed create same group_name-name function from different consumer source`,
-							req.Who, groupName, f.Name)
+							reportedFunc.ProviderName, groupName, f.Name)
 						fService.Logger.Warningf(logTags, msg)
 						web.WriteBadRequestDataResp(&w, r, msg)
 						return
