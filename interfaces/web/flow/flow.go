@@ -143,6 +143,7 @@ func (flowFunc FlowFunction) formatToAggFlowFunction() *aggregate.FlowFunction {
 type FunctionRunInfo struct {
 	Status              value_object.RunState `json:"status"`
 	FunctionRunRecordID value_object.UUID     `json:"function_run_record_id"`
+	Trigger             *timestamp.Timestamp  `json:"trigger_time"`
 	Start               *timestamp.Timestamp  `json:"start_time"`
 	End                 *timestamp.Timestamp  `json:"end_time"`
 }
@@ -392,6 +393,7 @@ func fromAggWithLatestRunFunctionView(
 			flowfunctionID      string
 			functionRunRecordID value_object.UUID
 			functionRunState    value_object.RunState
+			Trigger             time.Time
 			Start               time.Time
 			End                 time.Time
 		}
@@ -409,6 +411,7 @@ func fromAggWithLatestRunFunctionView(
 						flowfunctionID:      flowFuncID,
 						functionRunRecordID: functionRunRecordID,
 						functionRunState:    value_object.UnknownRunState,
+						Trigger:             funcRecord.Trigger,
 						Start:               funcRecord.Start,
 						End:                 funcRecord.End,
 					}
@@ -439,6 +442,7 @@ func fromAggWithLatestRunFunctionView(
 					flowfunctionID:      flowFuncID,
 					functionRunRecordID: functionRunRecordID,
 					functionRunState:    thisFuncRunState,
+					Trigger:             funcRecord.Trigger,
 					Start:               funcRecord.Start,
 					End:                 funcRecord.End,
 				}
@@ -458,6 +462,7 @@ func fromAggWithLatestRunFunctionView(
 			retFlow.LatestRunFlowFunctionIDMapFunctionRunInfo[i.flowfunctionID] = FunctionRunInfo{
 				Status:              i.functionRunState,
 				FunctionRunRecordID: i.functionRunRecordID,
+				Trigger:             timestamp.NewTimeStampFromTime(i.Trigger),
 				Start:               timestamp.NewTimeStampFromTime(i.Start),
 				End:                 timestamp.NewTimeStampFromTime(i.End),
 			}
