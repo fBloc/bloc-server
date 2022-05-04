@@ -298,6 +298,7 @@ func fromAggWithCertainRunFunctionView(
 		flowfunctionID      string
 		functionRunRecordID value_object.UUID
 		functionRunState    value_object.RunState
+		Trigger             time.Time
 		Start               time.Time
 		End                 time.Time
 	}
@@ -336,13 +337,18 @@ func fromAggWithCertainRunFunctionView(
 				}
 				thisFuncRunState = value_object.Fail
 			} else {
-				thisFuncRunState = value_object.Running
+				if funcRecord.Start.IsZero() {
+					thisFuncRunState = value_object.InQueue
+				} else {
+					thisFuncRunState = value_object.Running
+				}
 			}
 		RET:
 			resp <- funcRunState{
 				flowfunctionID:      flowFuncID,
 				functionRunRecordID: functionRunRecordID,
 				functionRunState:    thisFuncRunState,
+				Trigger:             funcRecord.Trigger,
 				Start:               funcRecord.Start,
 				End:                 funcRecord.End,
 			}
@@ -362,6 +368,7 @@ func fromAggWithCertainRunFunctionView(
 		retFlow.LatestRunFlowFunctionIDMapFunctionRunInfo[i.flowfunctionID] = FunctionRunInfo{
 			Status:              i.functionRunState,
 			FunctionRunRecordID: i.functionRunRecordID,
+			Trigger:             timestamp.NewTimeStampFromTime(i.Trigger),
 			Start:               timestamp.NewTimeStampFromTime(i.Start),
 			End:                 timestamp.NewTimeStampFromTime(i.End),
 		}
@@ -435,7 +442,11 @@ func fromAggWithLatestRunFunctionView(
 					}
 					thisFuncRunState = value_object.Fail
 				} else {
-					thisFuncRunState = value_object.Running
+					if funcRecord.Start.IsZero() {
+						thisFuncRunState = value_object.InQueue
+					} else {
+						thisFuncRunState = value_object.Running
+					}
 				}
 			RET:
 				resp <- funcRunState{
