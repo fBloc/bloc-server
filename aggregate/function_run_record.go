@@ -25,6 +25,7 @@ type FunctionRunRecord struct {
 	FlowRunRecordID           value_object.UUID
 	FunctionProviderName      string
 	ShouldBeCanceledAt        time.Time
+	Trigger                   time.Time
 	Start                     time.Time
 	End                       time.Time
 	Suc                       bool
@@ -58,7 +59,7 @@ func NewFunctionRunRecordFromFlowDriven(
 		FunctionID:           functionIns.ID,
 		FlowFunctionID:       flowFunctionID,
 		FlowRunRecordID:      flowRunRecordIns.ID,
-		Start:                time.Now(),
+		Trigger:              time.Now(),
 		ProcessStages:        functionIns.ProcessStages,
 		FunctionProviderName: functionIns.ProviderName,
 		TraceID:              value_object.GetTraceIDFromContext(ctx),
@@ -101,6 +102,13 @@ func (bh *FunctionRunRecord) Finished() bool {
 		return false
 	}
 	return true
+}
+
+func (bh *FunctionRunRecord) SetStart() {
+	if bh.IsZero() {
+		return
+	}
+	bh.Start = time.Now()
 }
 
 func (bh *FunctionRunRecord) SetSuc() {

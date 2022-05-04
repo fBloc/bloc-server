@@ -40,6 +40,7 @@ type FunctionRunRecordRepository interface {
 	) error
 
 	ClearProgress(id value_object.UUID) error
+	SaveStart(id value_object.UUID) error
 	SaveSuc(
 		id value_object.UUID, desc string,
 		keyMapValueType map[string]value_type.ValueType,

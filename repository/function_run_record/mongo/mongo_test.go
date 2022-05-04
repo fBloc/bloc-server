@@ -320,6 +320,17 @@ func TestFunctionRunRecord(t *testing.T) {
 			So(err, ShouldBeNil)
 		})
 
+		Convey("SaveStart", func() {
+			fRR, _ := epo.GetByID(aggFunctionRunRecord.ID)
+			So(fRR.Start.IsZero(), ShouldBeTrue)
+
+			err := epo.SaveStart(aggFunctionRunRecord.ID)
+			So(err, ShouldBeNil)
+
+			fRR, _ = epo.GetByID(aggFunctionRunRecord.ID)
+			So(fRR.Start.IsZero(), ShouldBeFalse)
+		})
+
 		Convey("SaveSuc", func() {
 			err := epo.SaveSuc(
 				aggFunctionRunRecord.ID, "test",

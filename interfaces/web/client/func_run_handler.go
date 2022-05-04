@@ -15,6 +15,38 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
+func FunctionRunStart(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	logTags := web.GetTraceAboutFields(r.Context())
+	logTags["business"] = "function_run_start report api"
+	scheduleLogger.Infof(logTags, "start")
+
+	var req FuncRunStartHttpReq
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		scheduleLogger.Warningf(logTags, "unmarshal body failed: %v", err)
+		web.WriteBadRequestDataResp(&w, r, err.Error())
+		return
+	}
+	logTags["function_run_record_id"] = req.FunctionRunRecordID
+
+	funcRunRecordUUID, err := value_object.ParseToUUID(req.FunctionRunRecordID)
+	if err != nil {
+		scheduleLogger.Warningf(logTags, "parse to uuid failed: %v", err)
+		web.WriteBadRequestDataResp(&w, r, "parse function_id to uuid failed: %v", err)
+		return
+	}
+
+	err = fRRService.FunctionRunRecords.SaveStart(funcRunRecordUUID)
+	if err != nil {
+		scheduleLogger.Errorf(logTags, "save function_run_record start failed: %v", err)
+		web.WriteInternalServerErrorResp(&w, r, err, "update function_run_record start failed")
+		return
+	}
+
+	scheduleLogger.Infof(logTags, "finished")
+	web.WritePlainSucOkResp(&w, r)
+}
+
 func FunctionRunFinished(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	logTags := web.GetTraceAboutFields(r.Context())
 	logTags["business"] = "function_run_finshed report api"

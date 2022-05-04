@@ -51,3 +51,7 @@ type FuncRunFinishedHttpReq struct {
 	OptKeyMapBriefData        map[string]string `json:"optKey_map_briefData"`
 	OptKeyMapObjectStorageKey map[string]string `json:"optKey_map_objectStorageKey"`
 }
+
+type FuncRunStartHttpReq struct {
+	FunctionRunRecordID string `json:"function_run_record_id"`
+}

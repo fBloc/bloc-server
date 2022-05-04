@@ -59,7 +59,8 @@ type mongoFunctionRunRecord struct {
 	FunctionID                value_object.UUID               `bson:"function_id"`
 	FlowFunctionID            string                          `bson:"flow_function_id"`
 	FlowRunRecordID           value_object.UUID               `bson:"flow_run_record_id"`
-	Start                     time.Time                       `bson:"start"`
+	Trigger                   time.Time                       `bson:"trigger"`
+	Start                     time.Time                       `bson:"start,omitempty"`
 	End                       time.Time                       `bson:"end,omitempty"`
 	Suc                       bool                            `bson:"suc"`
 	InterceptBelowFunctionRun bool                            `bson:"intercept_below_function_run"`
@@ -90,6 +91,7 @@ func NewFromAggregate(fRR *aggregate.FunctionRunRecord) *mongoFunctionRunRecord 
 		FlowFunctionID:            fRR.FlowFunctionID,
 		FlowRunRecordID:           fRR.FlowRunRecordID,
 		Start:                     fRR.Start,
+		Trigger:                   fRR.Trigger,
 		End:                       fRR.End,
 		Suc:                       fRR.Suc,
 		InterceptBelowFunctionRun: fRR.InterceptBelowFunctionRun,
@@ -137,6 +139,7 @@ func (m mongoFunctionRunRecord) ToAggregate() *aggregate.FunctionRunRecord {
 		FlowRunRecordID:           m.FlowRunRecordID,
 		Start:                     m.Start,
 		End:                       m.End,
+		Trigger:                   m.Trigger,
 		Suc:                       m.Suc,
 		InterceptBelowFunctionRun: m.InterceptBelowFunctionRun,
 		Canceled:                  m.Canceled,
@@ -338,6 +341,15 @@ func (mr *MongoRepository) SaveFail(
 		mongodb.NewUpdater().
 			AddSet("end", time.Now()).
 			AddSet("error_msg", errMsg))
+}
+
+func (mr *MongoRepository) SaveStart(
+	id value_object.UUID,
+) error {
+	return mr.mongoCollection.PatchByID(
+		id,
+		mongodb.NewUpdater().AddSet("start", time.Now()),
+	)
 }
 
 func (mr *MongoRepository) SaveCancel(

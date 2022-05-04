@@ -335,6 +335,7 @@ func (blocApp *BlocApp) RunHttpServer() {
 			router.GET(basicPath+"/report_functionExecute_heartbeat/:function_run_record_id", middleware.WithTrace(client.ReportFunctionExecuteHeartbeat))
 			router.POST(basicPath+"/persist_certain_function_run_opt_field", middleware.WithTrace(client.PersistFuncRunOptField))
 			router.POST(basicPath+"/function_run_finished", middleware.WithTrace(client.FunctionRunFinished))
+			router.POST(basicPath+"/function_run_start", middleware.WithTrace(client.FunctionRunStart))
 			router.GET(basicPath+"/get_function_run_record_by_id/:id", middleware.WithTrace(function_run_record.Get))
 			router.GET(basicPath+"/check_flowRun_is_canceled_by_flowRunID/:id", middleware.WithTrace(client.FlowRunRecordIsCanceled))
 			router.GET(basicPath+"/get_byte_value_by_key/:key", middleware.WithTrace(object_storage.GetValueByKeyReturnByte))

@@ -37,6 +37,7 @@ type FunctionRunRecord struct {
 	FunctionID                  value_object.UUID      `json:"function_id"`
 	FlowFunctionID              string                 `json:"flow_function_id"`
 	FlowRunRecordID             value_object.UUID      `json:"flow_run_record_id"`
+	Trigger                     *timestamp.Timestamp   `json:"trigger"`
 	Start                       *timestamp.Timestamp   `json:"start"`
 	End                         *timestamp.Timestamp   `json:"end"`
 	Suc                         bool                   `json:"suc"`
@@ -103,6 +104,7 @@ func fromAgg(
 		ProcessStageIndex:           aggFRR.ProcessStageIndex,
 		FunctionProviderName:        aggFRR.FunctionProviderName,
 		TraceID:                     aggFRR.TraceID,
+		Trigger:                     timestamp.NewTimeStampFromTime(aggFRR.Trigger),
 		Start:                       timestamp.NewTimeStampFromTime(aggFRR.Start),
 		ShouldBeCanceledAt:          timestamp.NewTimeStampFromTime(aggFRR.ShouldBeCanceledAt),
 		End:                         timestamp.NewTimeStampFromTime(aggFRR.End),
