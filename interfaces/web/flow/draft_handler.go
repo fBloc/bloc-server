@@ -13,6 +13,126 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
+func GetOrCreateDraftForCertainFlowByOriginID(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	logTags := web.GetTraceAboutFields(r.Context())
+	logTags["business"] = "get or create draft flow by origin_id"
+
+	reqUser, suc := web.GetReqUserFromContext(r.Context())
+	if !suc {
+		fService.Logger.Errorf(logTags, "failed to get user from context which should be setted by middleware!")
+		web.WriteInternalServerErrorResp(&w, r, nil, "get requser from context failed")
+		return
+	}
+	logTags["user_name"] = reqUser.Name
+
+	originID := ps.ByName("origin_id")
+	if originID == "" {
+		fService.Logger.Warningf(logTags, "lack query param origin_id")
+		web.WriteBadRequestDataResp(&w, r, "origin_id cannot be blank")
+		return
+	}
+	originUUID, err := value_object.ParseToUUID(originID)
+	if err != nil {
+		fService.Logger.Errorf(logTags, "parse query param origin_id: %s to uuid error: %v", originID, err)
+		web.WriteBadRequestDataResp(&w, r, "cannot parse origin_id to uuid")
+		return
+	}
+	logTags["origin_id"] = originID
+
+	draftFlowIns, err := fService.Flow.GetDraftByOriginID(originUUID)
+	if err != nil {
+		fService.Logger.Errorf(logTags, "get latest draft_flow by origin_id error: %v", err)
+		web.WriteInternalServerErrorResp(&w, r, err, "get latest draft_flow by origin_id failed")
+		return
+	}
+	// draft already exist, return it
+	if !draftFlowIns.IsZero() {
+		fService.Logger.Infof(logTags, "already exist draft")
+		fService.Logger.Infof(logTags, "finished")
+		web.WriteSucResp(&w, r, fromAggWithoutUserPermission(draftFlowIns))
+		return
+	}
+
+	// draft not exist, need to create new one
+	fService.Logger.Infof(logTags, "does not exist draft. going to create one")
+	flowIns, err := fService.Flow.GetOnlineByOriginID(originUUID)
+	if err != nil {
+		fService.Logger.Errorf(logTags, "get latest flow by origin_id failed: %v", err)
+		web.WriteInternalServerErrorResp(&w, r, err, "get latest flow by origin_id failed")
+		return
+	}
+	if flowIns.IsZero() {
+		fService.Logger.Warningf(logTags, "get latest flow by origin_id match nothing")
+		web.WriteBadRequestDataResp(&w, r, "check ur origin_id, it match no online flow")
+		return
+	}
+
+	newDraftIns, err := fService.Flow.CreateDraftForExistFlow(
+		flowIns.Name,
+		reqUser.ID, flowIns.OriginID,
+		flowIns.Position, flowIns.FlowFunctionIDMapFlowFunction)
+	if err != nil {
+		fService.Logger.Errorf(logTags, "create draft flow failed: %v", err)
+		web.WriteInternalServerErrorResp(&w, r, err, "create draft flow error")
+		return
+	}
+
+	web.WriteSucResp(&w, r, fromAggWithoutUserPermission(newDraftIns))
+}
+
+func CreateBrandNewDraftFromFlowByOriginID(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	logTags := web.GetTraceAboutFields(r.Context())
+	logTags["business"] = "create brand new draft flow by origin_id"
+
+	reqUser, suc := web.GetReqUserFromContext(r.Context())
+	if !suc {
+		fService.Logger.Errorf(logTags, "failed to get user from context which should be setted by middleware!")
+		web.WriteInternalServerErrorResp(&w, r, nil, "get requser from context failed")
+		return
+	}
+	logTags["user_name"] = reqUser.Name
+
+	originID := ps.ByName("origin_id")
+	if originID == "" {
+		fService.Logger.Warningf(logTags, "lack query param origin_id")
+		web.WriteBadRequestDataResp(&w, r, "origin_id cannot be blank")
+		return
+	}
+	originUUID, err := value_object.ParseToUUID(originID)
+	if err != nil {
+		fService.Logger.Errorf(logTags, "parse query param origin_id: %s to uuid error: %v", originID, err)
+		web.WriteBadRequestDataResp(&w, r, "cannot parse origin_id to uuid")
+		return
+	}
+	logTags["origin_id"] = originID
+
+	flowIns, err := fService.Flow.GetOnlineByOriginID(originUUID)
+	if err != nil {
+		fService.Logger.Errorf(logTags, "get latest draft_flow by origin_id error: %v", err)
+		web.WriteInternalServerErrorResp(&w, r, err, "get latest draft_flow by origin_id failed")
+		return
+	}
+	if flowIns.IsZero() {
+		fService.Logger.Warningf(logTags, "get latest flow by origin_id match nothing")
+		web.WriteBadRequestDataResp(&w, r, "check ur origin_id, it match no online flow")
+		return
+	}
+
+	fService.Logger.Infof(logTags, "does not exist draft. going to create one")
+
+	newDraftIns, err := fService.Flow.CreateDraftFromScratch(
+		flowIns.Name, reqUser.ID,
+		flowIns.Position, flowIns.FlowFunctionIDMapFlowFunction)
+
+	if err != nil {
+		fService.Logger.Errorf(logTags, "create draft flow failed: %v", err)
+		web.WriteInternalServerErrorResp(&w, r, err, "create draft flow error")
+		return
+	}
+
+	web.WriteSucResp(&w, r, fromAggWithoutUserPermission(newDraftIns))
+}
+
 func GetDraftByOriginID(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	logTags := web.GetTraceAboutFields(r.Context())
 	logTags["business"] = "get draft flow by origin_id"
@@ -51,7 +171,7 @@ func GetDraftByOriginID(w http.ResponseWriter, r *http.Request, ps httprouter.Pa
 		return
 	}
 
-	retFlow := fromAggWithLatestRunFlowView(flowIns, reqUser)
+	retFlow := fromAggWithoutUserPermission(flowIns)
 	if !retFlow.Read {
 		fService.Logger.Warningf(logTags, "user has no read permission of this draft flow")
 		web.WritePermissionNotEnough(&w, r, "user have no read permission on this flow")
@@ -151,7 +271,7 @@ func CreateDraft(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 			return
 		}
 
-		flowIns, err := fService.Flow.CreateDraftFromExistFlow(
+		flowIns, err := fService.Flow.CreateDraftForExistFlow(
 			reqFlow.Name,
 			reqFlow.CreateUserID, reqFlow.OriginID,
 			reqFlow.Position, reqFlow.getAggregateFlowFunctionIDMapFlowFunction())

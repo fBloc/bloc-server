@@ -557,8 +557,8 @@ func (mr *MongoRepository) CreateDraftFromScratch(
 	return &aggFlow, nil
 }
 
-// CreateDraftFromExistFlow compare to CreateDraftFromScratch, plus field `originID` of the exist flow
-func (mr *MongoRepository) CreateDraftFromExistFlow(
+// CreateDraftForExistFlow compare to CreateDraftFromScratch, plus field `originID` of the exist flow
+func (mr *MongoRepository) CreateDraftForExistFlow(
 	name string,
 	createUserID, originID value_object.UUID,
 	position interface{},

@@ -169,6 +169,12 @@ func (blocApp *BlocApp) RunHttpServer() {
 			router.GET(basicPath, middleware.WithTrace(middleware.LoginAuth(flow.FilterDraftByName)))
 			router.GET(basicPath+"/get_by_origin_id/:origin_id", middleware.WithTrace(middleware.LoginAuth(flow.GetDraftByOriginID)))
 			router.GET(basicPath+"/commit_by_id/:id", middleware.WithTrace(middleware.LoginAuth(flow.PubDraft)))
+
+			router.GET(basicPath+"/get_or_create_for_flow_by_origin_id/:origin_id",
+				middleware.WithTrace(middleware.LoginAuth(flow.GetOrCreateDraftForCertainFlowByOriginID)))
+			router.GET(basicPath+"/create_brand_new_from_flow_by_origin_id/:origin_id",
+				middleware.WithTrace(middleware.LoginAuth(flow.CreateBrandNewDraftFromFlowByOriginID)))
+
 			router.POST(basicPath, middleware.WithTrace(middleware.LoginAuth(flow.CreateDraft)))
 			router.PATCH(basicPath, middleware.WithTrace(middleware.LoginAuth(flow.UpdateDraft)))
 			router.DELETE(

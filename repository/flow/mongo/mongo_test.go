@@ -223,8 +223,8 @@ func TestDraft(t *testing.T) {
 		epo.DeleteDraftByOriginID(draftFlow.OriginID)
 	})
 
-	Convey("CreateDraftFromExistFlow", t, func() {
-		draftFlow, err := epo.CreateDraftFromExistFlow(
+	Convey("CreateDraftForExistFlow", t, func() {
+		draftFlow, err := epo.CreateDraftForExistFlow(
 			fakeName, value_object.NewUUID(),
 			value_object.NewUUID(), nil,
 			validFlowFunctionIDMapFlowFunction,
@@ -437,8 +437,8 @@ func TestOnline(t *testing.T) {
 			So(f.Deleted, ShouldBeTrue)
 		})
 
-		Convey("CreateDraftFromExistFlow", func() {
-			draftFlow, err := epo.CreateDraftFromExistFlow(
+		Convey("CreateDraftForExistFlow", func() {
+			draftFlow, err := epo.CreateDraftForExistFlow(
 				fakeName, value_object.NewUUID(),
 				onlineFlow.OriginID, nil,
 				validFlowFunctionIDMapFlowFunction,

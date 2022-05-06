@@ -17,7 +17,7 @@ type FlowRepository interface {
 		position interface{},
 		funcs map[string]*aggregate.FlowFunction,
 	) (*aggregate.Flow, error)
-	CreateDraftFromExistFlow(
+	CreateDraftForExistFlow(
 		name string,
 		createUserID, originID value_object.UUID,
 		position interface{},
