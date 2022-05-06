@@ -354,6 +354,60 @@ func TestOnlineFlow(t *testing.T) {
 			})
 		})
 
+		Convey("online flow based draft", func() {
+			Convey("create brand new", func() {
+				// two create draft should have not same id
+				resp1 := struct {
+					web.RespMsg
+					Flow *flow.Flow `json:"data"`
+				}{}
+				_, err := http_util.Get(
+					superuserHeader(),
+					serverAddress+"/api/v1/draft_flow/create_brand_new_from_flow_by_origin_id/"+pubResp.OnlineFlow.OriginID.String(),
+					http_util.BlankGetParam, &resp1)
+				So(err, ShouldBeNil)
+				So(resp1.Flow.IsZero(), ShouldBeFalse)
+
+				resp2 := struct {
+					web.RespMsg
+					Flow *flow.Flow `json:"data"`
+				}{}
+				_, err = http_util.Get(
+					superuserHeader(),
+					serverAddress+"/api/v1/draft_flow/create_brand_new_from_flow_by_origin_id/"+pubResp.OnlineFlow.OriginID.String(),
+					http_util.BlankGetParam, &resp2)
+				So(err, ShouldBeNil)
+				So(resp2.Flow.IsZero(), ShouldBeFalse)
+
+				So(resp1.Flow.ID, ShouldNotEqual, resp2.Flow.ID)
+			})
+
+			Convey("create for flow", func() {
+				// two create draft should have same id
+				// the second will just return the first as online flow can only have one draft
+				resp1 := struct {
+					web.RespMsg
+					Flow *flow.Flow `json:"data"`
+				}{}
+				_, err := http_util.Get(
+					superuserHeader(),
+					serverAddress+"/api/v1/draft_flow/get_or_create_for_flow_by_origin_id/"+pubResp.OnlineFlow.OriginID.String(),
+					http_util.BlankGetParam, &resp1)
+				So(err, ShouldBeNil)
+				So(resp1.Flow.IsZero(), ShouldBeFalse)
+
+				resp2 := resp1
+				_, err = http_util.Get(
+					superuserHeader(),
+					serverAddress+"/api/v1/draft_flow/get_or_create_for_flow_by_origin_id/"+pubResp.OnlineFlow.OriginID.String(),
+					http_util.BlankGetParam, &resp2)
+				So(err, ShouldBeNil)
+				So(resp2.Flow.IsZero(), ShouldBeFalse)
+
+				So(resp1.Flow.ID, ShouldEqual, resp2.Flow.ID)
+			})
+		})
+
 		Convey("update", func() {
 			Convey("SetExecuteControlAttribute trigger key", func() {
 				req := flow.Flow{
@@ -589,7 +643,6 @@ func TestOnlineFlow(t *testing.T) {
 				&resp)
 			So(err, ShouldBeNil)
 			So(resp.Code, ShouldEqual, http.StatusOK)
-			So(resp.Data["delete_amount"], ShouldEqual, 1)
 
 			getFlowResp := struct {
 				web.RespMsg

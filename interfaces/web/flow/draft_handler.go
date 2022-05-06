@@ -171,7 +171,7 @@ func GetDraftByOriginID(w http.ResponseWriter, r *http.Request, ps httprouter.Pa
 		return
 	}
 
-	retFlow := fromAggWithoutUserPermission(flowIns)
+	retFlow := fromAgg(flowIns, reqUser)
 	if !retFlow.Read {
 		fService.Logger.Warningf(logTags, "user has no read permission of this draft flow")
 		web.WritePermissionNotEnough(&w, r, "user have no read permission on this flow")
