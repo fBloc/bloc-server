@@ -14,9 +14,9 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-type runByKeyRespStruct struct {
-	Msg             string `json:"msg"`
-	FlowRunRecordID string `json:"flow_run_record_id"`
+type triggerRunRespStruct struct {
+	Msg             string            `json:"msg"`
+	FlowRunRecordID value_object.UUID `json:"flow_run_record_id"`
 }
 
 func RunByTriggerKey(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -56,7 +56,7 @@ func RunByTriggerKey(w http.ResponseWriter, r *http.Request, ps httprouter.Param
 	thisLogTags["origin_id"] = flowIns.OriginID.String()
 	if !flowIns.AllowTriggerByKey {
 		fService.Logger.Infof(logTags, "not allowed trigger by key")
-		resp := runByKeyRespStruct{
+		resp := triggerRunRespStruct{
 			Msg: "not allowed trigger by key",
 		}
 		web.WriteSucResp(&w, r, resp)
@@ -91,8 +91,8 @@ func RunByTriggerKey(w http.ResponseWriter, r *http.Request, ps httprouter.Param
 	}
 
 	fService.Logger.Infof(logTags, "finished")
-	resp := runByKeyRespStruct{
-		FlowRunRecordID: aggFlowRunRecord.ID.String(),
+	resp := triggerRunRespStruct{
+		FlowRunRecordID: aggFlowRunRecord.ID,
 	}
 	web.WriteSucResp(&w, r, resp)
 }
@@ -134,7 +134,7 @@ func RunByTriggerKeyWithParamOverride(w http.ResponseWriter, r *http.Request, ps
 	thisLogTags["origin_id"] = flowIns.OriginID.String()
 	if !flowIns.AllowTriggerByKey {
 		fService.Logger.Infof(logTags, "not allowed trigger by key")
-		resp := runByKeyRespStruct{
+		resp := triggerRunRespStruct{
 			Msg: "not allowed trigger by key",
 		}
 		web.WriteSucResp(&w, r, resp)
@@ -222,8 +222,8 @@ func RunByTriggerKeyWithParamOverride(w http.ResponseWriter, r *http.Request, ps
 	}
 
 	fService.Logger.Infof(logTags, "finished")
-	resp := runByKeyRespStruct{
-		FlowRunRecordID: aggFlowRunRecord.ID.String(),
+	resp := triggerRunRespStruct{
+		FlowRunRecordID: aggFlowRunRecord.ID,
 	}
 	web.WriteSucResp(&w, r, resp)
 }
@@ -296,7 +296,7 @@ func Run(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	}
 
 	fService.Logger.Infof(logTags, "finished")
-	web.WritePlainSucOkResp(&w, r)
+	web.WriteSucResp(&w, r, triggerRunRespStruct{FlowRunRecordID: aggFlowRunRecord.ID})
 }
 
 func CancelRun(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
