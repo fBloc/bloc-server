@@ -11,18 +11,18 @@ import (
 )
 
 type Function struct {
-	ID            value_object.UUID
-	Name          string
-	GroupName     string
-	ProviderName  string
-	Description   string
-	Ipts          ipt.IptSlice
-	Opts          []*opt.Opt
-	IptDigest     string
-	OptDigest     string
-	ProcessStages []string
-	ExeFunc       function_developer_implement.FunctionDeveloperImplementInterface
-	RegisterTime  time.Time
+	ID                 value_object.UUID
+	Name               string
+	GroupName          string
+	ProviderName       string
+	Description        string
+	Ipts               ipt.IptSlice
+	Opts               []*opt.Opt
+	IptDigest          string
+	OptDigest          string
+	ProgressMilestones []string
+	ExeFunc            function_developer_implement.FunctionDeveloperImplementInterface
+	RegisterTime       time.Time
 	// heartbeat
 	LastAliveTime time.Time
 	// 用于权限

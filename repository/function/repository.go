@@ -19,6 +19,7 @@ type FunctionRepository interface {
 
 	// update
 	PatchName(id value_object.UUID, name string) error
+	PatchProgressMilestones(id value_object.UUID, progressMilestones []string) error
 	PatchDescription(id value_object.UUID, desc string) error
 	PatchGroupName(id value_object.UUID, groupName string) error
 	PatchProviderName(id value_object.UUID, provider string) error

@@ -30,12 +30,12 @@ type briefAndKey struct {
 }
 
 type Progress struct {
-	ID                value_object.UUID `json:"id"`
-	Progress          float32           `json:"progress"`
-	ProgressMsg       []string          `json:"progress_msg"`
-	ProcessStages     []string          `json:"process_stages"`
-	ProcessStageIndex int               `json:"process_stage_index"`
-	IsFinished        bool              `json:"is_finished"`
+	ID                     value_object.UUID `json:"id"`
+	Progress               float32           `json:"progress"`
+	ProgressMsg            []string          `json:"progress_msg"`
+	ProgressMilestones     []string          `json:"progress_milestones"`
+	ProgressMilestoneIndex *int              `json:"progress_milestone_index"`
+	IsFinished             bool              `json:"is_finished"`
 }
 
 type FunctionRunRecord struct {
@@ -61,8 +61,8 @@ type FunctionRunRecord struct {
 	TraceID                     string                 `json:"trace_id"`
 	Progress                    float32                `json:"progress"`
 	ProgressMsg                 []string               `json:"progress_msg"`
-	ProcessStages               []string               `json:"process_stages"`
-	ProcessStageIndex           int                    `json:"process_stage_index"`
+	ProgressMilestones          []string               `json:"progress_milestones"`
+	ProgressMilestoneIndex      *int                   `json:"progress_milestone_index"`
 }
 
 func fromAggToProgress(
@@ -72,12 +72,12 @@ func fromAggToProgress(
 		return nil
 	}
 	return &Progress{
-		ID:                aggFRR.ID,
-		Progress:          aggFRR.Progress,
-		ProgressMsg:       aggFRR.ProgressMsg,
-		ProcessStages:     aggFRR.ProcessStages,
-		ProcessStageIndex: aggFRR.ProcessStageIndex,
-		IsFinished:        !aggFRR.End.IsZero(),
+		ID:                     aggFRR.ID,
+		Progress:               aggFRR.Progress,
+		ProgressMsg:            aggFRR.ProgressMsg,
+		ProgressMilestones:     aggFRR.ProgressMilestones,
+		ProgressMilestoneIndex: aggFRR.ProgressMilestoneIndex,
+		IsFinished:             !aggFRR.End.IsZero(),
 	}
 }
 
@@ -125,8 +125,8 @@ func fromAgg(
 		OptBriefAndObjectStoragekey: opt,
 		Progress:                    aggFRR.Progress,
 		ProgressMsg:                 aggFRR.ProgressMsg,
-		ProcessStages:               aggFRR.ProcessStages,
-		ProcessStageIndex:           aggFRR.ProcessStageIndex,
+		ProgressMilestones:          aggFRR.ProgressMilestones,
+		ProgressMilestoneIndex:      aggFRR.ProgressMilestoneIndex,
 		FunctionProviderName:        aggFRR.FunctionProviderName,
 		TraceID:                     aggFRR.TraceID,
 		Trigger:                     timestamp.NewTimeStampFromTime(aggFRR.Trigger),

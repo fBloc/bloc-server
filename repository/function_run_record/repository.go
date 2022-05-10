@@ -29,8 +29,8 @@ type FunctionRunRecordRepository interface {
 	// Update
 	PatchProgress(id value_object.UUID, progress float32) error
 	PatchProgressMsg(id value_object.UUID, progressMsg string) error
-	PatchStageIndex(
-		id value_object.UUID, progressStageIndex int,
+	PatchMilestoneIndex(
+		id value_object.UUID, ProgressMilestoneIndex *int,
 	) error
 	SetTimeout(id value_object.UUID, timeoutTime time.Time) error
 	SaveIptBrief(

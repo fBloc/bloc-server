@@ -115,7 +115,7 @@ func TestRunFlow(t *testing.T) {
 			So(addFunctionRunRecordresp.FunctionRunRecord.ID, ShouldEqual, addFunctionRunRecordID)
 			So(addFunctionRunRecordresp.FunctionRunRecord.End, ShouldBeNil)
 			So(addFunctionRunRecordresp.FunctionRunRecord.Suc, ShouldBeFalse)
-			So(addFunctionRunRecordresp.FunctionRunRecord.ProcessStageIndex, ShouldEqual, 0)
+			So(addFunctionRunRecordresp.FunctionRunRecord.ProgressMilestoneIndex, ShouldEqual, nil)
 			So(addFunctionRunRecordresp.FunctionRunRecord.Progress, ShouldEqual, 0)
 			So(len(addFunctionRunRecordresp.FunctionRunRecord.ProgressMsg), ShouldEqual, 0)
 
@@ -157,15 +157,15 @@ func TestRunFlow(t *testing.T) {
 			So(fetchedLogData, ShouldEqual, toLogData)
 
 			// report_progress
-			progressStageIndex := 1
+			ProgressMilestoneIndex := 1
 			var progressPercent float32 = 20
 			progressMsg := "suc parsed ipt params"
 			progressReport := client.ProgressReportHttpReq{
 				FunctionRunRecordID: addFunctionRunRecordID.String(),
 				FuncRunProgress: client.HighReadableFunctionRunProgress{
-					ProcessStageIndex: progressStageIndex,
-					Progress:          progressPercent,
-					Msg:               progressMsg},
+					ProgressMilestoneIndex: &ProgressMilestoneIndex,
+					Progress:               progressPercent,
+					Msg:                    progressMsg},
 			}
 			progressReportBody, err := json.Marshal(progressReport)
 			So(err, ShouldBeNil)
@@ -180,7 +180,7 @@ func TestRunFlow(t *testing.T) {
 				superuserHeader(),
 				serverAddress+"/api/v1/function_run_record/get_by_id/"+addFunctionRunRecordID.String(),
 				http_util.BlankGetParam, &addFunctionRunRecordresp)
-			So(addFunctionRunRecordresp.FunctionRunRecord.ProcessStageIndex, ShouldEqual, progressStageIndex)
+			So(*addFunctionRunRecordresp.FunctionRunRecord.ProgressMilestoneIndex, ShouldEqual, ProgressMilestoneIndex)
 			So(addFunctionRunRecordresp.FunctionRunRecord.Progress, ShouldEqual, progressPercent)
 			So(addFunctionRunRecordresp.FunctionRunRecord.ProgressMsg[0], ShouldEqual, progressMsg)
 

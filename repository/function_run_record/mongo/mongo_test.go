@@ -93,7 +93,7 @@ var functionAdd = aggregate.Function{
 			IsArray:     false,
 		},
 	},
-	ProcessStages:           []string{"parsing ipt", "finished parse ipt & start do the math", "finished"},
+	ProgressMilestones:      []string{"parsing ipt", "finished parse ipt & start do the math", "finished"},
 	ReadUserIDs:             []value_object.UUID{readeUser.ID, allPermissionUser.ID},
 	ExecuteUserIDs:          []value_object.UUID{executeUser.ID, allPermissionUser.ID},
 	AssignPermissionUserIDs: []value_object.UUID{allPermissionUser.ID},
@@ -143,7 +143,7 @@ var functionMultiply = aggregate.Function{
 			IsArray:     false,
 		},
 	},
-	ProcessStages:           []string{"parsing ipt", "finished parse ipt & start do the math", "finished"},
+	ProgressMilestones:      []string{"parsing ipt", "finished parse ipt & start do the math", "finished"},
 	ReadUserIDs:             []value_object.UUID{readeUser.ID, allPermissionUser.ID},
 	ExecuteUserIDs:          []value_object.UUID{executeUser.ID, allPermissionUser.ID},
 	AssignPermissionUserIDs: []value_object.UUID{allPermissionUser.ID},
@@ -287,16 +287,16 @@ func TestFunctionRunRecord(t *testing.T) {
 			So(fRR.ProgressMsg, ShouldResemble, []string{progressMsg})
 		})
 
-		Convey("PatchStageIndex", func() {
+		Convey("PatchMilestoneIndex", func() {
 			fRR, _ := epo.GetByID(aggFunctionRunRecord.ID)
-			So(fRR.ProcessStageIndex, ShouldEqual, 0)
+			So(fRR.ProgressMilestoneIndex, ShouldEqual, nil)
 
-			stageIndex := 1
-			err = epo.PatchStageIndex(aggFunctionRunRecord.ID, stageIndex)
+			milestoneIndex := 1
+			err = epo.PatchMilestoneIndex(aggFunctionRunRecord.ID, &milestoneIndex)
 			So(err, ShouldBeNil)
 
 			fRR, _ = epo.GetByID(aggFunctionRunRecord.ID)
-			So(fRR.ProcessStageIndex, ShouldResemble, stageIndex)
+			So(*fRR.ProgressMilestoneIndex, ShouldResemble, milestoneIndex)
 		})
 
 		Convey("SetTimeout", func() {

@@ -152,11 +152,11 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 		}
 
 		functionIns := blocApp.GetFunctionByRepoID(functionRecordIns.FunctionID)
-		logTags["function_id"] = functionIns.ID.String()
 		if functionIns.IsZero() {
 			logger.Errorf(logTags, "get function by id match no record")
 			continue
 		}
+		logTags["function_id"] = functionIns.ID.String()
 
 		// 装配输入参数到function_run_record实例【从flowFunction中配置的输入参数的来源（manual/connection）获得】
 		// 如果是被覆盖参数方式触发运行的，优先使用传入的覆盖参数

@@ -19,5 +19,5 @@ type FunctionDeveloperImplementInterface interface {
 	)
 	IptConfig() ipt.IptSlice
 	OptConfig() []*opt.Opt
-	AllProcessStages() []string
+	AllProgressMilestones() []string
 }

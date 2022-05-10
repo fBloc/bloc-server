@@ -56,12 +56,12 @@ func ReportProgress(w http.ResponseWriter, r *http.Request, _ httprouter.Params)
 		fRRService.FunctionRunRecords.PatchProgressMsg(
 			funcRunRecordUUID, req.FuncRunProgress.Msg)
 	}
-	if req.FuncRunProgress.ProcessStageIndex > 0 {
+	if req.FuncRunProgress.ProgressMilestoneIndex != nil {
 		scheduleLogger.Infof(logTags,
 			"progress index from %d to %d",
-			fRRIns.ProcessStageIndex, req.FuncRunProgress.ProcessStageIndex)
-		fRRService.FunctionRunRecords.PatchStageIndex(
-			funcRunRecordUUID, req.FuncRunProgress.ProcessStageIndex)
+			fRRIns.ProgressMilestoneIndex, req.FuncRunProgress.ProgressMilestoneIndex)
+		fRRService.FunctionRunRecords.PatchMilestoneIndex(
+			funcRunRecordUUID, req.FuncRunProgress.ProgressMilestoneIndex)
 	}
 
 	scheduleLogger.Infof(logTags, "finished")

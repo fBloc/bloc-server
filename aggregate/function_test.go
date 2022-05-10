@@ -42,7 +42,7 @@ var (
 				IsArray:     false,
 			},
 		},
-		ProcessStages:           []string{"parsing ipt", "finished parse ipt & start do the math", "finished"},
+		ProgressMilestones:      []string{"parsing ipt", "finished parse ipt & start do the math", "finished"},
 		ReadUserIDs:             []value_object.UUID{readeUser.ID, allPermissionUser.ID},
 		ExecuteUserIDs:          []value_object.UUID{executeUser.ID, allPermissionUser.ID},
 		AssignPermissionUserIDs: []value_object.UUID{allPermissionUser.ID},

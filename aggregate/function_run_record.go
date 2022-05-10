@@ -41,8 +41,8 @@ type FunctionRunRecord struct {
 	OptKeyMapIsArray          map[string]bool
 	Progress                  float32
 	ProgressMsg               []string
-	ProcessStages             []string
-	ProcessStageIndex         int
+	ProgressMilestones        []string
+	ProgressMilestoneIndex    *int
 	TraceID                   string
 }
 
@@ -60,7 +60,7 @@ func NewFunctionRunRecordFromFlowDriven(
 		FlowFunctionID:       flowFunctionID,
 		FlowRunRecordID:      flowRunRecordIns.ID,
 		Trigger:              time.Now(),
-		ProcessStages:        functionIns.ProcessStages,
+		ProgressMilestones:   functionIns.ProgressMilestones,
 		FunctionProviderName: functionIns.ProviderName,
 		TraceID:              value_object.GetTraceIDFromContext(ctx),
 	}

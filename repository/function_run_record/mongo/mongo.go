@@ -74,8 +74,8 @@ type mongoFunctionRunRecord struct {
 	OptKeyMapIsArray          map[string]bool                 `bson:"optKey_map_isArray,omitempty"`
 	Progress                  float32                         `bson:"progress"`
 	ProgressMsg               []string                        `bson:"progress_msg"`
-	ProcessStages             []string                        `bson:"process_stages"`
-	ProcessStageIndex         int                             `bson:"process_stage_index"`
+	ProgressMilestones        []string                        `bson:"progress_milestones"`
+	ProgressMilestoneIndex    *int                            `bson:"progress_milestone_index"`
 	FunctionProviderName      string                          `bson:"provider_name"`
 	ShouldBeCanceledAt        time.Time                       `bson:"sb_canceled_at"`
 	TraceID                   string                          `bson:"trace_id"`
@@ -103,8 +103,8 @@ func NewFromAggregate(fRR *aggregate.FunctionRunRecord) *mongoFunctionRunRecord 
 		OptKeyMapValueType:        fRR.OptKeyMapValueType,
 		OptKeyMapIsArray:          fRR.OptKeyMapIsArray,
 		Progress:                  fRR.Progress,
-		ProcessStages:             fRR.ProcessStages,
-		ProcessStageIndex:         fRR.ProcessStageIndex,
+		ProgressMilestones:        fRR.ProgressMilestones,
+		ProgressMilestoneIndex:    fRR.ProgressMilestoneIndex,
 		FunctionProviderName:      fRR.FunctionProviderName,
 		ShouldBeCanceledAt:        fRR.ShouldBeCanceledAt,
 		TraceID:                   fRR.TraceID,
@@ -151,8 +151,8 @@ func (m mongoFunctionRunRecord) ToAggregate() *aggregate.FunctionRunRecord {
 		OptKeyMapIsArray:          m.OptKeyMapIsArray,
 		Progress:                  m.Progress,
 		ProgressMsg:               m.ProgressMsg,
-		ProcessStages:             m.ProcessStages,
-		ProcessStageIndex:         m.ProcessStageIndex,
+		ProgressMilestones:        m.ProgressMilestones,
+		ProgressMilestoneIndex:    m.ProgressMilestoneIndex,
 		FunctionProviderName:      m.FunctionProviderName,
 		ShouldBeCanceledAt:        m.ShouldBeCanceledAt,
 		TraceID:                   m.TraceID,
@@ -204,7 +204,7 @@ func (mr *MongoRepository) GetOnlyProgressInfoByID(
 			AddOnlyFields(
 				"id", "end",
 				"progress", "progress_msg",
-				"process_stages", "process_stage_index"),
+				"progress_milestones", "progress_milestone_index"),
 	)
 }
 
@@ -269,10 +269,10 @@ func (mr *MongoRepository) PatchProgressMsg(id value_object.UUID, progressMsg st
 		id, mongodb.NewUpdater().AddPush("progress_msg", progressMsg))
 }
 
-func (mr *MongoRepository) PatchStageIndex(id value_object.UUID, progressStageIndex int) error {
+func (mr *MongoRepository) PatchMilestoneIndex(id value_object.UUID, ProgressMilestoneIndex *int) error {
 	return mr.mongoCollection.PatchByID(
 		id,
-		mongodb.NewUpdater().AddSet("process_stage_index", progressStageIndex))
+		mongodb.NewUpdater().AddSet("progress_milestone_index", ProgressMilestoneIndex))
 }
 
 func (mr *MongoRepository) SetTimeout(
@@ -328,7 +328,7 @@ func (mr *MongoRepository) ClearProgress(id value_object.UUID) error {
 			AddSet("start", time.Time{}).
 			AddSet("progress", 0).
 			AddSet("progress_msg", []string{}).
-			AddSet("process_stage_index", 0),
+			AddSet("progress_milestone_index", nil),
 	)
 }
 

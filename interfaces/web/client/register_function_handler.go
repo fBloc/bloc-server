@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"reflect"
 	"sync"
 	"time"
 
@@ -53,6 +54,17 @@ func RegisterFunctions(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 					f.ID = reportedFunc.ID
 					reportedFunc.LastReportTime = time.Now()
 					toReportAliveFuncIDs <- f.ID
+
+					// check whether some infomation is changed
+					if !reflect.DeepEqual(f.ProgressMilestones, reportedFunc.ProgressMilestones) {
+						reportedFunc.ProgressMilestones = f.ProgressMilestones
+						fService.Logger.Infof(logTags,
+							"update function %s-%s progress milestones from %v to %v",
+							groupName, f.Name, reportedFunc.ProgressMilestones, f.ProgressMilestones)
+						go func(functionID value_object.UUID, progressMilestones []string) {
+							fService.Function.PatchProgressMilestones(functionID, progressMilestones)
+						}(f.ID, f.ProgressMilestones)
+					}
 					continue
 				}
 			}
@@ -77,16 +89,16 @@ func RegisterFunctions(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 
 				if aggFunc.IsZero() { // 没汇报过 + 没查询到记录.表示是第一次汇报。需要持久化存储
 					aggFunction := aggregate.Function{
-						ID:            value_object.NewUUID(),
-						Name:          httpFunc.Name,
-						GroupName:     group,
-						ProviderName:  req.Who,
-						Description:   httpFunc.Description,
-						Ipts:          httpFunc.Ipts,
-						IptDigest:     iptD,
-						Opts:          httpFunc.Opts,
-						OptDigest:     optD,
-						ProcessStages: httpFunc.ProcessStages}
+						ID:                 value_object.NewUUID(),
+						Name:               httpFunc.Name,
+						GroupName:          group,
+						ProviderName:       req.Who,
+						Description:        httpFunc.Description,
+						Ipts:               httpFunc.Ipts,
+						IptDigest:          iptD,
+						Opts:               httpFunc.Opts,
+						OptDigest:          optD,
+						ProgressMilestones: httpFunc.ProgressMilestones}
 					err = fService.Function.Create(&aggFunction)
 					if err != nil {
 						msg := fmt.Sprintf("create function to persistence layer failed: %s", err.Error())
@@ -105,10 +117,20 @@ func RegisterFunctions(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 					if aggFunc.ProviderName == "" || aggFunc.ProviderName != req.Who {
 						err := fService.Function.PatchProviderName(httpFunc.ID, req.Who)
 						if err != nil {
-							fService.Logger.Errorf(
-								logTags,
-								"patch function's provider_name failed. function_id: %s, provider_name: %s",
-								httpFunc.ID.String(), req.Who)
+							fService.Logger.Errorf(logTags,
+								"patch function's provider_name failed: %v. function_id: %s, provider_name: %s",
+								err, httpFunc.ID.String(), req.Who)
+						}
+					}
+					if !reflect.DeepEqual(httpFunc.ProgressMilestones, aggFunc.ProgressMilestones) {
+						fService.Logger.Infof(logTags,
+							"update function %s-%s progress milestones from %v to %v",
+							groupName, httpFunc.Name, aggFunc.ProgressMilestones, httpFunc.ProgressMilestones)
+						err := fService.Function.PatchProgressMilestones(aggFunc.ID, httpFunc.ProgressMilestones)
+						if err != nil {
+							fService.Logger.Errorf(logTags,
+								"patch function's progress_milestone failed: %v. function_id: %s, progress_milestone: %v",
+								err, httpFunc.ID.String(), httpFunc.ProgressMilestones)
 						}
 					}
 				}
@@ -118,8 +140,12 @@ func RegisterFunctions(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 				// 加入到本地汇报缓存
 				reported.Lock()
 				reported.groupNameMapFuncNameMapFunc[group][httpFunc.Name] = &reportFunction{
-					ProviderName: req.Who, GroupName: group, Name: httpFunc.Name,
-					ID: httpFunc.ID, LastReportTime: time.Now()}
+					ProviderName:       req.Who,
+					GroupName:          group,
+					ProgressMilestones: httpFunc.ProgressMilestones,
+					Name:               httpFunc.Name,
+					ID:                 httpFunc.ID,
+					LastReportTime:     time.Now()}
 				reported.idMapFunc[httpFunc.ID] = *aggFunc
 				reported.Unlock()
 				fService.Logger.Infof(

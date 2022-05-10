@@ -52,7 +52,7 @@ type mongoFunction struct {
 	Opts                    []*opt.Opt          `bson:"opts"`
 	IptDigest               string              `bson:"ipt_digest"`
 	OptDigest               string              `bson:"opt_digest"`
-	ProcessStages           []string            `bson:"process_stages"`
+	ProgressMilestones      []string            `bson:"progress_milestones"`
 	ReadUserIDs             []value_object.UUID `bson:"read_user_ids"`
 	ExecuteUserIDs          []value_object.UUID `bson:"execute_user_ids"`
 	AssignPermissionUserIDs []value_object.UUID `bson:"assign_permission_user_ids"`
@@ -71,7 +71,7 @@ func (m *mongoFunction) ToAggregate() *aggregate.Function {
 		Opts:                    m.Opts,
 		IptDigest:               m.IptDigest,
 		OptDigest:               m.OptDigest,
-		ProcessStages:           m.ProcessStages,
+		ProgressMilestones:      m.ProgressMilestones,
 		ReadUserIDs:             m.ReadUserIDs,
 		ExecuteUserIDs:          m.ExecuteUserIDs,
 		AssignPermissionUserIDs: m.AssignPermissionUserIDs,
@@ -91,7 +91,7 @@ func NewFromFunction(f *aggregate.Function) *mongoFunction {
 		Opts:                    f.Opts,
 		IptDigest:               f.IptDigest,
 		OptDigest:               f.OptDigest,
-		ProcessStages:           f.ProcessStages,
+		ProgressMilestones:      f.ProgressMilestones,
 		ReadUserIDs:             f.ReadUserIDs,
 		ExecuteUserIDs:          f.ExecuteUserIDs,
 		AssignPermissionUserIDs: f.AssignPermissionUserIDs,
@@ -213,6 +213,14 @@ func (mr *MongoRepository) GetSameIptOptFunction(
 		return nil, err
 	}
 	return m.ToAggregate(), nil
+}
+
+func (mr *MongoRepository) PatchProgressMilestones(
+	id value_object.UUID,
+	progressMilestones []string,
+) error {
+	updater := mongodb.NewUpdater().AddSet("progress_milestones", progressMilestones)
+	return mr.mongoCollection.PatchByID(id, updater)
 }
 
 func (mr *MongoRepository) PatchName(id value_object.UUID, name string) error {

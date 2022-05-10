@@ -18,11 +18,12 @@ func InjectFunctionService(fS *function.FunctionService) {
 }
 
 type reportFunction struct {
-	ProviderName   string
-	GroupName      string
-	Name           string
-	ID             value_object.UUID
-	LastReportTime time.Time
+	ID                 value_object.UUID
+	Name               string
+	GroupName          string
+	ProviderName       string
+	ProgressMilestones []string
+	LastReportTime     time.Time
 }
 
 type reportedGroupNameMapFuncNameMapFunc struct {
@@ -47,12 +48,12 @@ type GroupNameMapFunctions map[string][]*HttpFunction
 // 	ID: the server will gen the ID and return it when first register.
 // 	ErrorMsg: like when function register failed. will put error msg in this field to return.
 type HttpFunction struct {
-	ID            value_object.UUID `json:"id"`
-	Name          string            `json:"name"`
-	GroupName     string            `json:"group_name"`
-	Description   string            `json:"description"`
-	Ipts          []*ipt.Ipt        `json:"ipts"`
-	Opts          []*opt.Opt        `json:"opts"`
-	ProcessStages []string          `json:"process_stages"`
-	ErrorMsg      string            `json:"error_msg"`
+	ID                 value_object.UUID `json:"id"`
+	Name               string            `json:"name"`
+	GroupName          string            `json:"group_name"`
+	Description        string            `json:"description"`
+	Ipts               []*ipt.Ipt        `json:"ipts"`
+	Opts               []*opt.Opt        `json:"opts"`
+	ProgressMilestones []string          `json:"progress_milestones"`
+	ErrorMsg           string            `json:"error_msg"`
 }
