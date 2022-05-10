@@ -286,9 +286,7 @@ func (mr *MongoRepository) FilterOnline(
 		filter.AddContains("name", nameContains)
 	}
 	filterOption := filter_options.NewFilterOption()
-	for _, i := range withoutFields {
-		filterOption.AddWithoutFields(i)
-	}
+	filterOption.AddWithoutFields(withoutFields...)
 
 	var flows []mongoFlow
 	err := mr.mongoCollection.Filter(filter, filterOption, &flows)
@@ -349,9 +347,7 @@ func (mr *MongoRepository) FilterDraft(
 		filter.AddContains("name", nameContains)
 	}
 	filterOption := filter_options.NewFilterOption()
-	for _, i := range withoutFields {
-		filterOption.AddWithoutFields(i)
-	}
+	filterOption.AddWithoutFields(withoutFields...)
 
 	var flows []mongoFlow
 	err := mr.mongoCollection.Filter(filter, filterOption, &flows)

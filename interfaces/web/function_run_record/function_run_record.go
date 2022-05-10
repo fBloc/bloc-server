@@ -29,6 +29,15 @@ type briefAndKey struct {
 	ObjectStorageKey string `json:"object_storage_key"`
 }
 
+type Progress struct {
+	ID                value_object.UUID `json:"id"`
+	Progress          float32           `json:"progress"`
+	ProgressMsg       []string          `json:"progress_msg"`
+	ProcessStages     []string          `json:"process_stages"`
+	ProcessStageIndex int               `json:"process_stage_index"`
+	IsFinished        bool              `json:"is_finished"`
+}
+
 type FunctionRunRecord struct {
 	ID                          value_object.UUID      `json:"id"`
 	FlowID                      value_object.UUID      `json:"flow_id"`
@@ -42,18 +51,34 @@ type FunctionRunRecord struct {
 	End                         *timestamp.Timestamp   `json:"end"`
 	Suc                         bool                   `json:"suc"`
 	InterceptBelowFunctionRun   bool                   `json:"intercept_below_function_run"`
-	Canceled                    bool                   `json:"canceled,omitempty"`
+	Canceled                    bool                   `json:"canceled"`
 	Description                 string                 `json:"description"`
 	ErrorMsg                    string                 `json:"error_msg"`
 	IptBriefAndObjectStoragekey [][]briefAndKey        `json:"ipt"`
 	OptBriefAndObjectStoragekey map[string]briefAndKey `json:"opt"`
-	Progress                    float32                `json:"progress"`
-	ProgressMsg                 []string               `json:"progress_msg"`
-	ProcessStages               []string               `json:"process_stages"`
-	ProcessStageIndex           int                    `json:"process_stage_index,omitempty"`
 	FunctionProviderName        string                 `json:"function_provider_name"`
 	ShouldBeCanceledAt          *timestamp.Timestamp   `json:"should_be_canceled_at"`
 	TraceID                     string                 `json:"trace_id"`
+	Progress                    float32                `json:"progress"`
+	ProgressMsg                 []string               `json:"progress_msg"`
+	ProcessStages               []string               `json:"process_stages"`
+	ProcessStageIndex           int                    `json:"process_stage_index"`
+}
+
+func fromAggToProgress(
+	aggFRR *aggregate.FunctionRunRecord,
+) *Progress {
+	if aggFRR.IsZero() {
+		return nil
+	}
+	return &Progress{
+		ID:                aggFRR.ID,
+		Progress:          aggFRR.Progress,
+		ProgressMsg:       aggFRR.ProgressMsg,
+		ProcessStages:     aggFRR.ProcessStages,
+		ProcessStageIndex: aggFRR.ProcessStageIndex,
+		IsFinished:        !aggFRR.End.IsZero(),
+	}
 }
 
 func fromAgg(

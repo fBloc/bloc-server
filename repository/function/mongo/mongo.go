@@ -124,9 +124,8 @@ func (mr *MongoRepository) Create(
 func (mr *MongoRepository) All(withoutFields []string) ([]*aggregate.Function, error) {
 	var m []mongoFunction
 	filterOption := filter_options.NewFilterOption().SetSortByNaturalAsc()
-	for _, i := range withoutFields {
-		filterOption.AddWithoutFields(i)
-	}
+	filterOption.AddWithoutFields(withoutFields...)
+
 	err := mr.mongoCollection.Filter(nil, filterOption, &m)
 	if err != nil {
 		return nil, err
@@ -147,9 +146,8 @@ func (mr *MongoRepository) UserReadAbleAll(
 	var m []mongoFunction
 
 	filterOption := filter_options.NewFilterOption().SetSortByNaturalAsc()
-	for _, i := range withoutFields {
-		filterOption.AddWithoutFields(i)
-	}
+	filterOption.AddWithoutFields(withoutFields...)
+
 	err := mr.mongoCollection.Filter(
 		mongodb.NewFilter().AddEqual("read_user_ids", user.ID),
 		filterOption, &m)

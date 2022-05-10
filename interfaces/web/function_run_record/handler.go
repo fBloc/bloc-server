@@ -9,9 +9,39 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
+func GetProgressByID(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	logTags := web.GetTraceAboutFields(r.Context())
+	logTags["business"] = "get function_run_record progress"
+
+	id := ps.ByName("id")
+	if id == "" {
+		fRRService.Logger.Warningf(logTags, "miss id in url path")
+		web.WriteBadRequestDataResp(&w, r, "id cannot be null")
+		return
+	}
+	logTags["id"] = id
+
+	uuID, err := value_object.ParseToUUID(id)
+	if err != nil {
+		fRRService.Logger.Warningf(logTags, "get by id failed: %v", err)
+		web.WriteBadRequestDataResp(&w, r, "parse id to uuid failed")
+		return
+	}
+
+	aggFRR, err := fRRService.FunctionRunRecords.GetOnlyProgressInfoByID(uuID)
+	if err != nil {
+		fRRService.Logger.Errorf(logTags, "get by id failed: %v", err)
+		web.WriteInternalServerErrorResp(&w, r, err, "visit repository failed")
+		return
+	}
+
+	fRRService.Logger.Infof(logTags, "finished")
+	web.WriteSucResp(&w, r, fromAggToProgress(aggFRR))
+}
+
 func Get(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	logTags := web.GetTraceAboutFields(r.Context())
-	logTags["business"] = "filter function_run_record"
+	logTags["business"] = "get function_run_record"
 
 	id := ps.ByName("id")
 	if id == "" {
@@ -41,7 +71,7 @@ func Get(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 func Filter(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	logTags := web.GetTraceAboutFields(r.Context())
-	logTags["business"] = "filter function run record"
+	logTags["business"] = "filter function_run_record"
 
 	filter, filterOption, err := BuildFromWebRequestParams(r.URL.Query())
 	if err != nil {

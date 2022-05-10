@@ -15,6 +15,7 @@ type FunctionRunRecordRepository interface {
 	Create(*aggregate.FunctionRunRecord) error
 
 	// Read
+	GetOnlyProgressInfoByID(id value_object.UUID) (*aggregate.FunctionRunRecord, error)
 	GetByID(id value_object.UUID) (*aggregate.FunctionRunRecord, error)
 	Filter(
 		filter value_object.RepositoryFilter,

@@ -123,6 +123,16 @@ func (c *Collection) Get(
 				findOptions.SetSort(bson.M{"$natural": -1})
 			}
 		}
+		if len(filterOptions.OnlyFields) > 0 || len(filterOptions.WithoutFields) > 0 {
+			projection := bson.M{}
+			for _, i := range filterOptions.OnlyFields {
+				projection[i] = 1
+			}
+			for _, i := range filterOptions.WithoutFields {
+				projection[i] = 0
+			}
+			findOptions.SetProjection(projection)
+		}
 	} else {
 		findOptions.SetSort(bson.M{"$natural": -1})
 	}
@@ -239,9 +249,9 @@ func (c *Collection) Filter(
 		if filterOptions.OffSet > 0 {
 			findOptions.SetSkip(filterOptions.OffSet)
 		}
-		if len(filterOptions.WithoutFields) > 0 {
+		if len(filterOptions.OnlyFields) > 0 || len(filterOptions.WithoutFields) > 0 {
 			projection := bson.M{}
-			for _, i := range filterOptions.WithoutFields {
+			for _, i := range filterOptions.OnlyFields {
 				projection[i] = 1
 			}
 			for _, i := range filterOptions.WithoutFields {

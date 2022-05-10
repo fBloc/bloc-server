@@ -180,19 +180,38 @@ func (mr *MongoRepository) Create(fRR *aggregate.FunctionRunRecord) error {
 }
 
 // Read
-func (mr *MongoRepository) get(filter *mongodb.MongoFilter) (*aggregate.FunctionRunRecord, error) {
+func (mr *MongoRepository) get(
+	filter *mongodb.MongoFilter,
+	filterOptions *filter_options.FilterOption,
+) (
+	*aggregate.FunctionRunRecord,
+	error,
+) {
 	var mFRR mongoFunctionRunRecord
-	err := mr.mongoCollection.Get(filter, nil, &mFRR)
+	err := mr.mongoCollection.Get(filter, filterOptions, &mFRR)
 	if err != nil {
 		return nil, err
 	}
 	return mFRR.ToAggregate(), err
 }
 
+func (mr *MongoRepository) GetOnlyProgressInfoByID(
+	id value_object.UUID,
+) (*aggregate.FunctionRunRecord, error) {
+	return mr.get(
+		mongodb.NewFilter().AddEqual("id", id),
+		filter_options.NewFilterOption().
+			AddOnlyFields(
+				"id", "end",
+				"progress", "progress_msg",
+				"process_stages", "process_stage_index"),
+	)
+}
+
 func (mr *MongoRepository) GetByID(
 	id value_object.UUID,
 ) (*aggregate.FunctionRunRecord, error) {
-	return mr.get(mongodb.NewFilter().AddEqual("id", id))
+	return mr.get(mongodb.NewFilter().AddEqual("id", id), nil)
 }
 
 func (mr *MongoRepository) Count(

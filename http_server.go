@@ -128,6 +128,7 @@ func (blocApp *BlocApp) RunHttpServer() {
 		basicPath := "/api/v1/function_run_record"
 		router.GET(basicPath, middleware.WithTrace(middleware.LoginAuth(function_run_record.Filter)))
 		router.GET(basicPath+"/get_by_id/:id", middleware.WithTrace(middleware.LoginAuth(function_run_record.Get)))
+		router.GET(basicPath+"/get_progress_by_id/:id", middleware.WithTrace(middleware.LoginAuth(function_run_record.GetProgressByID)))
 		router.GET(basicPath+"/pull_log_by_id/:function_run_record_id", middleware.WithTrace(function_run_record.PullLog))
 	}
 

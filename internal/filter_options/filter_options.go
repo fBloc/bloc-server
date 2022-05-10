@@ -7,6 +7,7 @@ type FilterOption struct {
 	OffSet         int64
 	SortAscFields  []string
 	SortDescFields []string
+	OnlyFields     []string
 	WithoutFields  []string
 	NaturalAsc     *bool
 	NaturalDesc    *bool
@@ -48,7 +49,12 @@ func (fo *FilterOption) SetSortByNaturalDesc() *FilterOption {
 	return fo
 }
 
-func (fo *FilterOption) AddWithoutFields(field string) *FilterOption {
-	fo.WithoutFields = append(fo.WithoutFields, field)
+func (fo *FilterOption) AddWithoutFields(fields ...string) *FilterOption {
+	fo.WithoutFields = append(fo.WithoutFields, fields...)
+	return fo
+}
+
+func (fo *FilterOption) AddOnlyFields(fields ...string) *FilterOption {
+	fo.OnlyFields = append(fo.OnlyFields, fields...)
 	return fo
 }
