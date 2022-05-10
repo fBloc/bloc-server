@@ -34,6 +34,16 @@ type FlowFunction struct {
 	allUpstreamIDsMap         map[string]struct{}
 }
 
+func (flowFunc *FlowFunction) Name() string {
+	if flowFunc.Note != "" {
+		return flowFunc.Note
+	}
+	if flowFunc.Function == nil {
+		return ""
+	}
+	return flowFunc.Function.Name
+}
+
 // AllUpstreamFlowFunctionIDsMap including father、grandfather、...'s flow_function_ids
 func (flowFunc *FlowFunction) AllUpstreamFlowFunctionIDsMap(flowFuncIDMapFlowFunction map[string]*FlowFunction) map[string]struct{} {
 	if flowFunc.allUpstreamIDsMap != nil {
@@ -69,7 +79,7 @@ func (flowFunc *FlowFunction) CheckWhetherParamValidIsValid(
 	if flowFunc.Function.IsZero() {
 		return false, fmt.Errorf(
 			"not set function to flow_function: %s, cannot check whether param is valid",
-			flowFunc.Note)
+			flowFunc.Name())
 	}
 
 	// 重要，这里的参数检测仅仅采用半检测 - 即只检测用户输入的参数类型是有效的。不考虑整体的有效性
@@ -106,7 +116,7 @@ func (flowFunc *FlowFunction) CheckValid(
 			return false, fmt.Errorf(
 				`「%s」节点填写的上游节点flow_function_id(%s)无效
 				-没有找到对应的flow_function_id`,
-				flowFunc.Note, funcID)
+				flowFunc.Name(), funcID)
 		}
 	}
 
@@ -116,7 +126,7 @@ func (flowFunc *FlowFunction) CheckValid(
 			return false, fmt.Errorf(
 				`「%s」节点填写的下游节点flow_function_id(%s)无效
 				-没有找到对应的flow_function_id`,
-				flowFunc.Note, funcID)
+				flowFunc.Name(), funcID)
 		}
 	}
 
@@ -136,7 +146,7 @@ func (flowFunc *FlowFunction) CheckValid(
 	if len(flowFunc.UpstreamFlowFunctionIDs) <= 0 {
 		return false, fmt.Errorf(
 			"「%s」节点没有上游节点 - 不允许",
-			flowFunc.Note)
+			flowFunc.Name())
 	}
 
 	// 检测输入参数的类型是否正确
@@ -152,7 +162,7 @@ func (flowFunc *FlowFunction) CheckValid(
 			if componentParamConfig.Blank && flowFunc.Function.Ipts[iptIndex].Must {
 				return false, fmt.Errorf(
 					"「%s」节点第%d个ipt下的第%d个component要求必填，但是没填",
-					flowFunc.Note,
+					flowFunc.Name(),
 					iptIndex, componentIndex)
 			}
 
@@ -162,7 +172,7 @@ func (flowFunc *FlowFunction) CheckValid(
 					return false, fmt.Errorf(
 						`「%s」节点第%d个ipt下的第%d个component输入的上游flow_function节点id(%s)无效
 						-没有此flow_function_id的上游节点`,
-						flowFunc.Note,
+						flowFunc.Name(),
 						iptIndex, componentIndex, componentParamConfig.FlowFunctionID,
 					)
 				}
@@ -174,7 +184,7 @@ func (flowFunc *FlowFunction) CheckValid(
 					return false, fmt.Errorf(
 						`「%s」节点第%d个ipt下的第%d个component输入的上游flow_function节点id(%s)无效
 						-此flow_function_id对应的节点不是直接上游节点、不能作为输入`,
-						flowFunc.Note,
+						flowFunc.Name(),
 						iptIndex, componentIndex, componentParamConfig.FlowFunctionID,
 					)
 				}
@@ -189,7 +199,7 @@ func (flowFunc *FlowFunction) CheckValid(
 						return false, fmt.Errorf(
 							`「%s」节点第%d个ipt下的第%d个component输入的上游flow_function节点id(%s)无效
 							-此flow_function_id对应的节点不是直接上游节点、不能作为输入`,
-							flowFunc.Note,
+							flowFunc.Name(),
 							iptIndex, componentIndex, componentParamConfig.FlowFunctionID)
 					}
 				}
