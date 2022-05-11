@@ -375,17 +375,21 @@ func PubDraft(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		web.WriteBadRequestDataResp(&w, r, msg)
 		return
 	}
-	// 检查FlowFunctionIDMapFlowFunction下面配置的每个function_id是否正确
-	// 同时也将查到的function赋予到对应的值，方便后续的连接类型有效性检查
-	for flowFuncID, flowFunc := range draftFlowIns.FlowFunctionIDMapFlowFunction {
+
+	// 需要检查的节点只需要是在运行节点内的. 支持拖入节点但是不连入运行流程（比如临时下线某些node等场景）
+	neededToCheckFlowIDs := draftFlowIns.LinedFlowIDs()
+
+	// 将查到的function赋予到对应的值，方便后续的连接类型有效性检查
+	for _, flowFuncID := range neededToCheckFlowIDs {
 		if flowFuncID == config.FlowFunctionStartID {
 			continue
 		}
+		flowFunc := draftFlowIns.FlowFunctionIDMapFlowFunction[flowFuncID]
 		function, ok := funcIDMapFunction[flowFunc.FunctionID]
 		if !ok {
 			msg := fmt.Sprintf(
 				"function:%s's function_id: %s cannot find corresponding function",
-				flowFunc.Note, flowFunc.FunctionID)
+				flowFunc.Name(), flowFunc.FunctionID)
 			fService.Logger.Errorf(logTags, msg)
 			web.WriteBadRequestDataResp(&w, r, msg)
 			return
@@ -394,13 +398,14 @@ func PubDraft(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	}
 
 	// 具体开始检查每个节点的各项配置是否正确/有效
-	for flowFuncID, flowFunc := range draftFlowIns.FlowFunctionIDMapFlowFunction {
+	for _, flowFuncID := range neededToCheckFlowIDs {
+		flowFunc := draftFlowIns.FlowFunctionIDMapFlowFunction[flowFuncID]
 		valid, err := flowFunc.CheckValid(
 			flowFuncID,
 			draftFlowIns.FlowFunctionIDMapFlowFunction,
 		)
 		if !valid {
-			msg := fmt.Sprintf("function:「%s」failed valid check: %v", flowFunc.Note, err)
+			msg := fmt.Sprintf("function:「%s」failed valid check: %v", flowFunc.Name(), err)
 			fService.Logger.Errorf(logTags, msg)
 			web.WriteBadRequestDataResp(&w, r, msg)
 			return

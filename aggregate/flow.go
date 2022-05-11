@@ -256,6 +256,34 @@ func (flow *Flow) IsZero() bool {
 	return flow.ID.IsNil()
 }
 
+func (flow *Flow) LinedFlowIDs() []string {
+	if flow == nil {
+		return []string{}
+	}
+	if len(flow.FlowFunctionIDMapFlowFunction[config.FlowFunctionStartID].DownstreamFlowFunctionIDs) == 0 {
+		return []string{}
+	}
+
+	ids := make([]string, 0, len(flow.FlowFunctionIDMapFlowFunction)-1)
+	var getNodeDownstreamFlowFunctionIDs func(flowFuncID string, flowFuncIDSlice *[]string)
+	getNodeDownstreamFlowFunctionIDs = func(
+		flowFuncID string, flowFuncIDSlice *[]string,
+	) {
+		flowFunc, ok := flow.FlowFunctionIDMapFlowFunction[flowFuncID]
+		if !ok {
+			return
+		}
+		if flowFuncID != config.FlowFunctionStartID {
+			(*flowFuncIDSlice) = append((*flowFuncIDSlice), flowFuncID)
+		}
+		for _, downstreamFlowFuncID := range flowFunc.DownstreamFlowFunctionIDs {
+			getNodeDownstreamFlowFunctionIDs(downstreamFlowFuncID, flowFuncIDSlice)
+		}
+	}
+	getNodeDownstreamFlowFunctionIDs(config.FlowFunctionStartID, &ids)
+	return ids
+}
+
 func (flow *Flow) HaveRetryStrategy() bool {
 	if flow.IsZero() {
 		return false
