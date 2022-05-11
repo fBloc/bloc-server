@@ -12,6 +12,7 @@ import (
 	"github.com/fBloc/bloc-server/interfaces/web"
 	"github.com/fBloc/bloc-server/interfaces/web/user"
 	"github.com/fBloc/bloc-server/internal/http_util"
+	"github.com/fBloc/bloc-server/internal/timestamp"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -49,6 +50,50 @@ func TestUserFilterByName(t *testing.T) {
 			map[string]string{"name__contains": name}, &resp)
 		So(err, ShouldBeNil)
 		So(len(resp.Data), ShouldEqual, 0)
+	})
+}
+
+func TestUserInfo(t *testing.T) {
+	Convey("get logginned user info", t, func() {
+		resp := struct {
+			web.RespMsg
+			User *struct {
+				Name       string               `json:"name"`
+				CreateTime *timestamp.Timestamp `json:"create_time"`
+				IsSuper    bool                 `json:"super"`
+				IsAdmin    bool                 `json:"is_admin"`
+			} `json:"data"`
+		}{}
+
+		Convey("not exist user should require token", func() {
+			_, err := http_util.Get(
+				notExistUserHeader(),
+				fmt.Sprintf("%s%s", serverAddress, "/api/v1/user/info"),
+				nil, &resp)
+			So(err, ShouldBeNil)
+			So(resp.User, ShouldBeNil)
+			So(resp.Code, ShouldEqual, http.StatusUnauthorized)
+		})
+
+		Convey("admin user hit", func() {
+			_, err := http_util.Get(
+				superuserHeader(),
+				fmt.Sprintf("%s%s", serverAddress, "/api/v1/user/info"),
+				nil, &resp)
+			So(err, ShouldBeNil)
+			So(resp.Code, ShouldEqual, http.StatusOK)
+			So(resp.User.IsAdmin, ShouldBeTrue)
+		})
+
+		Convey("nobody user hit", func() {
+			_, err := http_util.Get(
+				nobodyHeader(),
+				fmt.Sprintf("%s%s", serverAddress, "/api/v1/user/info"),
+				nil, &resp)
+			So(err, ShouldBeNil)
+			So(resp.Code, ShouldEqual, http.StatusOK)
+			So(resp.User.IsAdmin, ShouldBeFalse)
+		})
 	})
 }
 

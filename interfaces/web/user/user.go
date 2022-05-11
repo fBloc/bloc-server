@@ -12,9 +12,14 @@ import (
 )
 
 var uService *user.UserService
+var adminName string
 
 func InjectUserService(uS *user.UserService) {
 	uService = uS
+}
+
+func SetAdminName(name string) {
+	adminName = name
 }
 
 func InitialUserExistOrCreate(
@@ -76,4 +81,23 @@ func FilterRespFromAggs(w *http.ResponseWriter, r *http.Request, aggUs []aggrega
 		us[i] = tmp
 	}
 	web.WriteSucResp(w, r, us)
+}
+
+type userInfo struct {
+	Name       string               `json:"name"`
+	CreateTime *timestamp.Timestamp `json:"create_time"`
+	IsSuper    bool                 `json:"super"`
+	IsAdmin    bool                 `json:"is_admin"`
+}
+
+func FromAggToInfo(aggU *aggregate.User) *userInfo {
+	if aggU.IsZero() {
+		return nil
+	}
+	return &userInfo{
+		Name:       aggU.Name,
+		CreateTime: timestamp.NewTimeStampFromTime(aggU.CreateTime),
+		IsSuper:    aggU.IsSuper,
+		IsAdmin:    aggU.Name == adminName,
+	}
 }

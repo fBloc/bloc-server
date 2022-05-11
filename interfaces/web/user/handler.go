@@ -42,6 +42,22 @@ func LoginHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	LoginRespFromAgg(&w, r, sameNameUser)
 }
 
+// Info Loginned user to get its info
+func Info(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	logTags := web.GetTraceAboutFields(r.Context())
+	logTags["business"] = "get loginned user info"
+
+	reqUser, suc := web.GetReqUserFromContext(r.Context())
+	if !suc {
+		uService.Logger.Errorf(logTags, "failed to get user from context which should be setted by middleware!")
+		web.WriteInternalServerErrorResp(&w, r, nil, "get requser from context failed")
+		return
+	}
+
+	uService.Logger.Infof(logTags, "finished")
+	web.WriteSucResp(&w, r, FromAggToInfo(reqUser))
+}
+
 // FilterByName
 func FilterByName(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	logTags := web.GetTraceAboutFields(r.Context())

@@ -41,6 +41,10 @@ func getUserFromService(token string) (*aggregate.User, error) {
 // LoginAuth 检测需要登录
 func LoginAuth(h httprouter.Handle) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		if r.Header.Get("token") == "" {
+			web.WriteNeedLogin(&w, r)
+			return
+		}
 		user, err := getUserFromService(r.Header.Get("token"))
 		if err != nil {
 			web.WriteInternalServerErrorResp(&w, r, err, "")

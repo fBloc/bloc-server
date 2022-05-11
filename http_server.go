@@ -59,6 +59,7 @@ func (blocApp *BlocApp) RunHttpServer() {
 			panic(err)
 		}
 		user.InjectUserService(userService)
+		user.SetAdminName(blocApp.configBuilder.DefaultUserConf.Name)
 
 		// 确保默认用户存在（否则没法登录前端、查看功能）
 		initialUserName, initialUserPasswd := blocApp.InitialUserInfo()
@@ -72,6 +73,7 @@ func (blocApp *BlocApp) RunHttpServer() {
 
 		basicPath := "/api/v1/user"
 		router.GET(basicPath, middleware.WithTrace(middleware.LoginAuth(user.FilterByName)))
+		router.GET(basicPath+"/info", middleware.WithTrace(middleware.LoginAuth(user.Info)))
 		router.POST(basicPath, middleware.WithTrace(middleware.SuperuserAuth(user.AddUser)))
 		router.DELETE(basicPath+"/delete_by_id/:id", middleware.WithTrace(middleware.SuperuserAuth(user.DeleteUser)))
 	}
