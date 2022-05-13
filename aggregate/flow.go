@@ -256,7 +256,7 @@ func (flow *Flow) IsZero() bool {
 	return flow.ID.IsNil()
 }
 
-func (flow *Flow) LinedFlowIDs() []string {
+func (flow *Flow) LinedFlowFunctionIDs() []string {
 	if flow == nil {
 		return []string{}
 	}

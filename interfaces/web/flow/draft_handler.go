@@ -377,7 +377,7 @@ func PubDraft(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	}
 
 	// 需要检查的节点只需要是在运行节点内的. 支持拖入节点但是不连入运行流程（比如临时下线某些node等场景）
-	neededToCheckFlowIDs := draftFlowIns.LinedFlowIDs()
+	neededToCheckFlowIDs := draftFlowIns.LinedFlowFunctionIDs()
 
 	// 将查到的function赋予到对应的值，方便后续的连接类型有效性检查
 	for _, flowFuncID := range neededToCheckFlowIDs {

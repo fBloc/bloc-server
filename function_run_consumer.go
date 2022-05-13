@@ -62,6 +62,10 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 			logger.Warningf(logTags, "should not pub already finished function!")
 			continue
 		}
+		if !functionRecordIns.Start.IsZero() {
+			logger.Warningf(logTags, "should not pub already started function!")
+			continue
+		}
 
 		flowIns, err := flowRepo.GetByID(functionRecordIns.FlowID)
 		logTags["flow_id"] = functionRecordIns.FlowID.String()

@@ -244,8 +244,9 @@ func FunctionRunFinished(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 						因为 FlowFunctionIDMapFlowFunction 有此flow每个function运行历史的对应记录
 						从而检查是不是都有效完成了
 				*/
-				toCheckFlowFunctionIDMapDone := make(map[string]bool, len(flowIns.FlowFunctionIDMapFlowFunction))
-				for flowFunctionID := range flowIns.FlowFunctionIDMapFlowFunction {
+				linedFlowFunctionIDs := flowIns.LinedFlowFunctionIDs()
+				toCheckFlowFunctionIDMapDone := make(map[string]bool, len(linedFlowFunctionIDs))
+				for _, flowFunctionID := range linedFlowFunctionIDs {
 					toCheckFlowFunctionIDMapDone[flowFunctionID] = false
 				}
 				delete(toCheckFlowFunctionIDMapDone, config.FlowFunctionStartID)

@@ -86,13 +86,16 @@ func (blocApp *BlocApp) FlowTaskStartConsumer() {
 
 		// 检测其下的functions的心跳是否存在过期的，如果存在就直接不要发布保存失败就是了
 		var checkAllFuncAliveMutex sync.WaitGroup
-		checkAllFuncAliveMutex.Add(len(flowIns.FlowFunctionIDMapFlowFunction) - 1)
+
+		linedFlowFunctionIDs := flowIns.LinedFlowFunctionIDs()
+		checkAllFuncAliveMutex.Add(len(linedFlowFunctionIDs))
 		notAliveFuncs := make([]*aggregate.Function, 0, 2)
 		var notAliveFuncMutex sync.Mutex
-		for flowFunctionID, flowFunc := range flowIns.FlowFunctionIDMapFlowFunction {
+		for _, flowFunctionID := range linedFlowFunctionIDs {
 			if flowFunctionID == config.FlowFunctionStartID {
 				continue
 			}
+			flowFunc := flowIns.FlowFunctionIDMapFlowFunction[flowFunctionID]
 			go func(
 				functionID value_object.UUID,
 				wg *sync.WaitGroup,
