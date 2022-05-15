@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fBloc/bloc-server/internal/timestamp"
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	"github.com/influxdata/influxdb-client-go/v2/api"
 	"github.com/influxdata/influxdb-client-go/v2/domain"
@@ -121,7 +122,7 @@ func (bC *BucketClient) Query(
 			continue
 		}
 		tmp := map[string]interface{}{
-			"time": hT,
+			"time": timestamp.NewTimeStampFromTime(hT),
 			"data": result.Record().Value(),
 		}
 		happenTimes = append(happenTimes, hT)
