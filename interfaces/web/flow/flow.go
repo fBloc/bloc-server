@@ -365,10 +365,12 @@ func fromAggWithCertainRunFunctionView(
 			len(linedFlowFunctionIDs),
 		)
 	}
-	for _, i := range linedFlowFunctionIDs {
-		// each function's default run state is waiting schedule
-		retFlow.LatestRunFlowFunctionIDMapFunctionRunInfo[i] = FunctionRunInfo{
-			Status: value_object.ToSchedule,
+	if !theFlowRunRecord.Finished() {
+		for _, i := range linedFlowFunctionIDs {
+			// running flow's each function's default run state is to schedule
+			retFlow.LatestRunFlowFunctionIDMapFunctionRunInfo[i] = FunctionRunInfo{
+				Status: value_object.ToSchedule,
+			}
 		}
 	}
 
