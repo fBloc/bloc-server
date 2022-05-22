@@ -508,7 +508,7 @@ func (bA *BlocApp) GetFunctionByRepoID(functionRepoID value_object.UUID) *aggreg
 }
 
 func (bA *BlocApp) Run() {
-	go bA.RunConsumer()
+	go bA.RunScheduler()
 	go bA.RunHttpServer()
 
 	forever := make(chan struct{})

@@ -1,6 +1,6 @@
 package bloc
 
-func (blocApp *BlocApp) RunConsumer() {
+func (blocApp *BlocApp) RunScheduler() {
 	// 监听发布flow运行任务消息的consumer
 	go blocApp.FlowTaskStartConsumer()
 
