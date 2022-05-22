@@ -50,7 +50,7 @@ func (dUC *DefaultUserConfig) IsNil() bool {
 	if dUC == nil {
 		return true
 	}
-	return dUC.Name != "" && dUC.Password != ""
+	return dUC.Name == "" && dUC.Password == ""
 }
 
 type HttpServerConfig struct {
@@ -84,8 +84,16 @@ type ConfigBuilder struct {
 }
 
 func (confbder *ConfigBuilder) SetDefaultUser(name, password string) *ConfigBuilder {
-	confbder.DefaultUserConf.Name = name
-	confbder.DefaultUserConf.Password = password
+	if name == "" && password == "" {
+		return confbder
+	}
+	if name == "" || password == "" {
+		panic("name & password must both exist")
+	}
+	confbder.DefaultUserConf = &DefaultUserConfig{
+		Name:     name,
+		Password: password,
+	}
 	return confbder
 }
 
@@ -508,9 +516,6 @@ func (bA *BlocApp) GetFunctionByRepoID(functionRepoID value_object.UUID) *aggreg
 }
 
 func (bA *BlocApp) Run() {
-	go bA.RunScheduler()
-	go bA.RunHttpServer()
-
-	forever := make(chan struct{})
-	<-forever
+	bA.RunScheduler()
+	bA.RunHttpServer()
 }

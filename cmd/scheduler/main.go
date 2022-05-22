@@ -34,6 +34,8 @@ type Options struct {
 	InfluxdbConnect string `long:"influxdb_connection_str" description:"connection influxdb string in format:'$user:$password@$host:$port?token=$token&organization=$organization'" required:"true"`
 	ServerHost      string `long:"server_host" description:"server listern ip" required:"false"`
 	ServerPort      int    `long:"server_port" description:"server listern port" required:"false"`
+	UserName        string `long:"user_name" description:"admin user name" required:"false"`
+	UserPassword    string `long:"user_password" description:"admin user password" required:"false"`
 }
 
 func main() {
@@ -61,6 +63,7 @@ func main() {
 	}
 
 	blocApp.GetConfigBuilder().
+		SetDefaultUser(opts.UserName, opts.UserPassword).
 		SetRabbitConfig(
 			rabbitUser, rabbitPasswd, strings.Split(rabbitHost, ","), rabbitQuery.Get("vhost")).
 		SetMongoConfig(
@@ -76,4 +79,6 @@ func main() {
 		BuildUp()
 
 	blocApp.RunScheduler()
+	forever := make(chan struct{})
+	<-forever
 }
