@@ -239,58 +239,63 @@ func FunctionRunFinished(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 					}
 				}
 			} else { // 此函数节点没有下游了。进行检查flow是否全部运行成功从而完成了，
-				/*
-					检测要点：
-						因为 FlowFunctionIDMapFlowFunction 有此flow每个function运行历史的对应记录
-						从而检查是不是都有效完成了
-				*/
-				linedFlowFunctionIDs := flowIns.LinedFlowFunctionIDs()
-				toCheckFlowFunctionIDMapDone := make(map[string]bool, len(linedFlowFunctionIDs))
-				for _, flowFunctionID := range linedFlowFunctionIDs {
-					toCheckFlowFunctionIDMapDone[flowFunctionID] = false
-				}
-				delete(toCheckFlowFunctionIDMapDone, config.FlowFunctionStartID)
-
-				flowFinished := true
-				for toCheckFlowFunctionID := range toCheckFlowFunctionIDMapDone {
-					funcRunRecordID, ok := flowRunRecordIns.FlowFuncIDMapFuncRunRecordID[toCheckFlowFunctionID]
-					if !ok { // 表示此flow_function还没有运行记录
-						flowFinished = false
-						break
-					}
-					functionRunRecordIns, err := fRRService.FunctionRunRecords.GetByID(funcRunRecordID)
-					if err != nil {
-						scheduleLogger.Errorf(logTags,
-							"get function_run_record by function_run_record_id(%s) failed: %s",
-							funcRunRecordID.String(), err.Error())
-						// 先保守处理为未完成运行
-						flowFinished = false
-						break
-					}
-					if !functionRunRecordIns.Finished() {
-						flowFinished = false
-						break
-					}
-				}
-				// 已检测到全部完成
-				if flowFinished {
-					err = flowRunRecordService.FlowRunRecord.Suc(flowRunRecordIns.ID)
-					if err != nil {
-						scheduleLogger.Errorf(logTags, "save flow_run_record suc failed: %v", err)
-					}
-				}
+				goto CheckWhetherFlowRunFinished
 			}
 		} else { // 运行拦截，此function节点以下的节点不用再运行了，此步骤拦截
-			err = flowRunRecordService.FlowRunRecord.Intercepted(
-				flowRunRecordIns.ID,
-				fmt.Sprintf(
-					"intercepted by function: %s-%s",
-					functionIns.GroupName, functionIns.Name))
-			if err != nil {
-				scheduleLogger.Errorf(logTags,
-					"save flow_run_record from intercepted failed: %v", err)
+			goto CheckWhetherFlowRunFinished
+		}
+	CheckWhetherFlowRunFinished:
+		/*
+			检测要点：
+				因为 FlowFunctionIDMapFlowFunction 有此flow每个function运行历史的对应记录
+				从而检查是不是都有效完成了
+		*/
+
+		var checkFlowRunWhetherFinished func(flowRunRecordID string, finished *bool, flag string)
+		checkFlowRunWhetherFinished = func(flowFunctionID string, finished *bool, flag string) {
+			if !*finished {
+				return
+			}
+			interceptBelow := false
+			if flowFunctionID != config.FlowFunctionStartID {
+				funcRunRecordID, ok := flowRunRecordIns.FlowFuncIDMapFuncRunRecordID[flowFunctionID]
+				if !ok { // 表示此flow_function还没有运行记录
+					*finished = false
+					return
+				}
+				functionRunRecordIns, err := fRRService.FunctionRunRecords.GetByID(funcRunRecordID)
+				if err != nil {
+					scheduleLogger.Errorf(logTags,
+						"get function_run_record by function_run_record_id(%s) failed: %s",
+						funcRunRecordID.String(), err.Error())
+					// 先保守处理为未完成运行
+					*finished = false
+					return
+				}
+				if functionRunRecordIns.InterceptBelowFunctionRun {
+					interceptBelow = true
+				}
+				if !functionRunRecordIns.Finished() {
+					*finished = false
+					return
+				}
+			}
+			if !interceptBelow {
+				flowFunc := flowIns.FlowFunctionIDMapFlowFunction[flowFunctionID]
+				for _, downstreamFlowFuncID := range flowFunc.DownstreamFlowFunctionIDs {
+					checkFlowRunWhetherFinished(downstreamFlowFuncID, finished, flag)
+				}
 			}
 		}
+		finished := true
+		checkFlowRunWhetherFinished(config.FlowFunctionStartID, &finished, functionIns.Name)
+		if finished {
+			err = flowRunRecordService.FlowRunRecord.Suc(flowRunRecordIns.ID)
+			if err != nil {
+				scheduleLogger.Errorf(logTags, "save flow_run_record suc failed: %v", err)
+			}
+		}
+		goto Final
 	} else { // function节点运行失败, 处理有重试的情况
 		// 无重试策略
 		if !flowIns.HaveRetryStrategy() || flowRunRecordIns.RetriedAmount >= flowIns.RetryAmount {
