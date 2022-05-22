@@ -139,20 +139,10 @@ func (blocApp *BlocApp) FunctionRunConsumer() {
 		}
 		if upstreamFunctionIntercepted {
 			// 上游有节点明确表示拦截了，不能继续往下执行。
-			var err error
-
-			err = flowRunRecordRepo.Intercepted(flowRunRecordIns.ID, "TODO")
+			err := flowRunRecordRepo.Intercepted(flowRunRecordIns.ID, "TODO")
 			if err != nil {
 				logger.Errorf(logTags, "save flow run finished : %v", err)
 			}
-
-			err = event.PubEvent(&event.FlowRunFinished{
-				FlowRunRecordID: flowRunRecordIns.ID,
-			})
-			if err != nil {
-				logger.Errorf(logTags, "pub flow run finished event failed: %v", err)
-			}
-			continue
 		}
 
 		functionIns := blocApp.GetFunctionByRepoID(functionRecordIns.FunctionID)

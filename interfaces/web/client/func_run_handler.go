@@ -278,16 +278,6 @@ func FunctionRunFinished(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 					if err != nil {
 						scheduleLogger.Errorf(logTags, "save flow_run_record suc failed: %v", err)
 					}
-
-					err = event.PubEvent(&event.FlowRunFinished{
-						FlowRunRecordID: flowRunRecordIns.ID,
-					})
-					if err != nil {
-						scheduleLogger.Errorf(logTags, "pub flow_run_finished event from suc failed: %v", err)
-					} else {
-						scheduleLogger.Infof(logTags,
-							"pub finished flow_run_record event from all finished")
-					}
 				}
 			}
 		} else { // 运行拦截，此function节点以下的节点不用再运行了，此步骤拦截
@@ -299,17 +289,6 @@ func FunctionRunFinished(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 			if err != nil {
 				scheduleLogger.Errorf(logTags,
 					"save flow_run_record from intercepted failed: %v", err)
-			}
-
-			err = event.PubEvent(&event.FlowRunFinished{
-				FlowRunRecordID: flowRunRecordIns.ID,
-			})
-			if err != nil {
-				scheduleLogger.Errorf(logTags,
-					"pub flow_run_finished event from intercepted failed: %v", err)
-			} else {
-				scheduleLogger.Infof(logTags,
-					"pub finished flow_run_record__id from intercepted: %s", flowRunRecordIns.ID)
 			}
 		}
 	} else { // function节点运行失败, 处理有重试的情况
