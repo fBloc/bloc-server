@@ -13,11 +13,12 @@ const (
 	Fail
 	InterceptedCancel
 	NotAllowedParallelCancel
+	ToSchedule // upper functions not finished. Waiting to schedule
 	maxRunStatus
 )
 
 func (tS RunState) IsRunFinished() bool {
-	return tS > Running
+	return tS > Running && tS < ToSchedule
 }
 
 func (tS RunState) IsRunStateValid() bool {
@@ -25,5 +26,5 @@ func (tS RunState) IsRunStateValid() bool {
 }
 
 func NotFinishedRunStatus() []RunState {
-	return []RunState{Created, InQueue, Running}
+	return []RunState{ToSchedule, Created, InQueue, Running}
 }

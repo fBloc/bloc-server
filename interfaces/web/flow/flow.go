@@ -358,12 +358,20 @@ func fromAggWithCertainRunFunctionView(
 	wg.Wait()
 	close(resp)
 
+	linedFlowFunctionIDs := aggF.LinedFlowFunctionIDs()
 	if retFlow.LatestRunFlowFunctionIDMapFunctionRunInfo == nil {
 		retFlow.LatestRunFlowFunctionIDMapFunctionRunInfo = make(
 			map[string]FunctionRunInfo,
-			len(theFlowRunRecord.FlowFuncIDMapFuncRunRecordID),
+			len(linedFlowFunctionIDs),
 		)
 	}
+	for _, i := range linedFlowFunctionIDs {
+		// each function's default run state is waiting schedule
+		retFlow.LatestRunFlowFunctionIDMapFunctionRunInfo[i] = FunctionRunInfo{
+			Status: value_object.ToSchedule,
+		}
+	}
+
 	for i := range resp {
 		retFlow.LatestRunFlowFunctionIDMapFunctionRunInfo[i.flowfunctionID] = FunctionRunInfo{
 			Status:              i.functionRunState,
