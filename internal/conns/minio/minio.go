@@ -38,6 +38,8 @@ func getValidClient(config *MinioConfig) *minio.Client {
 				// already has this bucket
 				return minioClient
 			}
+		} else {
+			return minioClient
 		}
 	}
 	return nil
