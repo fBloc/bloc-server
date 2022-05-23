@@ -8,6 +8,7 @@ import (
 type FunctionRepository interface {
 	// create
 	Create(f *aggregate.Function) error
+	FindOrCreate(f *aggregate.Function) (alreadyExistFunction *aggregate.Function, err error)
 
 	// read
 	GetByIDForCheckAliveTime(id value_object.UUID) (*aggregate.Function, error)

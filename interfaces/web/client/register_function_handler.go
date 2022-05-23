@@ -99,19 +99,24 @@ func RegisterFunctions(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 						Opts:               httpFunc.Opts,
 						OptDigest:          optD,
 						ProgressMilestones: httpFunc.ProgressMilestones}
-					err = fService.Function.Create(&aggFunction)
+					alreadyExistFunc, err := fService.Function.FindOrCreate(&aggFunction)
 					if err != nil {
 						msg := fmt.Sprintf("create function to persistence layer failed: %s", err.Error())
 						fService.Logger.Errorf(logTags, msg)
 						httpFunc.ErrorMsg = msg
 						return
 					}
-					fService.Logger.Infof(
-						logTags,
-						"new reported function! group_name: %s, provider_name: %s, function_name: %s;",
-						group, req.Who, httpFunc.Name)
-					httpFunc.ID = aggFunction.ID
-					aggFunc = &aggFunction
+					if alreadyExistFunc.IsZero() {
+						fService.Logger.Infof(
+							logTags,
+							"new reported function! group_name: %s, provider_name: %s, function_name: %s;",
+							group, req.Who, httpFunc.Name)
+						httpFunc.ID = aggFunction.ID
+						aggFunc = &aggFunction
+					} else {
+						httpFunc.ID = alreadyExistFunc.ID
+						aggFunc = alreadyExistFunc
+					}
 				} else { // 没汇报过 + 查到了记录
 					httpFunc.ID = aggFunc.ID
 					if aggFunc.ProviderName == "" || aggFunc.ProviderName != req.Who {

@@ -58,6 +58,16 @@ type mongoFunction struct {
 	AssignPermissionUserIDs []value_object.UUID `bson:"assign_permission_user_ids"`
 }
 
+func (m *mongoFunction) IsZero() bool {
+	if m == nil {
+		return true
+	}
+	if m.ID.IsNil() {
+		return true
+	}
+	return false
+}
+
 func (m *mongoFunction) ToAggregate() *aggregate.Function {
 	return &aggregate.Function{
 		ID:                      m.ID,
@@ -108,6 +118,32 @@ func NewFromFunction(f *aggregate.Function) *mongoFunction {
 		resp.AssignPermissionUserIDs = []value_object.UUID{}
 	}
 	return &resp
+}
+
+func (mr *MongoRepository) FindOrCreate(
+	f *aggregate.Function,
+) (
+	alreadyExistFunction *aggregate.Function,
+	err error,
+) {
+	mF := NewFromFunction(f)
+	if mF.RegisterTime.IsZero() {
+		mF.RegisterTime = time.Now()
+	}
+
+	var old mongoFunction
+	_, err = mr.mongoCollection.FindOneOrInsert(
+		mongodb.NewFilter().
+			AddEqual("ipt_digest", mF.IptDigest).
+			AddEqual("opt_digest", mF.OptDigest),
+		*mF, &old)
+	if err != nil {
+		return
+	}
+	if old.IsZero() { // 老文档不存在，表示此次为新建
+		return nil, nil
+	}
+	return old.ToAggregate(), nil
 }
 
 func (mr *MongoRepository) Create(
