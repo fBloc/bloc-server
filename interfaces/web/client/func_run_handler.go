@@ -164,7 +164,7 @@ func FunctionRunFinished(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 				wg *sync.WaitGroup,
 			) {
 				defer wg.Done()
-				functionIns, err := fService.Function.GetByID(functionID)
+				functionIns, err := fService.Function.GetByIDForCheckAliveTime(functionID)
 				if err != nil {
 					return
 				}
