@@ -1,4 +1,6 @@
 # bloc-server
+[中文](/README.zh-CN.md)
+
 In a global view, bloc's code repo has below relationship:
 ![repo_relationship](/static/repo_relationship.png)
 
